@@ -9,9 +9,9 @@ LaTeX-Befehl `executeR` erwähnt:
 ```latex
 % R aus LaTeX heraus ausführen
 \newcommand{\executeR}[1]{%
-	\ignorespaces%
-	\immediate%
-	\write18{echo; echo "executeR: #1:"; R --slave --vanilla -f '#1' --args FromLaTeX; echo}%
-	\ignorespaces%
+    \ignorespaces%
+    \immediate%
+    \write18{echo; echo "executeR: #1:"; R --slave --vanilla -f '#1' --args FromLaTeX; echo}%
+    \ignorespaces%
 }
 ```
