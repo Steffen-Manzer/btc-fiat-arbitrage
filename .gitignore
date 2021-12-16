@@ -1,0 +1,13 @@
+# R Projektdateien
+.RData
+.Rhistory
+.Rproj.Rproj
+.Rproj.user
+.Rprofile
+
+# Konfiguration
+Konfiguration/CoinMarketCap_API_Key.r
+Konfiguration/TikZ.r
+
+# Doku
+/_Paketdokumentationen

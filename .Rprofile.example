@@ -1,0 +1,18 @@
+
+if (exists("rProfileLoaded") == FALSE) {
+    
+    # Zeitzone
+    Sys.setenv(TZ="UTC")
+    options(TZ="UTC")
+    
+    # Anzeigelimits
+    options(max.print = 100)
+    options(digits.secs = 6)
+    
+    # TikZ-Cache
+    if (identical(getOption("tikzMetricsDictionary"), NULL)) {
+        options(tikzMetricsDictionary="/home/example/tikz-cache")
+    }
+    
+    rProfileLoaded <- TRUE
+}
