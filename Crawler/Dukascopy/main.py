@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+# Geschrieben für Python 3.9 unter macOS 12.1
 # Mit Hilfe von https://github.com/terukusu/download-tick-from-dukascopy
 
 from datetime import datetime, timedelta, timezone
