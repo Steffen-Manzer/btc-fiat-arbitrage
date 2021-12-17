@@ -45,7 +45,7 @@ summariseDukascopyTickData <- function(dataset) {
 
 readMonthlyDividedDataset(
     "Dukascopy",
-    currencyPairs = c("eurusd"),#, "gbpusd", "usdcad", "usdchf", "usdjpy", "audusd"),
+    currencyPairs = c("eurusd", "gbpusd", "usdcad", "usdchf", "usdjpy", "audusd"),
     getSourceFileCallback = function(pair, year, month) {
         return(paste0(
             "Daten/",
