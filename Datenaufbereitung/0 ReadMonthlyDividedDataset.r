@@ -100,10 +100,11 @@ readMonthlyDividedDataset <- function(
         cacheBase5s   <- paste0(cacheBase, "5s/",   targetBasename, "-", tolower(pair), "-5s-")
         cacheBase60s  <- paste0(cacheBase, "60s/",  targetBasename, "-", tolower(pair), "-60s-")
         
-        # Tagesdaten werden nicht nach Monaten getrennt,
+        # Tages- und Monatsdaten werden nicht nach Monaten getrennt,
         # sondern alle in eine Datei geschrieben
         # Beispiel-Schema: Cache/bitstamp/btcusd/bitstamp-btcusd-daily.rds
         targetFileDaily <- paste0(cacheBase, targetBasename, "-", tolower(pair), "-daily.rds")
+        targetFileMonthly <- paste0(cacheBase, targetBasename, "-", tolower(pair), "-monthly.rds")
         
         
         # Anhand der (sehr kleinen) Tagesdaten prüfen, ob der Datensatz 
@@ -111,7 +112,13 @@ readMonthlyDividedDataset <- function(
         # angehängt werden müssen.
         if (file.exists(targetFileDaily)) {
             
+            if (!file.exists(targetFileMonthly)) {
+                cat("Monatsdaten fehlen, obwohl Tagesdaten verfügbar sind. Fehler!")
+                next
+            }
+            
             dataset_daily <- readRDS(targetFileDaily)
+            dataset_monthly <- readRDS(targetFileMonthly)
             
             lastDataset = last(dataset_daily$Time)
             lastMonth = month(lastDataset)
@@ -141,6 +148,7 @@ readMonthlyDividedDataset <- function(
             # Datensatz nicht gefunden, starte von Beginn.
             # Ab 2011 starten, manche Datensätze beginnen so früh.
             dataset_daily <- data.table()
+            dataset_monthly <- data.table()
             startYear = 2010
             startMonth = 1
             
@@ -185,13 +193,12 @@ readMonthlyDividedDataset <- function(
                 targetFile60s <- paste0(cacheBase60s, year, "-", sprintf("%02d", month), ".rds")
                 
                 # Quell-Datensatz existiert nicht
-                if (!file.exists(srcFile)) {
+                if (!file.exists(srcFile) && !file.exists(targetFileTick)) {
                     # Es sind neue Daten vorhanden, dieser Datensatz fehlt allerdings.
                     if (newDataFound) {
                         cat(paste0(srcFile, " nicht gefunden! Ende.\n"))
                         stop = TRUE
                     }
-                    cat(srcFile, " nicht gefunden\n")
                     next()
                 }
                 
@@ -222,7 +229,7 @@ readMonthlyDividedDataset <- function(
                     format(last(thisDataset$Time), format="%d.%m.%Y %H:%M:%S")
                 )
                 
-                # Auf 1s-OHLC aggregieren
+                # Auf 1s aggregieren
                 if (!file.exists(targetFile1s)) {
                     cat(" - 1s")
                     thisDataset_1s <- thisDataset |>
@@ -235,7 +242,7 @@ readMonthlyDividedDataset <- function(
                     rm(thisDataset_1s)
                 }
                 
-                # Auf 5s-OHLC aggregieren
+                # Auf 5s aggregieren
                 if (!file.exists(targetFile5s)) {
                     cat(", 5s")
                     thisDataset_5s <- thisDataset |>
@@ -248,7 +255,7 @@ readMonthlyDividedDataset <- function(
                     rm(thisDataset_5s)
                 }
                 
-                # Auf 60s-OHLC aggregieren
+                # Auf 60s aggregieren
                 if (!file.exists(targetFile60s)) {
                     cat(", 60s")
                     thisDataset_60s <- thisDataset |>
@@ -261,7 +268,7 @@ readMonthlyDividedDataset <- function(
                     rm(thisDataset_60s)
                 }
                 
-                # Auf 1d-OHLC aggregieren (einzelne Datei für gesamten Datensatz)
+                # Auf 1d aggregieren (einzelne Datei für gesamten Datensatz)
                 cat(", 1d ")
                 thisDataset_daily <- thisDataset |>
                     group_by(floor_date(Time, unit = "1 day")) |>
@@ -269,8 +276,18 @@ readMonthlyDividedDataset <- function(
                 colnames(thisDataset_daily)[1] <- "Time"
                 dataset_daily <- rbind(dataset_daily, thisDataset_daily)
                 saveRDS(dataset_daily, targetFileDaily)
+                rm(thisDataset_daily)
                 
-                rm(thisDataset_daily, thisDataset)
+                # Auf 1 Monat aggregieren (einzelne Datei für gesamten Datensatz)
+                cat(", 1mo ")
+                thisDataset_monthly <- thisDataset |>
+                    group_by(floor_date(Time, unit = "1 month")) |>
+                    summariseDataCallback()
+                colnames(thisDataset_monthly)[1] <- "Time"
+                dataset_monthly <- rbind(dataset_monthly, thisDataset_monthly)
+                saveRDS(dataset_monthly, targetFileMonthly)
+                
+                rm(thisDataset_monthly, thisDataset)
                 toc()
             } # loop: month
         } # loop: year

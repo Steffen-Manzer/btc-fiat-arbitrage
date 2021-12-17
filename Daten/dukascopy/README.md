@@ -9,21 +9,32 @@
 
 ## API
 
-Nutzung des Node.js-Moduls [_dukascopy-node_](https://www.npmjs.com/package/dukascopy-node).
+Abfrage folgender URL:
+
+> `https://datafeed.dukascopy.com/datafeed/{SYMBOL}/{JAHR}/{MONAT}/{TAG}/{STUNDE}h_ticks.bi5`
+
+dabei ist
+
+- `{SYMBOL}` die ISO~4217-Codes des gewünschten Handelspaares, etwa EURUSD,
+- `{JAHR}` das gewünschte Jahr als vierstellige Zahl,
+- `{MONAT}` der gewünschte Monat als zweistellige Zahl, wobei 0 für Januar und 11 für Dezember steht und
+- `{TAG}` bzw. `{STUNDE}` der gewünschte Tag respektive die gewünschte Stunde als zweistellige Zahl.
 
 ## Enthaltener Zeitraum
 
 Alle Datensätze enthalten Daten von 01.01.2010, 00:00:00.000 (UTC) bis heute.
 
 ## Dateistruktur
-- Datum/Uhrzeit als [Unix-Timestamp](https://de.wikipedia.org/wiki/Unixzeit) mit Millisekunden (10<sup>-3</sup>, letzte drei Stellen)
+- Datum/Uhrzeit ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit))
 - Geld- und Briefkurs
-- Angebots- und Nachfragemenge in Millionen Einheiten der Basiswährung
-- Beispiel USD/CHF: 
+- Angebots- und Nachfragemenge in Einheiten der Basiswährung
+- Beispiel EUR/USD: 
 
 ---
-	timestamp,askPrice,bidPrice,askVolume,bidVolume
-	1598918401100,0.90412,0.90403,1.69,1
-	1598918401202,0.90412,0.90403,3,1
-	[...]
+    Time,Bid,Ask,BidVolume,AskVolume
+    [...]
+    2010-01-01T00:00:03.964000Z,1.43283,1.43293,2300000,3000000
+    2010-01-01T00:00:05.996000Z,1.43278,1.4329,1400000,4200000
+    2010-01-01T00:00:10.385000Z,1.43274,1.43287,1900000,4200000
+    [...]
 ---

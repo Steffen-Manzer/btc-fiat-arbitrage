@@ -5,32 +5,26 @@ parseDukascopyTickData <- function(srcFile) {
     
     # Bibliotheken laden
     library("data.table")
+    library("fasttime")
     
     # Tickdaten aus CSV einlesen
     # Datenstruktur:
-    #        timestamp askPrice bidPrice askVolume bidVolume
-    # 1: 1627851854474  1.18722  1.18641      0.37      0.19
-    # 2: 1627851862067  1.18722  1.18641      0.37      0.19
-    thisDataset <- fread(srcFile, showProgress = FALSE)
+    #                       Time     Bid     Ask BidVolume AskVolume
+    # 1: 2010-01-01 00:00:03.963 1.43283 1.43293   2300000   3000000
+    # 2: 2010-01-01 00:00:05.996 1.43278 1.43290   1400000   4200000
+    # Überspringe Leerzeilen (können aufgrund eines Bugs in
+    # der Datenerfassung am Wochenende auftreten)
+    thisDataset <- fread(srcFile, showProgress = FALSE, blank.lines.skip = TRUE)
     
     # Handelsvolumen interessiert derzeit nicht
-    thisDataset$bidVolume <- NULL
-    thisDataset$askVolume <- NULL
-    
-    # Spaltenbezeichnungen normalisieren
-    colnames(thisDataset)[1] <- "Time"
-    colnames(thisDataset)[2] <- "Ask"
-    colnames(thisDataset)[3] <- "Bid"
+    thisDataset$BidVolume <- NULL
+    thisDataset$AskVolume <- NULL
     
     # Zeit einlesen
-    # as.numeric und +0.1, um floating point-Probleme zu vermeiden
-    # Siehe Beispiele in der Dokumentation von as.POSIXct:
-    # # avoid rounding down: milliseconds are not exactly representable
-    # as.POSIXct((z+0.1)/1000, origin = "1960-01-01")
-    thisDataset$Time <- as.POSIXct((as.numeric(thisDataset$Time)+0.1)/1000, origin = "1970-01-01")
+    thisDataset$Time <- fastPOSIXct(thisDataset$Time, tz="UTC")
     
     # Mittelkurs aus Bid und Ask berechnen
-    thisDataset$Mittel <- rowMeans(thisDataset[,c("Ask","Bid")])
+    thisDataset$Mittel <- rowMeans(thisDataset[,c("Bid","Ask")])
     
     return(thisDataset)
     
@@ -51,13 +45,13 @@ summariseDukascopyTickData <- function(dataset) {
 
 readMonthlyDividedDataset(
     "Dukascopy",
-    currencyPairs = c("AUDUSD", "EURUSD", "GBPUSD", "USDCAD", "USDCHF", "USDJPY"),
+    currencyPairs = c("eurusd"),#, "gbpusd", "usdcad", "usdchf", "usdjpy", "audusd"),
     getSourceFileCallback = function(pair, year, month) {
         return(paste0(
             "Daten/",
             "dukascopy/",
             pair, "/",
-            pair, "-", year, "-", sprintf("%02d", month), ".csv.gz"
+            "dukascopy-", pair, "-", year, "-", sprintf("%02d", month), ".csv.gz"
         ))
     },
     parseSourceFileCallback = parseDukascopyTickData,

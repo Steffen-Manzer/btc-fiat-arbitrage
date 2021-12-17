@@ -50,8 +50,7 @@ summariseTrueFXTickData <- function(thisDataset) {
 
 readMonthlyDividedDataset(
     "TrueFX",
-    #currencyPairs = c("AUDUSD", "EURUSD", "GBPUSD", "USDCAD", "USDCHF", "USDJPY"),
-    currencyPairs = c("EURUSD", "GBPUSD", "USDCAD", "USDCHF", "USDJPY"),
+    currencyPairs = c("EURUSD", "GBPUSD", "USDJPY"),
     getSourceFileCallback = function(pair, year, month) {
         return(paste0(
             "Daten/",
