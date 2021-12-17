@@ -6,6 +6,7 @@
 from datetime import datetime, timedelta, timezone
 import os.path
 import lzma
+import re
 import SignalHelper
 import struct
 import subprocess
@@ -25,6 +26,7 @@ symbols = ["eurusd", "gbpusd", "usdchf", "usdcad", "usdjpy", "audusd"]
 now = datetime.now()
 start_date = datetime(year=2010, month=1, day=1, tzinfo=timezone.utc)
 end_date = datetime(year=now.year, month=now.month - 1, day=1, tzinfo=timezone.utc)
+
 
 # ====== Ende Konfiguration ======
 
@@ -148,10 +150,29 @@ if __name__ == '__main__':
         print(f"{TerminalColors.BOLD}Verarbeite {symbol.upper()}{TerminalColors.NORMAL}")
 
         output_dir = os.path.realpath(f"{out_path}{symbol}/")
-        if not os.path.exists(output_dir):
+        current_date = start_date
+
+        if os.path.exists(output_dir):
+
+            # Ausgabeverzeichnis existiert, ggf. sind bereits Daten vorhanden.
+            # Letzten vollständigen Datensatz finden und ab dort beginnen.
+            files = os.listdir(output_dir)
+            files.sort(reverse=True)
+            search_regex = re.compile(r"dukascopy-\w{6}-(\d{4})-(\d{2})\.csv\.gz")
+            for file in files:
+                match = search_regex.match(file)
+                if match is not None:
+                    # Starte nach letztem Datensatz
+                    current_date = datetime(year=int(match[1]), month=int(match[2]), day=1, tzinfo=timezone.utc)
+                    print(f"Daten verfügbar bis einschließlich {current_date.strftime('%Y-%m')}")
+                    current_date = skip_to_next_month(current_date)
+                    break
+
+        else:
+            # Ausgabeverzeichnis existiert nicht, anlegen.
+            # Keine Daten vorhanden, starte bei start_date.
             os.mkdir(output_dir)
 
-        current_date = start_date
         new_data_found = False
         while current_date <= end_date:
 
