@@ -7,8 +7,10 @@
 #' @author Steffen Manzer
 #' @param exchangeName Name der Börse.
 #' @param currencyPairs Liste der Gegenwährungen, z.B. `c("btceur", "eurusd")`.
-#' @param getSourceFileCallback Callback, das den Dateipfad der CSV-Quelldatei zurückgibt.
-#' @param parseSourceFileCallback Callback, das den Inhalt der CSV-Quelldatei zurückgibt.
+#' @param getSourceFileCallback Callback, das den Dateipfad
+#'   der CSV-Quelldatei zurückgibt.
+#' @param parseSourceFileCallback Callback, das den Inhalt
+#'   der CSV-Quelldatei zurückgibt.
 #' @param summariseDataCallback Callback, das die Daten aggregiert (`summarise`).
 #' @param targetBasename Basisverzeichnis für Zieldateien.
 #'   Standard: exchangeName in Kleinbuchstaben, falls NA.
