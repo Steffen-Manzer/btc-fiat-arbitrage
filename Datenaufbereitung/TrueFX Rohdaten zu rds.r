@@ -1,11 +1,16 @@
+# Lese und aggregiere TrueFX-Rohdaten zu
+# - Tickdaten (vollständig)
+# - 1s-/5s-/60s/1d: Schlusskurse für Bid-, Ask- und Mittelkurs
+# Diese Auswahl erfolgt, um die Dateigröße zu gering wie möglich zu halten.
 
 source("Funktionen/ReadMonthlyDividedDataset.r")
 
+# Bibliotheken laden
+library("data.table") # fread
+library("lubridate") # parse_date_time
+
+# Hilfsfunktion: Eine .csv-Datei einlesen
 parseTrueFXTickData <- function(srcFile) {
-    
-    # Bibliotheken laden
-    library("data.table") # fread
-    library("lubridate") # parse_date_time
     
     # Tickdaten aus CSV einlesen
     # Datenstruktur:
@@ -35,10 +40,7 @@ parseTrueFXTickData <- function(srcFile) {
     
 }
 
-# Lese und aggregiere TrueFX-Rohdaten zu
-# - Tickdaten (vollständig)
-# - 1s-/5s-/60s/1d: Schlusskurse für Bid-, Ask- und Mittelkurs
-# Diese Auswahl erfolgt, um die Dateigröße zu gering wie möglich zu halten.
+# Hilfsfunktion: Daten eines Zeitabschnittes aggregieren
 summariseTrueFXTickData <- function(thisDataset) {
     thisDataset |> summarise(
         CloseBid = last(Bid),
@@ -48,6 +50,7 @@ summariseTrueFXTickData <- function(thisDataset) {
     )
 }
 
+# Daten einlesen und aggregieren
 readMonthlyDividedDataset(
     "TrueFX",
     currencyPairs = c("EURUSD", "GBPUSD", "USDJPY"),
@@ -62,5 +65,3 @@ readMonthlyDividedDataset(
     parseSourceFileCallback = parseTrueFXTickData,
     summariseDataCallback = summariseTrueFXTickData
 )
-
-cat("\nTipp: R-Session neu starten, um nicht benötigten Speicher freizugeben.\n")

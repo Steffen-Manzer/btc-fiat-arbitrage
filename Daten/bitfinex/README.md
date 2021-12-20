@@ -19,7 +19,11 @@ Die Dateien ohne Monatsangabe enthalten alle Daten bis zur Umstellung auf monats
 
 ## Enthaltener Zeitraum
 
-- BTCUSD, BTCEUR, BTCGBP und BTCJPY enthalten jeweils Daten von 01.01.2018, 00:00:00 (UTC) bis heute
+- BTCUSD enthält Daten von 14.01.2013, 16:47:23 (UTC) bis heute
+- BTCEUR enthält Daten von 01.09.2019, 00:00:00 (UTC) bis heute
+- BTCGBP enthält Daten von 29.03.2018, 14:40:57 (UTC) bis heute
+- BTCJPY enthält Daten von 29.03.2018, 15:55:31 (UTC) bis heute
+
 
 ## Dateistruktur
 - Vorgangs-ID

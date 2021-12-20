@@ -6,25 +6,24 @@
 > The trade side indicates the maker order side. The maker order is the order that was open on the order book.  
 > **buy** side (0) indicates a down-tick because the maker was a buy order and their order was removed.  
 > Conversely, **sell** side (1) indicates an up-tick.
->@ https://docs.pro.coinbase.com/#get-trades
+>@ https://docs.cloud.coinbase.com/exchange/reference/exchangerestapi_getproducttrades
 
 ## API
 
-- Abfrage folgender URLs:
-    - https://api.pro.coinbase.com/products/BTC-USD/trades
-    - https://api.pro.coinbase.com/products/BTC-EUR/trades
-    - https://api.pro.coinbase.com/products/BTC-GBP/trades
-- Aktualisierung erfolgt 1-3 Minuten (je nach Handelspaar)
+Abfrage folgender URLs:
+- https://api.pro.coinbase.com/products/BTC-USD/trades
+- https://api.pro.coinbase.com/products/BTC-EUR/trades
+- https://api.pro.coinbase.com/products/BTC-GBP/trades
 
 ## Enthaltener Zeitraum
 
-- BTCUSD enthält Daten von 31.12.2017, 23:59:55.819 (UTC) bis heute
-- BTCEUR enthält Daten von 31.12.2017, 23:59:50.700 (UTC) bis heute
-- BTCGBP enthält Daten von 31.12.2017, 23:59:50.373 (UTC) bis heute
+- BTCUSD enthält Daten von 01.12.2014, 05:33:56.761199 (UTC) bis heute.
+- BTCEUR enthält Daten von 23.04.2015, 01:42:34.182104 (UTC) bis heute.
+- BTCGBP enthält Daten von 21.04.2015, 22:22:41.294060 (UTC) bis heute.
 
 ## Dateistruktur
 - Vorgangs-ID
-- Datum ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit))
+- Datum/Uhrzeit ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit)) mit einer Genauigkeit von 1ms
 - Gehandelte Menge in BTC
 - Preis in USD/EUR/GBP
 - Art (Kauf = 0 / Verkauf = 1)

@@ -57,7 +57,7 @@ findNearestDatapoint <- function(
         return(NA)
     }
     
-    # Nach zeitlicher Nähe sortieren und hinterlegen
+    # Nach zeitlicher Nähe sortieren und im Datensatz hinterlegen
     dataset$TimeDifference <- dataset$Time - datetime
     dataset <- dataset[order(abs(TimeDifference)),]
     

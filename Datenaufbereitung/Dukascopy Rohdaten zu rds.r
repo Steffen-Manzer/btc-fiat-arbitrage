@@ -1,11 +1,16 @@
+# Lese und aggregiere Dukascopy-Rohdaten zu
+# - Tickdaten (vollständig)
+# - 1s-/5s-/60s/1d: Schlusskurse für Bid-, Ask- und Mittelkurs
+# Diese Auswahl erfolgt, um die Dateigröße zu gering wie möglich zu halten.
 
 source("Funktionen/ReadMonthlyDividedDataset.r")
 
+# Bibliotheken laden
+library("data.table")
+library("fasttime")
+
+# Hilfsfunktion: Eine .csv-Datei einlesen
 parseDukascopyTickData <- function(srcFile) {
-    
-    # Bibliotheken laden
-    library("data.table")
-    library("fasttime")
     
     # Tickdaten aus CSV einlesen
     # Datenstruktur:
@@ -30,10 +35,7 @@ parseDukascopyTickData <- function(srcFile) {
     
 }
 
-# Lese und aggregiere Dukascopy-Rohdaten zu
-# - Tickdaten (vollständig)
-# - 1s-/5s-/60s/1d: Schlusskurse für Bid-, Ask- und Mittelkurs
-# Diese Auswahl erfolgt, um die Dateigröße zu gering wie möglich zu halten.
+# Hilfsfunktion: Daten eines Zeitabschnittes aggregieren
 summariseDukascopyTickData <- function(dataset) {
     dataset |> summarise(
         CloseBid = last(Bid),
@@ -43,6 +45,7 @@ summariseDukascopyTickData <- function(dataset) {
     )
 }
 
+# Daten einlesen und aggregieren
 readMonthlyDividedDataset(
     "Dukascopy",
     currencyPairs = c("eurusd", "gbpusd", "usdcad", "usdchf", "usdjpy", "audusd"),
@@ -57,5 +60,3 @@ readMonthlyDividedDataset(
     parseSourceFileCallback = parseDukascopyTickData,
     summariseDataCallback = summariseDukascopyTickData
 )
-
-cat("\nTipp: R-Session neu starten, um nicht benötigten Speicher freizugeben.\n")
