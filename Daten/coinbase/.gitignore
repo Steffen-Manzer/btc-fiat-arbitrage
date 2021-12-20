@@ -1,1 +1,3 @@
-*/
+.lastDataset
+*.csv
+*.csv.gz
