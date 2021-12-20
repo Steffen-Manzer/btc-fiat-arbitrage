@@ -1,5 +1,5 @@
 
-source("Datenaufbereitung/0 ReadMonthlyDividedDataset.r")
+source("Funktionen/ReadMonthlyDividedDataset.r")
 
 parseTrueFXTickData <- function(srcFile) {
     

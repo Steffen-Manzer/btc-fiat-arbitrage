@@ -1,17 +1,24 @@
-#' Einen Datensatz einlesen, der in monatlich getrennten CSV-Dateien gespeichert ist.
-#' Funktioniert für Bitcoin-Börsen genau wie für Wechselkurse.
+#' Monatlich getrennte Daten einlesen
+#' 
+#' Einen Datensatz aus monatlich getrennten CSV-Dateien einlesen und auf
+#' bestimmte Zeithorizonte aggregieren (1s, 5s, 60s, 1d, 1mo).
+#' Funktioniert für Bitcoin-Börsen und Wechselkursdaten.
 #' 
 #' @author Steffen Manzer
 #' @param exchangeName Name der Börse.
-#' @param currencyPairs Liste der Gegenwährungen, z.B. c("btceur", "eurusd")
-#' @param getSourceFileCallback Callback, das den Dateipfad der CSV-Quelldatei erzeugt
-#' @param parseSourceFileCallback Callback, das die CSV-Quelldatei einliest
-#' @param summariseDataCallback Callback, das die Daten nach 1s/5s/... aggregiert
-#' @param targetBasename Basisverzeichnis für Zieldateien. Standard: exchangeName in Kleinbuchstaben, falls NA.
-#' @param sourceFileExtension Dateiendung der Rohdaten. Standard: .csv.gz.
-#' @param readUntil Daten bis zu diesem Zeitpunkt einlesen. Standard: bis vor einen Monat.
+#' @param currencyPairs Liste der Gegenwährungen, z.B. `c("btceur", "eurusd")`.
+#' @param getSourceFileCallback Callback, das den Dateipfad der CSV-Quelldatei zurückgibt.
+#' @param parseSourceFileCallback Callback, das den Inhalt der CSV-Quelldatei zurückgibt.
+#' @param summariseDataCallback Callback, das die Daten aggregiert (`summarise`).
+#' @param targetBasename Basisverzeichnis für Zieldateien.
+#'   Standard: exchangeName in Kleinbuchstaben, falls NA.
+#' @param sourceFileExtension Dateiendung der Rohdaten.
+#'   Standard: .csv.gz.
+#' @param readUntil Daten bis zu diesem Zeitpunkt einlesen. 
+#'   Standard: bis vor einen Monat.
 #' @return NULL
 #' @examples
+#' # NOT RUN {
 #' readMonthlyDividedDataset(
 #'     exchangeName = "Bitstamp",
 #'     currencyPairs = c("btcusd", "btceur"),
@@ -30,6 +37,7 @@
 #'     },
 #'     readUntil = as.POSIXct("2019-08-01")
 #' )
+#' # }
 readMonthlyDividedDataset <- function(
     exchangeName,
     currencyPairs,

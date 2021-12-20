@@ -1,5 +1,5 @@
 
-source("Datenaufbereitung/0 ReadMonthlyDividedDataset.r")
+source("Funktionen/ReadMonthlyDividedDataset.r")
 library("data.table") # fread
 
 # Die Methode, um Daten zu 1s/5s/60s/1d zu aggregieren,

@@ -15,14 +15,15 @@
     
     # Pakete laden
     library("data.table")
-    library("anytime")
     library("lubridate") # floor_date
     library("fasttime") # fastPOSIXct
     library("dplyr")
     library("tictoc")
     
-    # summarise: Nicht über ungrouping informieren
-    options(dplyr.summarise.inform = FALSE)
+    # Verzeichnis anlegen
+    if (!dir.exists("Cache/coindesk")) {
+        dir.create("Cache/coindesk")
+    }
     
     # Lese Daten: BPI Tick = 60s
     cat("Reading CSV... ")
@@ -52,7 +53,7 @@
             Open = first(Close),
             High = max(Close),
             Low = min(Close),
-            Close = last(Close), # MUSS die letzte Zeile sein
+            Close = last(Close), # Muss bei gleichem Namen die letzte Zeile sein
             NumDatasets = n()
         )
     
@@ -73,7 +74,7 @@
             Open = first(Close),
             High = max(Close),
             Low = min(Close),
-            Close = last(Close), # MUSS die letzte Zeile sein
+            Close = last(Close), # Muss bei gleichem Namen die letzte Zeile sein
             NumDatasets = n()
         )
     
