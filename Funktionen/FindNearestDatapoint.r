@@ -29,6 +29,9 @@ findNearestDatapoint <- function(
     withPastData = TRUE,
     getAllWithinThreshold = FALSE
 ) {
+    # Bibliotheken laden
+    library("lubridate") # is.POSIXct
+    
     # Parameter validieren
     stopifnot(
         length(datetime) == 1,
@@ -59,7 +62,7 @@ findNearestDatapoint <- function(
     
     # Nach zeitlicher Nähe sortieren und im Datensatz hinterlegen
     dataset$TimeDifference <- dataset$Time - datetime
-    dataset <- dataset[order(abs(TimeDifference)),]
+    dataset <- dataset[order(abs(dataset$TimeDifference)),]
     
     if (getAllWithinThreshold) {
         # Alle gefundenen Datensätze nach zeitlicher Nähe sortiert zurückgeben
@@ -67,7 +70,7 @@ findNearestDatapoint <- function(
         
     } else {
         # Nur den zeitlich nächsten Datensatz zurückgeben
-        return(dataset[1])
+        return(dataset[1,])
         
     }
 }
