@@ -34,6 +34,7 @@ sampleExchangeRate_b = 50000
 
 
 # Bibliotheken laden ----------------------------------------------------------
+library("fst")
 library("data.table")
 library("dplyr")
 library("readr")
@@ -44,21 +45,21 @@ library("ggthemes")
 # Quelldaten
 srcsets <- fread("
     Exchange,Pair,SrcFile,InterpolationNeeded
-    Bitfinex,BTC/USD,Cache/bitfinex/btcusd/bitfinex-btcusd-daily.rds,0
-    Bitfinex,BTC/EUR,Cache/bitfinex/btceur/bitfinex-btceur-daily.rds,0
-    Bitfinex,BTC/GBP,Cache/bitfinex/btcgbp/bitfinex-btcgbp-daily.rds,0
-    Bitfinex,BTC/JPY,Cache/bitfinex/btcjpy/bitfinex-btcjpy-daily.rds,0
-    Bitstamp,BTC/USD,Cache/bitstamp/btcusd/bitstamp-btcusd-daily.rds,0
-    Bitstamp,BTC/EUR,Cache/bitstamp/btceur/bitstamp-btceur-daily.rds,0
-    Coinbase Pro,BTC/USD,Cache/coinbase/btcusd/coinbase-btcusd-daily.rds,0
-    Coinbase Pro,BTC/EUR,Cache/coinbase/btceur/coinbase-btceur-daily.rds,0
-    Coinbase Pro,BTC/GBP,Cache/coinbase/btcgbp/coinbase-btcgbp-daily.rds,0
-    Kraken,BTC/USD,Cache/kraken/btcusd/kraken-btcusd-daily.rds,0
-    Kraken,BTC/EUR,Cache/kraken/btceur/kraken-btceur-daily.rds,0
-    Kraken,BTC/GBP,Cache/kraken/btcgbp/kraken-btcgbp-daily.rds,0
-    Kraken,BTC/JPY,Cache/kraken/btcjpy/kraken-btcjpy-daily.rds,0
-    Kraken,BTC/CAD,Cache/kraken/btccad/kraken-btccad-daily.rds,0
-    Kraken,BTC/CHF,Cache/kraken/btcchf/kraken-btcchf-daily.rds,1
+    Bitfinex,BTC/USD,Cache/bitfinex/btcusd/bitfinex-btcusd-daily.fst,0
+    Bitfinex,BTC/EUR,Cache/bitfinex/btceur/bitfinex-btceur-daily.fst,0
+    Bitfinex,BTC/GBP,Cache/bitfinex/btcgbp/bitfinex-btcgbp-daily.fst,0
+    Bitfinex,BTC/JPY,Cache/bitfinex/btcjpy/bitfinex-btcjpy-daily.fst,0
+    Bitstamp,BTC/USD,Cache/bitstamp/btcusd/bitstamp-btcusd-daily.fst,0
+    Bitstamp,BTC/EUR,Cache/bitstamp/btceur/bitstamp-btceur-daily.fst,0
+    Coinbase Pro,BTC/USD,Cache/coinbase/btcusd/coinbase-btcusd-daily.fst,0
+    Coinbase Pro,BTC/EUR,Cache/coinbase/btceur/coinbase-btceur-daily.fst,0
+    Coinbase Pro,BTC/GBP,Cache/coinbase/btcgbp/coinbase-btcgbp-daily.fst,0
+    Kraken,BTC/USD,Cache/kraken/btcusd/kraken-btcusd-daily.fst,0
+    Kraken,BTC/EUR,Cache/kraken/btceur/kraken-btceur-daily.fst,0
+    Kraken,BTC/GBP,Cache/kraken/btcgbp/kraken-btcgbp-daily.fst,0
+    Kraken,BTC/JPY,Cache/kraken/btcjpy/kraken-btcjpy-daily.fst,0
+    Kraken,BTC/CAD,Cache/kraken/btccad/kraken-btccad-daily.fst,0
+    Kraken,BTC/CHF,Cache/kraken/btcchf/kraken-btcchf-daily.fst,1
 ")
 #Kraken BTC/CHF Erst ab Dezember 2019
 
@@ -81,7 +82,7 @@ for (i in 1:nrow(srcsets)) {
         next()
     }
     
-    dataset <- readRDS(srcset$SrcFile)
+    dataset <- read_fst(srcset$SrcFile) |> as.data.table()
     
     # Nach Datum filtern
     dataset <- dataset[dataset$Time >= dateFrom,]

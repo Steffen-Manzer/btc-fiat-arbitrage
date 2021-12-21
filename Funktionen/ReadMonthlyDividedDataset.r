@@ -52,6 +52,7 @@ readMonthlyDividedDataset <- function(
 ) {
     
     # Bibliotheken laden ------------------------------------------------------
+    library("fst")
     library("data.table")
     library("dplyr")
     library("fasttime")
@@ -104,7 +105,7 @@ readMonthlyDividedDataset <- function(
         
         # Basispfade für alle Aggregationsstufen festlegen
         # Genauere Aggregationsstufen werden nach Monaten getrennt
-        # Beispiel-Schema: Cache/bitstamp/btcusd/tick/bitstamp-btcusd-tick-2019-09.rds
+        # Beispiel-Schema: Cache/bitstamp/btcusd/tick/bitstamp-btcusd-tick-2019-09.fst
         cacheBaseTick <- paste0(cacheBase, "tick/", targetBasename, "-", tolower(pair), "-tick-")
         cacheBase1s   <- paste0(cacheBase, "1s/",   targetBasename, "-", tolower(pair), "-1s-")
         cacheBase5s   <- paste0(cacheBase, "5s/",   targetBasename, "-", tolower(pair), "-5s-")
@@ -112,9 +113,9 @@ readMonthlyDividedDataset <- function(
         
         # Tages- und Monatsdaten werden nicht nach Monaten getrennt,
         # sondern alle in eine Datei geschrieben
-        # Beispiel-Schema: Cache/bitstamp/btcusd/bitstamp-btcusd-daily.rds
-        targetFileDaily <- paste0(cacheBase, targetBasename, "-", tolower(pair), "-daily.rds")
-        targetFileMonthly <- paste0(cacheBase, targetBasename, "-", tolower(pair), "-monthly.rds")
+        # Beispiel-Schema: Cache/bitstamp/btcusd/bitstamp-btcusd-daily.fst
+        targetFileDaily <- paste0(cacheBase, targetBasename, "-", tolower(pair), "-daily.fst")
+        targetFileMonthly <- paste0(cacheBase, targetBasename, "-", tolower(pair), "-monthly.fst")
         
         
         # Anhand der (sehr kleinen) Tagesdaten prüfen, ob der Datensatz 
@@ -127,8 +128,8 @@ readMonthlyDividedDataset <- function(
                 next
             }
             
-            dataset_daily <- readRDS(targetFileDaily)
-            dataset_monthly <- readRDS(targetFileMonthly)
+            dataset_daily <- read_fst(targetFileDaily) |> as.data.table()
+            dataset_monthly <- read_fst(targetFileMonthly) |> as.data.table()
             
             lastDataset = last(dataset_daily$Time)
             lastMonth = month(lastDataset)
@@ -197,10 +198,10 @@ readMonthlyDividedDataset <- function(
                 
                 # Quell- und Zieldateien für diesen Monat bestimmen
                 srcFile <- getSourceFileCallback(pair, year, month)
-                targetFileTick <- paste0(cacheBaseTick, year, "-", sprintf("%02d", month), ".rds")
-                targetFile1s <- paste0(cacheBase1s, year, "-", sprintf("%02d", month), ".rds")
-                targetFile5s <- paste0(cacheBase5s, year, "-", sprintf("%02d", month), ".rds")
-                targetFile60s <- paste0(cacheBase60s, year, "-", sprintf("%02d", month), ".rds")
+                targetFileTick <- paste0(cacheBaseTick, year, "-", sprintf("%02d", month), ".fst")
+                targetFile1s <- paste0(cacheBase1s, year, "-", sprintf("%02d", month), ".fst")
+                targetFile5s <- paste0(cacheBase5s, year, "-", sprintf("%02d", month), ".fst")
+                targetFile60s <- paste0(cacheBase60s, year, "-", sprintf("%02d", month), ".fst")
                 
                 # Quell-Datensatz existiert nicht
                 if (!file.exists(srcFile) && !file.exists(targetFileTick)) {
@@ -221,7 +222,7 @@ readMonthlyDividedDataset <- function(
                 if (file.exists(targetFileTick)) {
                     
                     # Vorhandene Tickdaten dieses Monats einlesen
-                    thisDataset <- readRDS(targetFileTick)
+                    thisDataset <- read_fst(targetFileTick) |> as.data.table()
                     
                 } else {
                     
@@ -229,7 +230,7 @@ readMonthlyDividedDataset <- function(
                     thisDataset <- parseSourceFileCallback(srcFile)
                     
                     # Tickdaten speichern
-                    saveRDS(thisDataset, targetFileTick)
+                    write_fst(thisDataset, targetFileTick)
                 }
                 
                 # Statistiken ausgeben
@@ -246,7 +247,7 @@ readMonthlyDividedDataset <- function(
                         group_by(floor_date(Time, unit = "second")) |>
                         summariseDataCallback()
                     colnames(thisDataset_1s)[1] <- "Time"
-                    saveRDS(thisDataset_1s, targetFile1s)
+                    write_fst(thisDataset_1s, targetFile1s)
                     
                     # Speicher freigeben
                     rm(thisDataset_1s)
@@ -259,7 +260,7 @@ readMonthlyDividedDataset <- function(
                         group_by(floor_date(Time, unit = "5 seconds")) |>
                         summariseDataCallback()
                     colnames(thisDataset_5s)[1] <- "Time"
-                    saveRDS(thisDataset_5s, targetFile5s)
+                    write_fst(thisDataset_5s, targetFile5s)
                     
                     # Speicher freigeben
                     rm(thisDataset_5s)
@@ -272,7 +273,7 @@ readMonthlyDividedDataset <- function(
                         group_by(floor_date(Time, unit = "minute")) |>
                         summariseDataCallback()
                     colnames(thisDataset_60s)[1] <- "Time"
-                    saveRDS(thisDataset_60s, targetFile60s)
+                    write_fst(thisDataset_60s, targetFile60s)
                     
                     # Speicher freigeben
                     rm(thisDataset_60s)
@@ -285,7 +286,7 @@ readMonthlyDividedDataset <- function(
                     summariseDataCallback()
                 colnames(thisDataset_daily)[1] <- "Time"
                 dataset_daily <- rbind(dataset_daily, thisDataset_daily)
-                saveRDS(dataset_daily, targetFileDaily)
+                write_fst(dataset_daily, targetFileDaily)
                 rm(thisDataset_daily)
                 
                 # Auf 1 Monat aggregieren (einzelne Datei für gesamten Datensatz)
@@ -295,7 +296,7 @@ readMonthlyDividedDataset <- function(
                     summariseDataCallback()
                 colnames(thisDataset_monthly)[1] <- "Time"
                 dataset_monthly <- rbind(dataset_monthly, thisDataset_monthly)
-                saveRDS(dataset_monthly, targetFileMonthly)
+                write_fst(dataset_monthly, targetFileMonthly)
                 
                 rm(thisDataset_monthly, thisDataset)
                 toc()

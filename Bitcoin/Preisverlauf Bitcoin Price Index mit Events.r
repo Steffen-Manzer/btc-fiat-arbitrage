@@ -18,7 +18,7 @@
     asTeX = FALSE
     texFile = "/Users/fox/Documents/Studium - Promotion/TeX/Grafiken/BPI_Log_Historisch_mit_Events.tex"
     doPlot = TRUE # Ansonsten nur Daten in den globalen Variablenraum einlesen
-    bpiSource = "Cache/coindesk/bpi-daily-btcusd.rds"
+    bpiSource = "Cache/coindesk/bpi-daily-btcusd.fst"
     
     #eventsSource = "Daten/Bitcoin-Events/events-20180808.csv"
     eventsSource = "Cache/99bitcoins/events.csv"
@@ -28,9 +28,10 @@
     limitGraphToTime = c("2011-01-01", "2030-01-01") # Daten beginnen ab Mitte 2010
     
     # Daten aufbereiten -------------------------------------------------------
+    library("fst")
     
     # BPI
-    bpi.perDay = readRDS(bpiSource)
+    bpi.perDay = read_fst(bpiSource) |> as.data.table()
     bpi.perDay = bpi.perDay[
         bpi.perDay$Time >= limitGraphToTime[1] & 
         bpi.perDay$Time <  limitGraphToTime[2],

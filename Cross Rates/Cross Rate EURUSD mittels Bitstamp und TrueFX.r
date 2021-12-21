@@ -32,6 +32,7 @@
     
     # Hilfsfunktion
     '%nin%' <- Negate('%in%')
+    library("fst")
     library("data.table")
     library("dplyr")
     library("ggplot2")
@@ -45,9 +46,9 @@
     cat("Lade Daten...\n")
     cat("** TODO ** Rewrite für nicht-aggregierte Bitcoin-Daten.\n")
     return()
-    bitstampEUR <- readRDS("Cache/bitstamp-bcc/bitstamp-bcc-tick-btceur.rds")
-    bitstampUSD <- readRDS("Cache/bitstamp-bcc/bitstamp-bcc-tick-btcusd.rds")
-    truefxEURUSD <- readRDS("Cache/TrueFX/truefx-60s-eurusd.rds")
+    bitstampEUR <- read_fst("Cache/bitstamp-bcc/bitstamp-bcc-tick-btceur.fst") |> as.data.table()
+    bitstampUSD <- read_fst("Cache/bitstamp-bcc/bitstamp-bcc-tick-btcusd.fst") |> as.data.table()
+    truefxEURUSD <- read_fst("Cache/TrueFX/truefx-60s-eurusd.fst") |> as.data.table()
     
     cat("Anzahl Datensätze:\n")
     cat("   BTC/EUR:", nrow(bitstampEUR), "\n")

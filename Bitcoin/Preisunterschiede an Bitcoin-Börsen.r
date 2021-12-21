@@ -7,6 +7,7 @@
 (function() {
     
     # Pakete laden ------------------------------------------------------------
+    library("fst")
     require("data.table")
     require("dplyr")
     require("lubridate")
@@ -46,9 +47,9 @@
         # Aggregationslevel: 1s, 5s, 60s?
         timeframe <- "5s"
         cat("Auf ", timeframe, "-Basis...\n", sep="")
-        cacheFile <- paste0("Cache/calculations/btc-price-differences/", pair, "-", timeframe, "-raw.rds")
-        cacheFileWeekly <- paste0("Cache/calculations/btc-price-differences/", pair, "-", timeframe, "-aggregatedWeekly.rds")
-        cacheFileMonthly <- paste0("Cache/calculations/btc-price-differences/", pair, "-", timeframe, "-aggregatedMonthly.rds")
+        cacheFile <- paste0("Cache/calculations/btc-price-differences/", pair, "-", timeframe, "-raw.fst")
+        cacheFileWeekly <- paste0("Cache/calculations/btc-price-differences/", pair, "-", timeframe, "-aggregatedWeekly.fst")
+        cacheFileMonthly <- paste0("Cache/calculations/btc-price-differences/", pair, "-", timeframe, "-aggregatedMonthly.fst")
         if (!dir.exists(dirname(cacheFile))) {
             dir.create(dirname(cacheFile), recursive=TRUE)
         }
@@ -57,7 +58,7 @@
             
             # Cache lesen
             cat("Lese Cache...\n")
-            priceDifferencesWeekly <- readRDS(cacheFileWeekly)
+            priceDifferencesWeekly <- read_fst(cacheFileWeekly) |> as.data.table()
             
             # Erweiterung des Caches nötig?
             lastDataset = last(priceDifferencesWeekly$Time)
@@ -80,8 +81,8 @@
                 rebuildCache <- FALSE
             } else {
                 rebuildCache <- TRUE
-                priceDifferences <- readRDS(cacheFile)
-                priceDifferencesMonthly <- readRDS(cacheFileMonthly)
+                priceDifferences <- read_fst(cacheFile) |> as.data.table()
+                priceDifferencesMonthly <- read_fst(cacheFileMonthly) |> as.data.table()
             }
             
         } else {
@@ -133,14 +134,14 @@
                             exchange, "/",
                             pair, "/", 
                             timeframe, "/",
-                            exchange, "-", pair, "-", timeframe, "-", year, "-", sprintf("%02d", month), ".rds"
+                            exchange, "-", pair, "-", timeframe, "-", year, "-", sprintf("%02d", month), ".fst"
                         )
                         if (!file.exists(dataFile)) {
                             next()
                         }
                         
                         cat(" ", exchange, sep="")
-                        thisDataset <- readRDS(dataFile)
+                        thisDataset <- read_fst(dataFile) |> as.data.table()
                         
                         # Auf Schlusskurs beschränken
                         thisDataset <- thisDataset[, c("Time", "Close")]
@@ -235,9 +236,9 @@
             # Cache erzeugen
             cat("Speichern...")
             tic()
-            saveRDS(priceDifferences, cacheFile)
-            saveRDS(priceDifferencesWeekly, cacheFileWeekly)
-            saveRDS(priceDifferencesMonthly, cacheFileMonthly)
+            write_fst(priceDifferences, cacheFile)
+            write_fst(priceDifferencesWeekly, cacheFileWeekly)
+            write_fst(priceDifferencesMonthly, cacheFileMonthly)
             toc()
         }
         

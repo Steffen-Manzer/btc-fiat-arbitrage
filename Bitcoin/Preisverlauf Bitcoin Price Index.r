@@ -28,6 +28,7 @@
     # Bibliotheken laden ------------------------------------------------------
     setwd("/Users/fox/Documents/Studium - Promotion/Datenanalyse/")
     source(".Rprofile")
+    library("fst")
     library("data.table")
     library("dplyr")
     library("ggplot2")
@@ -35,7 +36,7 @@
     
     # Berechnungen durchführen ------------------------------------------------
     # Quelldaten einlesen
-    btcusd <- readRDS("Cache/coindesk/bpi-daily-btcusd.rds")
+    btcusd <- read_fst("Cache/coindesk/bpi-daily-btcusd.fst") |> as.data.table()
     
     if (asTeX) {
         source("Konfiguration/TikZ.r")

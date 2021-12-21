@@ -3,6 +3,7 @@ source("Funktionen/FindNearestDatapoint.r")
 source("Funktionen/AddOneMonth.r")
 library("lubridate") # floor_date
 library("data.table")
+library("fst")
 
 # Datenbeginn aller Börsen:
 # - Bitfinex:
@@ -42,20 +43,20 @@ exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
 
 # Hilfsfunktion: Datensatz einer Börse laden
 getCachedDataset <- function(exchange, currencyPair, yearmonth) {
-    # Beispiel: Cache/bitfinex/btcusd/tick/bitfinex-btcusd-tick-2021-11.rds
+    # Beispiel: Cache/bitfinex/btcusd/tick/bitfinex-btcusd-tick-2021-11.fst
     dataFile <- paste0(
         "Cache/",
         exchange, "/",
         tolower(currencyPair), "/", 
         "tick/", 
-        exchange, "-", tolower(currencyPair), "-tick-", year(yearmonth), "-", sprintf("%02d", month(yearmonth)), ".rds"
+        exchange, "-", tolower(currencyPair), "-tick-", year(yearmonth), "-", sprintf("%02d", month(yearmonth)), ".fst"
     )
     
     if (!file.exists(dataFile)) {
         return(NA)
     }
     
-    return(readRDS(dataFile))
+    return(read_fst(dataFile) |> as.data.table())
 }
 
 # Hilfsfunktion: Preise zweier Börsen vergleichen
@@ -78,9 +79,32 @@ compareTwoExchanges <- function(
         is.numeric(threshold)
     )
     
+    # "Mergesort", danke an Lukas Fischer
+    dataset_ab <- data.table(
+        Time = c(dataset_a$Time, dataset_b$Time),
+        Price = c(dataset_a$Price, dataset_b$Price),
+        Exchange = c(rep_len(exchange_a, nrow(dataset_a)), rep_len(exchange_b, nrow(dataset_b)))
+    )
+    dataset_ab <- dataset_ab[order(dataset_ab$Time),]
+    
+    # `dataset_ab` enthält nun beide Datensätze nach Zeit sortiert
+    # Aufeinanderfolgende Daten der selben Börse interessieren nicht, da der Tickpunkt
+    # davor bzw. danach immer näher am nächsten Tick der anderen Börse ist.
+    # Aufeinanderfolgende Tripel daher herausfiltern.
+    #
+    # Beispiel: Mit Stern markierte Daten sind obsolet
+    #    A A A A B B A B B B A A B B B B A
+    #    * * *           *         * *
+    # ->       A B B A B   B A A B     B A
+    
+    
+    
+    # == ALT ==
+    
     # Ergebnisdatensatz aufbauen. Spalten: Siehe unten
     matchedPriceDifferences <- data.table()
     
+    # Statistiken berechnen
     lastTick <- Sys.time()
     speed <- "Berechne Geschwindigkeit..."
     cat("0 %")
@@ -89,6 +113,7 @@ compareTwoExchanges <- function(
     numRows <- nrow(dataset_a)
     for (i in 1:numRows) {
         
+        # Statistiken ausgeben, um Endzeit abschätzen zu können
         if (i %% 1000 == 0) {
             duration <- as.double(Sys.time() - lastTick)
             speed <- paste0(round(1000/duration), " Datensätze pro Sekunde")
@@ -130,111 +155,110 @@ for (index in 1:nrow(currencyPairs)) {
     endDate <- floor_date(floor_date(Sys.Date(), unit = "months") - 1, unit = "months")
     
     cat("== Untersuche ", pair, " ab ", format(startDate, "%Y-%m"), "\n", sep="")
-    currentDate <- startDate
-    while (currentDate <= endDate) {
-        cat(format(currentDate, "%Y-%m"), "\n", sep="")
-        
-        bitfinex <- getCachedDataset("bitfinex", pair, currentDate)
-        bitstamp <- getCachedDataset("bitstamp", pair, currentDate)
-        coinbase <- getCachedDataset("coinbase", pair, currentDate)
-        kraken <- getCachedDataset("kraken", pair, currentDate)
-        
-        matchedPriceDifferences <- data.table()
-        
-        # Jedes Börsenpaar vergleichen
-        # Bitfinex - Bitstamp
-        # Bitfinex - Coinbase Pro
-        # Bitfinex - Kraken
-        if (length(bitfinex) > 1 && !is.na(bitfinex)) {
-            if (length(bitstamp) > 1 && !is.na(bitstamp)) {
-                cat("Vergleiche Bitfinex - Bitstamp\n")
-                matchedPriceDifferences <- rbind(
-                    matchedPriceDifferences, 
-                    compareTwoExchanges(
-                        dataset_a = bitfinex,
-                        exchange_a = "Bitfinex",
-                        dataset_b = bitstamp,
-                        exchange_b = "Bitstamp",
-                        threshold = 5
-                    )
-                )
-            }
-            if (length(coinbase) > 1 && !is.na(coinbase)) {
-                cat("Vergleiche Bitfinex - Coinbase Pro\n")
-                matchedPriceDifferences <- rbind(
-                    matchedPriceDifferences, 
-                    compareTwoExchanges(
-                        dataset_a = bitfinex,
-                        exchange_a = "Bitfinex",
-                        dataset_b = coinbase,
-                        exchange_b = "Coinbase Pro",
-                        threshold = 5
-                    )
-                )
-            }
-            if (length(kraken) > 1 && !is.na(kraken)) {
-                cat("Vergleiche Bitfinex - Kraken\n")
-                matchedPriceDifferences <- rbind(
-                    matchedPriceDifferences, 
-                    compareTwoExchanges(
-                        dataset_a = bitfinex,
-                        exchange_a = "Bitfinex",
-                        dataset_b = kraken,
-                        exchange_b = "Kraken",
-                        threshold = 5
-                    )
-                )
-            }
-        }
-        # Bitstamp - Coinbase Pro
-        # Bitstamp - Kraken
+    
+    # TODO An den Datenumbrüchen einmal im Monat korrekt arbeiten
+    # -> Nutze stattdessen fst-Paket und lese immer nur bis zu einer Stunde im voraus ein
+    # -> Hilfsfunktion, um aktuellen Arbeitsdatensatz alle x Minuten anzupassen
+    # -> Iterativ immer ein paar Daten mehr lesen, alte Daten aus Speicher entfernen
+    
+    # === ALT ===
+    bitfinex <- getCachedDataset("bitfinex", pair, currentDate)
+    bitstamp <- getCachedDataset("bitstamp", pair, currentDate)
+    coinbase <- getCachedDataset("coinbase", pair, currentDate)
+    kraken <- getCachedDataset("kraken", pair, currentDate)
+    
+    matchedPriceDifferences <- data.table()
+    
+    # Jedes Börsenpaar vergleichen
+    # Bitfinex - Bitstamp
+    # Bitfinex - Coinbase Pro
+    # Bitfinex - Kraken
+    if (length(bitfinex) > 1 && !is.na(bitfinex)) {
         if (length(bitstamp) > 1 && !is.na(bitstamp)) {
-            if (length(coinbase) > 1 && !is.na(coinbase)) {
-                cat("Vergleiche Bitstamp - Coinbase Pro\n")
-                matchedPriceDifferences <- rbind(
-                    matchedPriceDifferences, 
-                    compareTwoExchanges(
-                        dataset_a = bitstamp,
-                        exchange_a = "Bitstamp",
-                        dataset_b = coinbase,
-                        exchange_b = "Coinbase Pro",
-                        threshold = 5
-                    )
+            cat("Vergleiche Bitfinex - Bitstamp\n")
+            matchedPriceDifferences <- rbind(
+                matchedPriceDifferences, 
+                compareTwoExchanges(
+                    dataset_a = bitfinex,
+                    exchange_a = "Bitfinex",
+                    dataset_b = bitstamp,
+                    exchange_b = "Bitstamp",
+                    threshold = 5
                 )
-            }
-            if (length(kraken) > 1 && !is.na(kraken)) {
-                cat("Vergleiche Bitstamp - Kraken\n")
-                matchedPriceDifferences <- rbind(
-                    matchedPriceDifferences, 
-                    compareTwoExchanges(
-                        dataset_a = bitstamp,
-                        exchange_a = "Bitstamp",
-                        dataset_b = kraken,
-                        exchange_b = "Kraken",
-                        threshold = 5
-                    )
-                )
-            }
+            )
         }
-        # Coinbase Pro - Kraken
         if (length(coinbase) > 1 && !is.na(coinbase)) {
-            if (length(kraken) > 1 && !is.na(kraken)) {
-                cat("Vergleiche Coinbase Pro - Kraken\n")
-                matchedPriceDifferences <- rbind(
-                    matchedPriceDifferences, 
-                    compareTwoExchanges(
-                        dataset_a = coinbase,
-                        exchange_a = "Coinbase Pro",
-                        dataset_b = kraken,
-                        exchange_b = "Kraken",
-                        threshold = 5
-                    )
+            cat("Vergleiche Bitfinex - Coinbase Pro\n")
+            matchedPriceDifferences <- rbind(
+                matchedPriceDifferences, 
+                compareTwoExchanges(
+                    dataset_a = bitfinex,
+                    exchange_a = "Bitfinex",
+                    dataset_b = coinbase,
+                    exchange_b = "Coinbase Pro",
+                    threshold = 5
                 )
-            }
+            )
         }
-        
-        # Zu nächsten Monat weitergehen
-        currentDate <- addOneMonth(currentDate)
+        if (length(kraken) > 1 && !is.na(kraken)) {
+            cat("Vergleiche Bitfinex - Kraken\n")
+            matchedPriceDifferences <- rbind(
+                matchedPriceDifferences, 
+                compareTwoExchanges(
+                    dataset_a = bitfinex,
+                    exchange_a = "Bitfinex",
+                    dataset_b = kraken,
+                    exchange_b = "Kraken",
+                    threshold = 5
+                )
+            )
+        }
+    }
+    # Bitstamp - Coinbase Pro
+    # Bitstamp - Kraken
+    if (length(bitstamp) > 1 && !is.na(bitstamp)) {
+        if (length(coinbase) > 1 && !is.na(coinbase)) {
+            cat("Vergleiche Bitstamp - Coinbase Pro\n")
+            matchedPriceDifferences <- rbind(
+                matchedPriceDifferences, 
+                compareTwoExchanges(
+                    dataset_a = bitstamp,
+                    exchange_a = "Bitstamp",
+                    dataset_b = coinbase,
+                    exchange_b = "Coinbase Pro",
+                    threshold = 5
+                )
+            )
+        }
+        if (length(kraken) > 1 && !is.na(kraken)) {
+            cat("Vergleiche Bitstamp - Kraken\n")
+            matchedPriceDifferences <- rbind(
+                matchedPriceDifferences, 
+                compareTwoExchanges(
+                    dataset_a = bitstamp,
+                    exchange_a = "Bitstamp",
+                    dataset_b = kraken,
+                    exchange_b = "Kraken",
+                    threshold = 5
+                )
+            )
+        }
+    }
+    # Coinbase Pro - Kraken
+    if (length(coinbase) > 1 && !is.na(coinbase)) {
+        if (length(kraken) > 1 && !is.na(kraken)) {
+            cat("Vergleiche Coinbase Pro - Kraken\n")
+            matchedPriceDifferences <- rbind(
+                matchedPriceDifferences, 
+                compareTwoExchanges(
+                    dataset_a = coinbase,
+                    exchange_a = "Coinbase Pro",
+                    dataset_b = kraken,
+                    exchange_b = "Kraken",
+                    threshold = 5
+                )
+            )
+        }
     }
 }
 

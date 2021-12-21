@@ -1,10 +1,11 @@
 library("TTR") # Bibliothek "Technical Trading Rules" laden
+library("fst") # Bibliothek "fst" für zwischengespeicherte Daten
 
 # Bitcoin-Tagesdaten (BTC/USD) laden. Struktur:
 # Time          Mean  Open  High   Low  Close  NumDatasets
 # 2010-07-19  0.0886  0.09  0.09  0.08   0.08         1440
 # 2010-07-20  [...]
-btcusd <- readRDS("Cache/coindesk/bpi-daily-btcusd.rds")
+btcusd <- read_fst("Cache/coindesk/bpi-daily-btcusd.fst")
 
 # Berechnung der annualisierten Close-to-close-Volatilität.
 # Hier erfolgt der Handel rund um die Uhr, 365 Tage im Jahr.
@@ -28,7 +29,7 @@ btcusd <- btcusd[handelstageProJahr:nrow(btcusd),]
 # Hier erfolgt der Handel an sechs von sieben Tagen in der Woche,
 # der Datensatz enthält pro Jahr somit Werte für 312 Tage.
 handelstageProJahr <- 312
-eurusd <- readRDS("Cache/Dukascopy/dukascopy-daily-eurusd.rds")
+eurusd <- read_fst("Cache/Dukascopy/dukascopy-daily-eurusd.fst")
 eurusd$vClose <- volatility(
     eurusd$Close, n = handelstageProJahr, N = handelstageProJahr
 )

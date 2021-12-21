@@ -28,6 +28,7 @@
     # Bibliotheken laden ------------------------------------------------------
     setwd("/Users/fox/Documents/Studium - Promotion/Datenanalyse/")
     source(".Rprofile")
+    library("fst")
     library("data.table")
     library("dplyr")
     library("lubridate") # floor_date
@@ -37,7 +38,7 @@
     
     # Berechnungen durchführen ------------------------------------------------
     # Quelldaten einlesen
-    btcusd <- readRDS("Cache/coindesk/bpi-daily-btcusd.rds")
+    btcusd <- read_fst("Cache/coindesk/bpi-daily-btcusd.fst") |> as.data.table()
     
     # Auf Wochendaten summieren
     btcusd <- btcusd %>%

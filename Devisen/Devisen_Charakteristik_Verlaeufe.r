@@ -39,6 +39,7 @@
     # Bibliotheken laden ------------------------------------------------------
     setwd(workingDirectory)
     source(".Rprofile")
+    library("fst")
     library("data.table")
     library("dplyr")
     library("ggplot2")
@@ -47,13 +48,14 @@
     library("TTR") # Technical Trading Rules -> volatility
     
     # Daten aufbereiten -------------------------------------------------------
-    dataPathBase <- "Cache/dukascopy/" # Dateinamen: eurusd/dukascopy-eurusd-daily.rds
+    dataPathBase <- "Cache/dukascopy/" # Dateinamen: eurusd/dukascopy-eurusd-daily.fst
     currencyPairs <- c("AUDUSD", "EURUSD", "GBPUSD", "USDCAD", "USDCHF", "USDJPY")
     plotData <- data.table()
     
     # Einzelne Daten einlesen
     for (pair in currencyPairs) {
-        dataset <- readRDS(paste0(dataPathBase, tolower(pair), "/dukascopy-", tolower(pair), "-daily.rds"))
+        dataset <- read_fst(paste0(dataPathBase, tolower(pair), "/dukascopy-", tolower(pair), "-daily.fst"))
+            |> as.data.table()
         
         # Auf Zeitraum ab 2014 beschränken
         #dataset <- dataset[dataset$Time >= "2014-01-01", ]
