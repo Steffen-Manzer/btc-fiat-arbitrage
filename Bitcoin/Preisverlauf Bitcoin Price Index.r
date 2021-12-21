@@ -36,7 +36,7 @@
     
     # Berechnungen durchführen ------------------------------------------------
     # Quelldaten einlesen
-    btcusd <- read_fst("Cache/coindesk/bpi-daily-btcusd.fst") |> as.data.table()
+    btcusd <- read_fst("Cache/coindesk/bpi-daily-btcusd.fst", as.data.table = TRUE)
     
     if (asTeX) {
         source("Konfiguration/TikZ.r")

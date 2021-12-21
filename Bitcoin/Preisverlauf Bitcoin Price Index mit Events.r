@@ -31,7 +31,7 @@
     library("fst")
     
     # BPI
-    bpi.perDay = read_fst(bpiSource) |> as.data.table()
+    bpi.perDay = read_fst(bpiSource, as.data.table = TRUE)
     bpi.perDay = bpi.perDay[
         bpi.perDay$Time >= limitGraphToTime[1] & 
         bpi.perDay$Time <  limitGraphToTime[2],

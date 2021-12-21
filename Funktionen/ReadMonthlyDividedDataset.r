@@ -128,8 +128,8 @@ readMonthlyDividedDataset <- function(
                 next
             }
             
-            dataset_daily <- read_fst(targetFileDaily) |> as.data.table()
-            dataset_monthly <- read_fst(targetFileMonthly) |> as.data.table()
+            dataset_daily <- read_fst(targetFileDaily, as.data.table = TRUE)
+            dataset_monthly <- read_fst(targetFileMonthly, as.data.table = TRUE)
             
             lastDataset = last(dataset_daily$Time)
             lastMonth = month(lastDataset)
@@ -222,7 +222,7 @@ readMonthlyDividedDataset <- function(
                 if (file.exists(targetFileTick)) {
                     
                     # Vorhandene Tickdaten dieses Monats einlesen
-                    thisDataset <- read_fst(targetFileTick) |> as.data.table()
+                    thisDataset <- read_fst(targetFileTick, as.data.table = TRUE)
                     
                 } else {
                     

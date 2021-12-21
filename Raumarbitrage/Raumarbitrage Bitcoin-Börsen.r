@@ -56,7 +56,7 @@ getCachedDataset <- function(exchange, currencyPair, yearmonth) {
         return(NA)
     }
     
-    return(read_fst(dataFile) |> as.data.table())
+    return(read_fst(dataFile, as.data.table = TRUE))
 }
 
 # Hilfsfunktion: Preise zweier Börsen vergleichen

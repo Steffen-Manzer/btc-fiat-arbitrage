@@ -61,7 +61,7 @@
     #btcusd <- btcusd[365:nrow(btcusd),]
     
     # Bitcoin-Tagesdaten (BTC/USD) aus Bitcoin Price Index laden
-    btcusd <- read_fst("Cache/coindesk/bpi-daily-btcusd.fst") |> as.data.table()
+    btcusd <- read_fst("Cache/coindesk/bpi-daily-btcusd.fst", as.data.table = TRUE)
     
     # Auf Daten ab 2011 beschränken, da vorher mehrmals keine Preisveränderungen vorliegen
     btcusd <- btcusd[btcusd$Time >= "2011-01-01",]
@@ -77,7 +77,7 @@
     # Analog für EUR/USD aus TrueFX-Datensatz
     # Hier sind es 6 Werte pro Woche (Samstag fehlt) / 24 pro vier Wochen
     zeitspanne <- 24
-    eurusd <- read_fst("Cache/Dukascopy/dukascopy-daily-eurusd.fst") |> as.data.table()
+    eurusd <- read_fst("Cache/Dukascopy/dukascopy-daily-eurusd.fst", as.data.table = TRUE)
     eurusd <- eurusd[eurusd$Time >= "2011-01-01",]
     eurusd$vClose <- volatility(eurusd$Close, n = zeitspanne, N = 52)
     eurusd <- eurusd[zeitspanne:nrow(eurusd),]

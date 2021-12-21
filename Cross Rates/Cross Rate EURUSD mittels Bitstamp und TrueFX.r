@@ -46,9 +46,9 @@
     cat("Lade Daten...\n")
     cat("** TODO ** Rewrite für nicht-aggregierte Bitcoin-Daten.\n")
     return()
-    bitstampEUR <- read_fst("Cache/bitstamp-bcc/bitstamp-bcc-tick-btceur.fst") |> as.data.table()
-    bitstampUSD <- read_fst("Cache/bitstamp-bcc/bitstamp-bcc-tick-btcusd.fst") |> as.data.table()
-    truefxEURUSD <- read_fst("Cache/TrueFX/truefx-60s-eurusd.fst") |> as.data.table()
+    bitstampEUR <- read_fst("Cache/bitstamp-bcc/bitstamp-bcc-tick-btceur.fst", as.data.table = TRUE)
+    bitstampUSD <- read_fst("Cache/bitstamp-bcc/bitstamp-bcc-tick-btcusd.fst", as.data.table = TRUE)
+    truefxEURUSD <- read_fst("Cache/TrueFX/truefx-60s-eurusd.fst", as.data.table = TRUE)
     
     cat("Anzahl Datensätze:\n")
     cat("   BTC/EUR:", nrow(bitstampEUR), "\n")

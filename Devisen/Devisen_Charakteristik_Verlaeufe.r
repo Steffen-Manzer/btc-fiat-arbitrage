@@ -54,8 +54,10 @@
     
     # Einzelne Daten einlesen
     for (pair in currencyPairs) {
-        dataset <- read_fst(paste0(dataPathBase, tolower(pair), "/dukascopy-", tolower(pair), "-daily.fst"))
-            |> as.data.table()
+        dataset <- read_fst(
+            paste0(dataPathBase, tolower(pair), "/dukascopy-", tolower(pair), "-daily.fst"),
+            as.data.table = TRUE
+        )
         
         # Auf Zeitraum ab 2014 beschränken
         #dataset <- dataset[dataset$Time >= "2014-01-01", ]

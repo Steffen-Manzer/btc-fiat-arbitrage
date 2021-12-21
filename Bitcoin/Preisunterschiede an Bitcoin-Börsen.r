@@ -58,7 +58,7 @@
             
             # Cache lesen
             cat("Lese Cache...\n")
-            priceDifferencesWeekly <- read_fst(cacheFileWeekly) |> as.data.table()
+            priceDifferencesWeekly <- read_fst(cacheFileWeekly, as.data.table = TRUE)
             
             # Erweiterung des Caches nötig?
             lastDataset = last(priceDifferencesWeekly$Time)
@@ -81,8 +81,8 @@
                 rebuildCache <- FALSE
             } else {
                 rebuildCache <- TRUE
-                priceDifferences <- read_fst(cacheFile) |> as.data.table()
-                priceDifferencesMonthly <- read_fst(cacheFileMonthly) |> as.data.table()
+                priceDifferences <- read_fst(cacheFile, as.data.table = TRUE)
+                priceDifferencesMonthly <- read_fst(cacheFileMonthly, as.data.table = TRUE)
             }
             
         } else {
@@ -141,7 +141,7 @@
                         }
                         
                         cat(" ", exchange, sep="")
-                        thisDataset <- read_fst(dataFile) |> as.data.table()
+                        thisDataset <- read_fst(dataFile, as.data.table = TRUE)
                         
                         # Auf Schlusskurs beschränken
                         thisDataset <- thisDataset[, c("Time", "Close")]

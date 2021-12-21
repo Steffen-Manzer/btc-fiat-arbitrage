@@ -82,7 +82,7 @@ for (i in 1:nrow(srcsets)) {
         next()
     }
     
-    dataset <- read_fst(srcset$SrcFile) |> as.data.table()
+    dataset <- read_fst(srcset$SrcFile, as.data.table = TRUE)
     
     # Nach Datum filtern
     dataset <- dataset[dataset$Time >= dateFrom,]
