@@ -45,7 +45,7 @@ exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
 
 # Interne Konfiguration
 datasetClassName <- "dataset"
-datasetAttributeNames <- list("Exchange", "CurrencyPair", "LastRowNumber")
+datasetAttributeNames <- list("Exchange", "CurrencyPair", "PathPrefix", "LastRowNumber")
 
 # Grundablauf: Immer paarweiser Vergleich zweier Börsen mit "Moving Window", ähnlich zu mergesort
 # - Erste x Daten beider Börsen laden = "Fenster" initialisieren: [t = 0, ..., t = 1h]
@@ -113,21 +113,21 @@ appendData <- function(x, y) {
     return(x)
 }
 
-# Lade Datensatz für das angegebene Intervall oder maximal 10.000 Datensätze
-# Intervall darf einen ganzen Monat (28-31 Tage) nicht überschreiten
+# Lade Datensatz für das angegebene Intervall.
+# Intervall darf einen ganzen Monat (28-31 Tage) nicht überschreiten.
 getTickDataByTimeInterval <- function(dataset, startDate, endDate) {
     
     # Wir können nur mit der selbst definierten Klasse "dataset" arbeiten
-    stopifnot(inherits(dataset, "dataset"))
-    
-    # Quellpfad
-    pathPrefix <- sprintf("Cache/%s/%s/tick/%1$s-%2$s-tick", exchange, tolower(currencyPair))
+    stopifnot(inherits(dataset, datasetClassName))
     
     # Alles bis auf letzte 100 Daten löschen
     dataset <- tail(dataset, n = 100)
     
     # Beginne immer bei aktuellem Monat
-    dataFile <- sprintf("%s-%d-%02d.fst", pathPrefix, year(startDate), month(startDate))
+    dataFile <- sprintf(
+        "%s-%d-%02d.fst", 
+        attr(dataset, "PathPrefix", TRUE), year(startDate), month(startDate)
+    )
     if (!file.exists(dataFile)) {
         stop(sprintf("Datei nicht gefunden: %s", dataFile))
     }
@@ -149,7 +149,10 @@ getTickDataByTimeInterval <- function(dataset, startDate, endDate) {
     
     # Ende liegt im nächsten Monat: Weitere Datei öffnen
     if (month(endDate) != month(startDate)) {
-        dataFile <- sprintf("%s-%d-%02d.fst", pathPrefix, year(endDate), month(endDate))
+        dataFile <- sprintf(
+            "%s-%d-%02d.fst", 
+            attr(dataset, "PathPrefix", TRUE), year(endDate), month(endDate)
+        )
         if (!file.exists(dataFile)) {
             stop(sprintf("Datei nicht gefunden: %s", dataFile))
         }
@@ -207,14 +210,20 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
     
     # Leere data.tables mit notwendigen Eigenschaften initialisieren
     dataset_a <- data.table()
-    class(dataset_a) <- c(class(dataset_a), "dataset")
+    class(dataset_a) <- c(class(dataset_a), datasetClassName)
     setattr(dataset_a, "Exchange", exchange_a)
     setattr(dataset_a, "CurrencyPair", currencyPair)
+    setattr(dataset_a, "PathPrefix", 
+            sprintf("Cache/%s/%s/tick/%1$s-%2$s-tick", exchange_a, tolower(currencyPair))
+    )
     
     dataset_b <- data.table()
-    class(dataset_b) <- c(class(dataset_b), "dataset")
+    class(dataset_b) <- c(class(dataset_b), datasetClassName)
     setattr(dataset_b, "Exchange", exchange_b)
     setattr(dataset_b, "CurrencyPair", currencyPair)
+    setattr(dataset_b, "PathPrefix", 
+            sprintf("Cache/%s/%s/tick/%1$s-%2$s-tick", exchange_b, tolower(currencyPair))
+    )
     
     # -- Diese Schritte müssen regelmäßig wiederholt werden, um Daten aufzufrischen
     # Daten für die ersten 60 Minuten beider Börsen laden
