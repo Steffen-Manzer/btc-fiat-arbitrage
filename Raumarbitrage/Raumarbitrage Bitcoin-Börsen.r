@@ -3,7 +3,9 @@ source("Funktionen/FindNearestDatapoint.r")
 source("Funktionen/AddOneMonth.r")
 library("lubridate") # floor_date
 library("data.table")
+library("dplyr") # filter
 library("fst")
+library("zoo") # rollapply für Filterfunktion
 
 # Datenbeginn aller Börsen:
 # - Bitfinex:
@@ -41,108 +43,214 @@ currencyPairs <- data.table(
 )
 exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
 
-# Hilfsfunktion: Datensatz einer Börse laden
-getCachedDataset <- function(exchange, currencyPair, yearmonth) {
-    # Beispiel: Cache/bitfinex/btcusd/tick/bitfinex-btcusd-tick-2021-11.fst
-    dataFile <- paste0(
-        "Cache/",
-        exchange, "/",
-        tolower(currencyPair), "/", 
-        "tick/", 
-        exchange, "-", tolower(currencyPair), "-tick-", year(yearmonth), "-", sprintf("%02d", month(yearmonth)), ".fst"
-    )
-    
-    if (!file.exists(dataFile)) {
-        return(NA)
+# Interne Konfiguration
+datasetClassName <- "dataset"
+datasetAttributeNames <- list("Exchange", "CurrencyPair", "LastRowNumber")
+
+# Grundablauf: Immer paarweiser Vergleich zweier Börsen mit "Moving Window", ähnlich zu mergesort
+# - Erste x Daten beider Börsen laden = "Fenster" initialisieren: [t = 0, ..., t = 1h]
+# - Verwendung des größeren Datensatzes als "Referenz", damit die geladene Zeit ungefähr konstant ist
+# - Zu prüfen: Begrenze Arbeitsfenster auf ~10.000 Daten, da Filter-/Sortier-/Vergleichsaufgaben 
+#   exponentiell mit der Größe des Arbeitsfensters wachsen _können_.
+# - Wichtig: Daten müssen zeit- und nicht zeilenbasiert geladen werden! Immer 1h-Sets
+# - Solange noch Daten für beide Börsen vorhanden sind:
+#   - Nächsten Datensatz vergleichen und Ergebnis speichern
+#   - Prüfen, ob noch genug Daten beider Börsen für Vergleich vorhanden sind, sonst:
+#       - neues Datenfenster laden: [t = 1h, ..., t = 2h]
+#       - Daten des ersten Fensters verwerfen (0...1h)
+#       - Letzte paar Datenpunkte des vorherigen Fensters behalten, um
+#         korrekt filtern/vergleichen zu können
+
+# Hilfsfunktion:
+# Neue Daten laden, bis Ende der Datei oder endDate erreicht ist
+readDataFile <- function(dataFile, startRow, endDate) {
+    result <- data.table()
+    meta <- metadata_fst(dataFile)
+    while (TRUE) {
+        
+        # Limit bestimmen: 10.000 Datensätze oder bis zum Ende der Datei
+        endRow <- min(meta$nrOfRows, startRow + 10000)
+        
+        # Dateiende bereits erreicht?
+        if (startRow > endRow) {
+            stop(sprintf("startRow (%d) > endRow (%d)!\n", startRow, endRow))
+        }
+        
+        # Datei einlesen
+        # TODO Auf off-by-one-Fehler prüfen!
+        result <- rbind(
+            result,
+            read_fst(dataFile, c("Time", "Price", startRow, endRow))
+        )
+        
+        # Letzter Datensatz liegt nach endDate oder Datei ist abgeschlossen
+        if (last(result$Time) > endDate || endRow == meta$nrOfRows) {
+            break
+        }
+        
+        # Weitere 10.000 Datenpunkte lesen
+        startRow <- startRow + 10000
     }
     
-    return(read_fst(dataFile, as.data.table = TRUE))
+    setattr(result, "LastRowNumber", endRow)
+    return(result)
 }
 
-# Hilfsfunktion: Preise zweier Börsen vergleichen
-compareTwoExchanges <- function(
-    dataset_a,
-    exchange_a,
-    dataset_b,
-    exchange_b,
-    threshold
-) {
-    # Parameter validieren
-    stopifnot(
-        is.data.table(dataset_a),
-        length(exchange_a) == 1,
-        is.character(exchange_a),
-        is.data.table(dataset_b),
-        length(exchange_b) == 1,
-        is.character(exchange_b),
-        length(threshold) == 1,
-        is.numeric(threshold)
-    )
+# Hilfsfunktion: Datensatz x um neue Daten y ergänzen.
+# Dabei Attribute und Datensatz-Klasse (s.o.) beibehalten.
+# `rbind` und `rbindlist` löschen class + attributes,
+# data.tables `full_join` ist wiederum um den Faktor 20+ langsamer.
+# Daher `rbindlist` und attribute händisch kopieren...
+appendData <- function(x, y) {
+    existingAttributes <- attributes(x)
+    x <- rbindlist(list(x, y)) # rbindlist ist etwas schneller als rbind
+    class(x) <- c(class(x), datasetClassName)
+    for (attribute in datasetAttributeNames) {
+        if (!is.null(existingAttributes[[attribute]])) {
+            setattr(x, attribute, existingAttributes[[attribute]])
+        }
+    }
+    return(x)
+}
+
+# Lade Datensatz für das angegebene Intervall oder maximal 10.000 Datensätze
+# Intervall darf einen ganzen Monat (28-31 Tage) nicht überschreiten
+getTickDataByTimeInterval <- function(dataset, startDate, endDate) {
     
-    # "Mergesort", danke an Lukas Fischer
+    # Wir können nur mit der selbst definierten Klasse "dataset" arbeiten
+    stopifnot(inherits(dataset, "dataset"))
+    
+    # Quellpfad
+    pathPrefix <- sprintf("Cache/%s/%s/tick/%1$s-%2$s-tick", exchange, tolower(currencyPair))
+    
+    # Alles bis auf letzte 100 Daten löschen
+    dataset <- tail(dataset, n = 100)
+    
+    # Beginne immer bei aktuellem Monat
+    dataFile <- sprintf("%s-%d-%02d.fst", pathPrefix, year(startDate), month(startDate))
+    if (!file.exists(dataFile)) {
+        stop(sprintf("Datei nicht gefunden: %s", dataFile))
+    }
+    
+    # Lese Datensatz ab dem letzten Datenpunkt ein oder beginne bei 1, falls neu
+    startRow <- max(attr(dataset, "LastRowNumber", TRUE), 1)
+    newData <- readDataFile(dataFile, startRow, endDate)
+    
+    # Falls bei 1 gestartet wurde (also kein Zeilenzähler bekannt ist),
+    # dann prüfe zusätzlich auf Daten vor dem angegebenen Startzeitpunkt
+    # und entferne diese ggf.
+    if (startRow == 1) {
+        newData <- filter(newData, Time >= startDate)
+    }
+    
+    # Neue Daten anfügen
+    dataset <- appendData(dataset, newData)
+    setattr(dataset, "LastRowNumber", attr(newData, "LastRowNumber", TRUE))
+    
+    # Ende liegt im nächsten Monat: Weitere Datei öffnen
+    if (month(endDate) != month(startDate)) {
+        dataFile <- sprintf("%s-%d-%02d.fst", pathPrefix, year(endDate), month(endDate))
+        if (!file.exists(dataFile)) {
+            stop(sprintf("Datei nicht gefunden: %s", dataFile))
+        }
+        
+        newData <- readDataFile(dataFile, 1, endDate)
+        dataset <- appendData(dataset, newData)
+        setattr(dataset, "LastRowNumber", attr(newData, "LastRowNumber", TRUE))
+    }
+    
+    return(dataset)
+}
+
+mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
+    
+    # Merge, Sort und Filter (nicht: mergesort-Algorithmus)
+    
+    # Listen verbinden
+    exchange_a <- attr(dataset_a, "Exchange", TRUE)
+    exchange_b <- attr(dataset_b, "Exchange", TRUE)
     dataset_ab <- data.table(
         Time = c(dataset_a$Time, dataset_b$Time),
         Price = c(dataset_a$Price, dataset_b$Price),
         Exchange = c(rep_len(exchange_a, nrow(dataset_a)), rep_len(exchange_b, nrow(dataset_b)))
     )
-    dataset_ab <- dataset_ab[order(dataset_ab$Time),]
     
-    # `dataset_ab` enthält nun beide Datensätze nach Zeit sortiert
+    # Liste nach Zeit sortieren
+    setorder(dataset_ab, Time)
+    
+    # `dataset_ab` enthält nun beide Datensätze nach Zeit sortiert.
     # Aufeinanderfolgende Daten der selben Börse interessieren nicht, da der Tickpunkt
     # davor bzw. danach immer näher am nächsten Tick der anderen Börse ist.
     # Aufeinanderfolgende Tripel daher herausfiltern.
     #
-    # Beispiel: Mit Stern markierte Daten sind obsolet
-    #    A A A A B B A B B B A A B B B B A
-    #    * * *           *         * *
-    # ->       A B B A B   B A A B     B A
+    # Beispiel:
+    # |------------------------------->     Zeitachse
+    # A A A A B B A B B B A A B B B B A     Originaldaten (Einzelne Ticks der Börse A oder B)
+    #        *   * *     *   *       *      Sinnvolle Preisvergleiche
+    # * * *           *         * *         Nicht benötigte Ticks
+    #       A B B A B   B A A B     B A     Reduzierter Datensatz
     
+    # Filtern
+    # Einschränkung: Erste und letzte Zeile werden immer beibehalten
+    unset <- c(F, rollapply(
+        dataset_ab$Exchange,
+        width = 3,
+        # Prüfe, ob Börse im vorherigen, aktuellen und nächsten Tick identisch ist
+        FUN = function(set) (set[1] == set[2] && set[2] == set[3])
+    ), F)
+    dataset_ab <- dataset_ab[-which(unset),]
     
+    return(dataset_ab)
+}
+
+compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate) {
     
-    # == ALT ==
+    # Leere data.tables mit notwendigen Eigenschaften initialisieren
+    dataset_a <- data.table()
+    class(dataset_a) <- c(class(dataset_a), "dataset")
+    setattr(dataset_a, "Exchange", exchange_a)
+    setattr(dataset_a, "CurrencyPair", currencyPair)
     
-    # Ergebnisdatensatz aufbauen. Spalten: Siehe unten
-    matchedPriceDifferences <- data.table()
+    dataset_b <- data.table()
+    class(dataset_b) <- c(class(dataset_b), "dataset")
+    setattr(dataset_b, "Exchange", exchange_b)
+    setattr(dataset_b, "CurrencyPair", currencyPair)
     
-    # Statistiken berechnen
-    lastTick <- Sys.time()
-    speed <- "Berechne Geschwindigkeit..."
-    cat("0 %")
+    # -- Diese Schritte müssen regelmäßig wiederholt werden, um Daten aufzufrischen
+    # Daten für die ersten 60 Minuten beider Börsen laden
+    endDate <- startDate + 60 * 60
+    dataset_a <- getTickDataByTimeInterval(dataset_a, startDate, endDate)
+    dataset_b <- getTickDataByTimeInterval(dataset_b, startDate, endDate)
     
-    # Jeden Datenpunkt abarbeiten
-    numRows <- nrow(dataset_a)
-    for (i in 1:numRows) {
+    # Merge + Sort + Filter, danke an Lukas Fischer (@o1oo11oo) für die Idee
+    dataset_ab <- mergeSortAndFilterTwoDatasets(dataset_a, dataset_b)
+    # -- Ende nötige Wiederholung
+    
+    while (TRUE) {
+        # TODO
+        # - In zweier-Sets Preise vergleichen
+        # - Zeitliche Differenz beider Daten prüfen und ggf. überspringen
+        # - Differenz inkl. Zeit und ggf. Preisniveau notieren
+        # -> rollapply bietet sich grundsätzlich wieder an? Aber wie/wann neue Daten laden?
+        # -> Berechnung eines Arbitrageindex wie in der Literatur?
         
-        # Statistiken ausgeben, um Endzeit abschätzen zu können
-        if (i %% 1000 == 0) {
-            duration <- as.double(Sys.time() - lastTick)
-            speed <- paste0(round(1000/duration), " Datensätze pro Sekunde")
-            lastTick <- Sys.time()
-        }
+        # Alter Code:
         
-        cat("\r", round(i/numRows*100), " % (", i, " von ", numRows, " verarbeitet), ", speed, sep="")
+        # matchedPriceDifferences <- data.table()
+        # ...
+        # matchedPriceDifferences <- rbind(matchedPriceDifferences, data.table(
+        #     TimeA = tick_a$Time,
+        #     TimeB = tick_b$Time,
+        #     TimeDifference = tick_a$Time - tick_b$Time,
+        #     PriceA = tick_a$Price,
+        #     PriceB = tick_b$Price,
+        #     PriceDifference = tick_a$Price - tick_b$Price,
+        #     ExchangeA = exchange_a,
+        #     ExchangeB = exchange_b
+        # ))
         
-        tick_a <- dataset_a[i,]
-        tick_b <- findNearestDatapoint(tick_a$Time, dataset_b, threshold=threshold)
-        
-        # Kein Tick innerhalb von `threshold` gefunden
-        if (length(tick_b) == 1 && is.na(tick_b)) {
-            next
-        }
-        
-        matchedPriceDifferences <- rbind(matchedPriceDifferences, data.table(
-            TimeA = tick_a$Time,
-            TimeB = tick_b$Time,
-            TimeDifference = tick_a$Time - tick_b$Time,
-            PriceA = tick_a$Price,
-            PriceB = tick_b$Price,
-            PriceDifference = tick_a$Price - tick_b$Price,
-            ExchangeA = exchange_a,
-            ExchangeB = exchange_b
-        ))
+        break
     }
-    cat("\n")
-    return(matchedPriceDifferences)
 }
 
 
@@ -156,18 +264,11 @@ for (index in 1:nrow(currencyPairs)) {
     
     cat("== Untersuche ", pair, " ab ", format(startDate, "%Y-%m"), "\n", sep="")
     
-    # TODO An den Datenumbrüchen einmal im Monat korrekt arbeiten
-    # -> Nutze stattdessen fst-Paket und lese immer nur bis zu einer Stunde im voraus ein
-    # -> Hilfsfunktion, um aktuellen Arbeitsdatensatz alle x Minuten anzupassen
-    # -> Iterativ immer ein paar Daten mehr lesen, alte Daten aus Speicher entfernen
+    # TODO Startdatum für jede Börse und jedes Währungspaar separat hinterlegen, s.o.
+    # Dann jeweils compareTwoExchanges("a", "b", currencyPair, startDate)
+    break
     
     # === ALT ===
-    bitfinex <- getCachedDataset("bitfinex", pair, currentDate)
-    bitstamp <- getCachedDataset("bitstamp", pair, currentDate)
-    coinbase <- getCachedDataset("coinbase", pair, currentDate)
-    kraken <- getCachedDataset("kraken", pair, currentDate)
-    
-    matchedPriceDifferences <- data.table()
     
     # Jedes Börsenpaar vergleichen
     # Bitfinex - Bitstamp
