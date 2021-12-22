@@ -80,7 +80,7 @@ readDataFile <- function(dataFile, startRow, endDate) {
         # TODO Auf off-by-one-Fehler prüfen!
         result <- rbind(
             result,
-            read_fst(dataFile, c("Time", "Price", startRow, endRow))
+            read_fst(dataFile, c("Time", "Price"), startRow, endRow)
         )
         
         # Letzter Datensatz liegt nach endDate oder Datei ist abgeschlossen
