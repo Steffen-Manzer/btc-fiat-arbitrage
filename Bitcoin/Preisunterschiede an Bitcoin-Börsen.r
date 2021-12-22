@@ -153,7 +153,8 @@
                     }
                     
                     # Nach Zeit sortieren (paar Sekunden)
-                    dataset <- dataset[order(dataset$Time),]
+                    setorder(dataset, Time)
+                    #dataset <- dataset[order(dataset$Time),]
                     
                     # Auf Datensätze mit mindestens 2 Börsen beschränken. Langsam.
                     cat(". ", prettyNum(nrow(dataset), big.mark=".", decimal.mark=","), " -> ", sep="")

@@ -28,7 +28,8 @@
         "Mt. Gox", "CampBX", "BTC-e", "Bitstamp", "Bitfinex", "LakeBTC",
         "OkCoin", "itBit", "Coinbase"
     )))
-    bpi = bpi[order(bpi$Exchange),]
+    setorder(bpi, Exchange)
+    #bpi = bpi[order(bpi$Exchange),]
     
 
     # Grafiken ----------------------------------------------------------------

@@ -61,8 +61,9 @@ findNearestDatapoint <- function(
     }
     
     # Nach zeitlicher Nähe sortieren und im Datensatz hinterlegen
-    dataset$TimeDifference <- dataset$Time - datetime
-    dataset <- dataset[order(abs(dataset$TimeDifference)),]
+    dataset$TimeDifference <- abs(dataset$Time - datetime)
+    setorder(dataset, TimeDifference)
+    #dataset <- dataset[order(abs(dataset$TimeDifference)),]
     
     if (getAllWithinThreshold) {
         # Alle gefundenen Datensätze nach zeitlicher Nähe sortiert zurückgeben
