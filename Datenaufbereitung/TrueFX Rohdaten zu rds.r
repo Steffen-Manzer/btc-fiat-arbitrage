@@ -8,6 +8,7 @@ source("Funktionen/ReadMonthlyDividedDataset.r")
 # Bibliotheken laden
 library("data.table") # fread
 library("lubridate") # parse_date_time
+library("dplyr") # summarise
 
 # Hilfsfunktion: Eine .csv-Datei einlesen
 parseTrueFXTickData <- function(srcFile) {

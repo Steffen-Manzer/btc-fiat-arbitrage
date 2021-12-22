@@ -8,6 +8,7 @@ source("Funktionen/ReadMonthlyDividedDataset.r")
 # Bibliotheken laden
 library("data.table")
 library("fasttime")
+library("dplyr") # summarise
 
 # Hilfsfunktion: Eine .csv-Datei einlesen
 parseDukascopyTickData <- function(srcFile) {

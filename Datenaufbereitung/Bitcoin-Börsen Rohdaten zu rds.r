@@ -6,6 +6,7 @@ source("Funktionen/ReadMonthlyDividedDataset.r")
 # Bibliotheken laden
 library("data.table") # fread
 library("fasttime")
+library("dplyr") # summarise
 
 # Hilfsfunktion: Daten eines Zeitabschnittes aggregieren
 # Die Art und Weise, wie Daten zu 1s/5s/60s/1d aggregiert werden, ist
