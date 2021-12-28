@@ -50,7 +50,7 @@
             title = col_character()
         )
     )
-    events = as.data.table(events)
+    setDT(events)
     
     events$Time = anytime(events$timestamp)
     events$timestamp = NULL
@@ -70,7 +70,7 @@
             TimeTo = col_datetime(format = "%Y-%m-%d")
         )
     )
-    timeframesRaw = as.data.table(timeframesRaw)
+    setDT(timeframesRaw)
     
     timeframes = list()
     i = 0
