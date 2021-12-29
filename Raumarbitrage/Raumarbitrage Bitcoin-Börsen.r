@@ -1,5 +1,8 @@
 # Bibliotheken und Hilfsfunktionen laden
 source("Klassen/Dataset.r")
+source("Funktionen/AddOneMonth.r")
+source("Funktionen/NumberFormat.r")
+source("Funktionen/printf.r")
 library("fst")
 library("data.table")
 library("dplyr") # filter
@@ -43,17 +46,15 @@ currencyPairs <- data.table(
 exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
 
 # Grundablauf: Immer paarweiser Vergleich zweier Börsen mit "Moving Window", ähnlich zu mergesort
-# - Erste x Daten beider Börsen laden = "Fenster" initialisieren: [t = 0, ..., t = 1h]
-# - Verwendung des größeren Datensatzes als "Referenz", damit die geladene Zeit ungefähr konstant ist
-# - Zu prüfen: Begrenze Arbeitsfenster auf ~10.000 Daten, da Filter-/Sortier-/Vergleichsaufgaben 
-#   exponentiell mit der Größe des Arbeitsfensters wachsen _können_.
-# - Wichtig: Daten müssen zeit- und nicht zeilenbasiert geladen werden! Immer 1h-Sets
-# - Solange noch Daten für beide Börsen vorhanden sind:
+# - Erste x Daten beider Börsen laden = "Betrachtungsfenster" initialisieren:
+#   [t = 0, ..., t = 1h] in Gruppen von je 10.000 Datenpunkten
+# - Beschränke Datensatz auf gemeinsame Daten
+# - Solange Daten für beide Börsen vorhanden sind:
 #   - Nächsten Datensatz vergleichen und Ergebnis speichern
 #   - Prüfen, ob noch genug Daten beider Börsen für Vergleich vorhanden sind, sonst:
 #       - neues Datenfenster laden: [t = 1h, ..., t = 2h]
-#       - Daten des ersten Fensters verwerfen (0...1h)
-#       - Letzte paar Datenpunkte des vorherigen Fensters behalten, um
+#       - Speicher freigeben: Daten des ersten Betrachtungsfensters entfernen (0...1h)
+#       - Letzte paar Datenpunkte des vorherigen Betrachtungsfensters behalten, um
 #         korrekt filtern/vergleichen zu können
 
 
@@ -65,6 +66,11 @@ exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
 #' @param endDate Zieldatum, bis zu dem mindestens gelesen werden soll
 #' @return `data.table` mit den gelesenen Daten
 readDataFile <- function(dataFile, startRow, endDate) {
+    
+    if (!file.exists(dataFile)) {
+        stop(sprintf("Datei %s nicht gefunden!", dataFile))
+    }
+    
     result <- data.table()
     meta <- metadata_fst(dataFile)
     
@@ -85,13 +91,13 @@ readDataFile <- function(dataFile, startRow, endDate) {
         }
         
         # Datei einlesen
-        #cat(sprintf("Lese %s von Zeile %d bis %d: ", basename(dataFile), startRow, endRow))
+        #printf("Lese %s von Zeile %d bis %d: ", basename(dataFile), startRow, endRow)
         # TODO Auf off-by-one-Fehler prüfen!
         newlyReadData <- read_fst(dataFile, c("Time", "Price"), startRow, endRow, as.data.table=TRUE)
         newlyReadData$RowNum <- startRow:endRow
         
         result <- rbind(result, newlyReadData)
-        #cat(sprintf("%d weitere Datensätze, %d insgesamt.\n", nrow(newlyReadData), nrow(result)))
+        #printf("%d weitere Datensätze, %d insgesamt.\n", nrow(newlyReadData), nrow(result))
         
         # Letzter Datensatz liegt nach endDate oder Datei ist abgeschlossen
         if (last(result$Time) > endDate || endRow == meta$nrOfRows) {
@@ -115,8 +121,15 @@ readDataFile <- function(dataFile, startRow, endDate) {
 #' @param dataset Eine Instanz der Klasse `Dataset`
 #' @param baseMonth Datum des zuletzt gelesenen Datenpunktes
 #' @param endDate Zieldatum, bis zu dem mindestens gelesen werden soll
+#' @param loadFileOfNextMonthIfNotSufficientTicks Sollen auch Daten eines weiteren Monats
+#'   (über endDate hinaus) geladen werden, wenn nicht genug Daten in der aktuellen Datei liegen?
 #' @return `NA` (`dataset` wird per Referenz verändert)
-readAndAppendNewTickData <- function(dataset, baseMonth, endDate) {
+readAndAppendNewTickData <- function(
+    dataset, 
+    baseMonth,
+    endDate, 
+    loadFileOfNextMonthIfNotSufficientTicks = TRUE
+) {
     
     # Parameter validieren
     stopifnot(
@@ -125,31 +138,43 @@ readAndAppendNewTickData <- function(dataset, baseMonth, endDate) {
         is.POSIXct(endDate)
     )
     
-    # Nicht mehr genutzte Daten (bis auf letzte 15) löschen
+    numNewRows <- 0L
     if (nrow(dataset$data) > 0) {
-        dataset$data <- tail(dataset$data, n = 15)
-    }
-    
-    # Beginne immer bei aktuellem Monat
-    dataFile <- sprintf(
-        "%s-%d-%02d.fst",
-        dataset$PathPrefix, year(baseMonth), month(baseMonth)
-    )
-    if (!file.exists(dataFile)) {
-        stop(sprintf("Datei nicht gefunden: %s", dataFile))
-    }
-    
-    # Lese Datensatz ab dem letzten Datenpunkt ein
-    if (nrow(dataset$data) > 0) {
+        
+        # Speicherbereinigung: Bereits verarbeitete Daten löschen
+        # Ansatz 1: Feste Anzahl an Ticks beibehalten
+        #dataset$data <- tail(dataset$data, n=5000)
+        
+        # Ansatz 2 (neu):
+        # Einen Zeitraum von fünf Minuten vor dem aktuell 
+        # betrachteten Tick beibehalten.
+        dataset$data <- dataset$data[Time >= (baseMonth - 5*60),]
+        
+        # Lese Daten ab dem letzten Tick ein
+        baseMonth <- last(dataset$data$Time)
         startRow <- last(dataset$data$RowNum)
+        
     } else {
+        
+        # Ab erster Zeile starten
         startRow <- 1L
+        
     }
-    isNewDataset <- (startRow == 1L)
     
     while (TRUE) {
-        cat(sprintf("Lese %s ab Zeile %d bis ", basename(dataFile), startRow))
+        
+        # Beginne immer bei aktuellem Monat
+        dataFile <- sprintf(
+            "%s-%d-%02d.fst",
+            dataset$PathPrefix, year(baseMonth), month(baseMonth)
+        )
+        if (!file.exists(dataFile)) {
+            stop(sprintf("Datei nicht gefunden: %s", dataFile))
+        }
+        
+        printf("Lese %s ab Zeile %s bis ", basename(dataFile), startRow |> numberFormat())
         newData <- readDataFile(dataFile, startRow, endDate)
+        numNewRows <- numNewRows + nrow(newData)
         
         # Letzte Zeile nur für Debug-Zwecke speichern
         lastRowNumber <- last(newData$RowNum)
@@ -157,30 +182,31 @@ readAndAppendNewTickData <- function(dataset, baseMonth, endDate) {
             lastRowNumber <- startRow
         }
         
-        if (nrow(newData) > 0) {
+        if (numNewRows > 0) {
             # Format anpassen und neue Daten anfügen
             newData$Exchange <- dataset$Exchange
-            cat(sprintf("%d: %d Datensätze.\n", lastRowNumber, nrow(newData)))
+            printf("%s (von %s): %s Datensätze.\n", 
+                        lastRowNumber |> numberFormat(),
+                        metadata_fst(dataFile)$nrOfRows |> numberFormat(),
+                        numNewRows |> numberFormat()
+            )
             dataset$data <- rbindlist(list(dataset$data, newData))
         } else {
-            cat(sprintf("%d: Keine neuen Datensätze.\n", lastRowNumber))
+            printf("%s: Keine neuen Datensätze.\n", lastRowNumber |> numberFormat())
         }
         
-        # Gewünschter Zeitraum liegt in einer einzelnen Monatsdatei.
-        # Keine weitere Verarbeitung nötig.
-        if (month(endDate) == month(last(dataset$data$Time))) {
+        # Zieldatum erreicht und mehr als 100 Datensätze geladen:
+        # Keine weiteren Daten laden.
+        if (
+            as.integer(format(endDate, "%Y%m")) <= as.integer(format(baseMonth, "%Y%m")) &&
+            (loadFileOfNextMonthIfNotSufficientTicks == FALSE || numNewRows > 100)
+        ) {
             break
         }
         
         # Lese zusätzlich nächsten Monat
-        dataFile <- sprintf(
-            "%s-%d-%02d.fst",
-            dataset$PathPrefix, year(endDate), month(endDate)
-        )
-        if (!file.exists(dataFile)) {
-            stop(sprintf("Datei nicht gefunden: %s", dataFile))
-        }
-        startRow <- 1
+        baseMonth <- addOneMonth(baseMonth)
+        startRow <- 1L
     }
     
     return(NA)
@@ -205,18 +231,28 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
         stop("filterTwoDatasetsByCommonTimeInterval: ein Datensatz ist leer!\n")
     }
     
+    # Letzten gemeinsamen Zeitpunkt bestimmen
     lastCommonTick <- min(last(dataset_a$data$Time), last(dataset_b$data$Time))
     
+    # Anmerkung: Es kann natürlich vorkommen, dass beide Datensätze am exakt
+    # gleichen Zeitpunkt enden. In diesem Fall muss nichts gefiltert werden.
+    
+    # Datensatz A enthält mehr Daten als B
     if (last(dataset_a$data$Time) > lastCommonTick) {
-        # Entweder: Datensatz A ist länger: Behalte nur gemeinsame Daten
+        
+        # Behalte nur gemeinsame Daten
         filter_a <- which(dataset_a$data$Time <= lastCommonTick)
         
         # Ergänze Datensatz um einen weiteren Datenpunkt für letzten Vergleich
         filter_a <- c(filter_a, last(filter_a) + 1)
         dataset_a$data <- dataset_a$data[filter_a,]
         
-    } else {
-        # Oder: Datensatz B ist länger: Behalte nur gemeinsame Daten
+    }
+    
+    # Datensatz B enthält mehr Daten als A
+    if (last(dataset_b$data$Time) > lastCommonTick) {
+        
+        # Behalte nur gemeinsame Daten
         filter_b <- which(dataset_b$data$Time <= lastCommonTick)
         
         # Ergänze Datensatz um einen weiteren Datenpunkt für letzten Vergleich
@@ -303,8 +339,7 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
 #'                  (= Zeitpunkt des ersten gemeinsamen Datensatzes)
 compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate) {
     
-    # Bis einschließlich vergangenen Monat arbeiten:
-    # (Berechnung: Erster Tag des aktuellen Monats - 1 Sekunde)
+    # Bis einschließlich vergangenen Monat vergleichen
     endDate <- as.POSIXct(format(Sys.time(), "%Y-%m-01 00:00:00")) - 1
     
     # Datenobjekte initialisieren
@@ -328,28 +363,28 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
     
     # Daten für die ersten 60 Minuten beider Börsen laden
     loadUntil <- startDate + 60 * 60
-    cat(sprintf("Lade von %s bis mindestens %s\n", startDate, loadUntil))
+    printf("Lade von %s bis mindestens %s\n", startDate, loadUntil)
     
     readAndAppendNewTickData(dataset_a, startDate, loadUntil)
     readAndAppendNewTickData(dataset_b, startDate, loadUntil)
     
-    cat(sprintf("A: %d Tickdaten von %s bis %s\n", 
-                nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time)))
-    cat(sprintf("B: %d Tickdaten von %s bis %s\n", 
-                nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time)))
+    printf("A: %d Tickdaten von %s bis %s\n", 
+                nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+    printf("B: %d Tickdaten von %s bis %s\n", 
+                nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
     
     # Begrenze auf gemeinsamen Zeitraum
     filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)
     
-    cat(sprintf("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
-                nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time)))
-    cat(sprintf("B (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
-                nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time)))
+    printf("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
+                nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+    printf("B (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
+                nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
     
     # Merge + Sort + Filter, danke an Lukas Fischer (@o1oo11oo) für die Idee
     dataset_ab <- mergeSortAndFilterTwoDatasets(dataset_a, dataset_b)
-    cat(sprintf("A+B: %d Tickdaten von %s bis %s\n", 
-                nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time)))
+    printf("A+B: %d Tickdaten von %s bis %s\n", 
+                nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time))
     
     # Position merken
     currentRow <- 0L
@@ -370,7 +405,7 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
         
         # Ende des Datensatzes erreicht
         if (currentRow == numRows) {
-            cat(sprintf("Zeile %d erreicht, Ende.\n", currentRow))
+            printf("Zeile %d erreicht, Ende.\n", currentRow)
             if (!endAfterCurrentDataset) {
                 stop("Keine neuen Daten geladen, obwohl Ende des Datensatzes erreicht wurde!")
             }
@@ -378,74 +413,70 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
         }
         
         # Neue Daten laden
-        if (currentRow == loadNewDataAtRowNumber && !endAfterCurrentDataset) {
+        if (currentRow >= loadNewDataAtRowNumber && !endAfterCurrentDataset) {
             
-            # Datensatz auf verbleibende Zeilen begrenzen
-            #dataset_ab <- tail(dataset_ab, n = numRows - loadNewDataAtRowNumber)
-            
-            cat(sprintf("\nZeile %d erreicht, lade neue Daten.\n", currentRow))
-            currentWorkingData <- dataset_ab[currentRow,]
-            
-            #dataset_ab_before_moving_window_loading <<- dataset_ab
-            #cat("Aktueller Datenpunkt:\n")
-            #print(currentWorkingData)
+            printf("\nZeile %d/%d erreicht, lade neue Daten.\n", currentRow, numRows)
+            currentTick <- dataset_ab[currentRow,]
             
             # Lese weitere Daten ab letztem gemeinsamen Datenpunkt
-            baseDate <- last(dataset_ab$Time)
-            loadUntil <- baseDate + 60 * 60
-            readAndAppendNewTickData(dataset_a, baseDate, loadUntil)
-            readAndAppendNewTickData(dataset_b, baseDate, loadUntil)
+            baseDate <- currentTick$Time
+            loadUntil <- last(dataset_ab$Time) + 60 * 60
             
-            cat(sprintf("A: %d Tickdaten von %s bis %s\n", 
-                        nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time)))
-            cat(sprintf("B: %d Tickdaten von %s bis %s\n", 
-                        nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time)))
+            # Ende erreicht
+            if (loadUntil > endDate) {
+                loadUntil <- endDate
+                endAfterCurrentDataset <- TRUE
+            }
+            
+            readAndAppendNewTickData(dataset_a, baseDate, loadUntil, 
+                                     loadFileOfNextMonthIfNotSufficientTicks=!endAfterCurrentDataset)
+            readAndAppendNewTickData(dataset_b, baseDate, loadUntil, 
+                                     loadFileOfNextMonthIfNotSufficientTicks=!endAfterCurrentDataset)
+            
+            printf("A: %d Tickdaten von %s bis %s\n", 
+                        nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+            printf("B: %d Tickdaten von %s bis %s\n", 
+                        nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
             
             # Begrenze auf gemeinsamen Zeitraum
             filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)
             
-            cat(sprintf("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
-                        nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time)))
-            cat(sprintf("B (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
-                        nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time)))
+            printf("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
+                        nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+            printf("B (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
+                        nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
             
             # Merge + Sort + Filter, danke an Lukas Fischer (@o1oo11oo) für die Idee
             dataset_ab <- mergeSortAndFilterTwoDatasets(dataset_a, dataset_b)
-            cat(sprintf("A+B: %d Tickdaten von %s bis %s\n", 
-                        nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time)))
+            printf("A+B: %d Tickdaten von %s bis %s\n", 
+                        nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time))
             
-            # Aktuelle Position korrigieren
-            currentRow <- with(
-                dataset_ab_after_moving_window_loading,
-                which(
-                    Time == currentWorkingData$Time & 
-                    Price == currentWorkingData$Price &
-                    Exchange == currentWorkingData$Exchange &
-                    RowNum == currentWorkingData$RowNum
-                )
-            )
+            # Aktuelle Position (`currentRow`) korrigieren, befindet sich nun
+            # am Beginn des (neuen) Datensatzes
+            currentRow <- dataset_ab[
+                Time == currentTick$Time & 
+                Price == currentTick$Price &
+                Exchange == currentTick$Exchange &
+                RowNum == currentTick$RowNum,
+                which = TRUE
+            ]
             
             # Aktuelle Position in neuem Betrachtungsfenster nicht gefunden!
             if (length(currentRow) == 0) {
-                stop(sprintf("Aktueller Arbeitspunkt (%d) in neu geladenen Daten nicht vorhanden!",
-                             currentWorkingData$Time))
+                dataset_ab_after_moving_window_loading <<- dataset_ab
+                currentTick <<- currentTick
+                stop(sprintf("Aktueller Arbeitspunkt (%s) in neu geladenen Daten nicht vorhanden!",
+                             format(currentTick$Time)))
             }
             
-            cat(sprintf("Aktueller Datenpunkt nun in Zeile %d.\n", currentRow))
-            #cat("Inhalt der aktuellen Zeile (muss identisch sein zu vorherigem Inhalt!):\n")
-            #print(dataset_ab[currentRow,])
+            printf("Aktueller Datenpunkt nun in Zeile %d.\n", currentRow)
             
-            # Rechtzeitig neue Daten laden
+            # Neue Daten kurz vor Ende des Datensatzes laden
             numRows <- nrow(dataset_ab)
             loadNewDataAtRowNumber <- numRows - 5L
             
-            # TODO Ende des Datensatzes erreicht?
-            #if (as.double(endDate - last(dataset_ab$Time), units="secs") < 60 * 60)
-            endAfterCurrentDataset <- FALSE
-            
             # TEST
-            #dataset_ab_after_moving_window_loading <<- dataset_ab
-            break
+            #break
             
         }
         
@@ -500,7 +531,7 @@ for (index in 1:nrow(currencyPairs)) {
     # Daten bis vor einen Monat verarbeiten
     endDate <- floor_date(floor_date(Sys.Date(), unit = "months") - 1, unit = "months")
     
-    cat("== Untersuche ", pair, " ab ", format(startDate, "%Y-%m"), "\n", sep="")
+    printf("======== Untersuche %s ab %s ========\n", pair, format(startDate, "%Y-%m"))
     
     # TEST
     compareTwoExchanges("bitfinex", "bitstamp", pair, startDate)
