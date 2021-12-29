@@ -154,6 +154,11 @@ readAndAppendNewTickData <- function(
         baseMonth <- last(dataset$data$Time)
         startRow <- last(dataset$data$RowNum)
         
+        # Bereits Daten bis über das angegebene Enddatum hinaus eingelesen
+        if (baseMonth > endDate) {
+            return()
+        }
+        
     } else {
         
         # Ab erster Zeile starten
@@ -440,6 +445,23 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
             
             # Begrenze auf gemeinsamen Zeitraum
             filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)
+            
+            # Zu wenig gemeinsame Daten (Datenlücke eines Datensatzes!)
+            # Weitere Daten nachladen, bis mehr als 50 gemeinsame Daten vorliegen
+            while (
+                !endAfterCurrentDataset &&
+                (nrow(dataset_a$data) < 50 || nrow(dataset_b$data) < 50)
+            ) {
+                loadUntil <- loadUntil + 60*60
+                printf("Weniger als 50 gemeinsame Daten, lade weitere.\n")
+                readAndAppendNewTickData(dataset_b, baseDate, loadUntil, 
+                                         loadFileOfNextMonthIfNotSufficientTicks=!endAfterCurrentDataset)
+                readAndAppendNewTickData(dataset_a, baseDate, loadUntil, 
+                                         loadFileOfNextMonthIfNotSufficientTicks=!endAfterCurrentDataset)
+                
+                # Begrenze auf gemeinsamen Zeitraum
+                filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)
+            }
             
             printf("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
                         nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
