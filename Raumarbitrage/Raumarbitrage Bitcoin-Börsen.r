@@ -45,6 +45,12 @@ currencyPairs <- data.table(
 )
 exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
 
+# Anzahl der Datensätze, die eingelesen werden, bevor geprüft wird,
+# ob die geforderte Anzahl Daten gelesen wurde
+numDatasetsPerRead <- 10000L
+
+# Ende Konfiguration
+
 # Grundablauf: Immer paarweiser Vergleich zweier Börsen mit "Moving Window", ähnlich zu mergesort
 # - Erste x Daten beider Börsen laden = "Betrachtungsfenster" initialisieren:
 #   [t = 0, ..., t = 1h] in Gruppen von je 10.000 Datenpunkten
@@ -67,9 +73,11 @@ exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
 #' @return `data.table` mit den gelesenen Daten
 readDataFile <- function(dataFile, startRow, endDate) {
     
-    if (!file.exists(dataFile)) {
-        stop(sprintf("Datei %s nicht gefunden!", dataFile))
-    }
+    # Umgebungsbedingungen prüfen
+    stopifnot(
+        exists("numDatasetsPerRead"),
+        file.exists(dataFile)
+    )
     
     result <- data.table()
     meta <- metadata_fst(dataFile)
@@ -82,30 +90,31 @@ readDataFile <- function(dataFile, startRow, endDate) {
     # Lese Daten iterativ ein
     while (TRUE) {
         
-        # Limit bestimmen: 10.000 Datensätze oder bis zum Ende der Datei
-        endRow <- min(meta$nrOfRows, startRow + 10000)
+        # Limit bestimmen: `numDatasetsPerRead` Datensätze oder bis zum Ende der Datei
+        endRow <- min(meta$nrOfRows, startRow + numDatasetsPerRead)
         
         # Dateiende bereits erreicht?
         if (startRow > endRow) {
-            stop(sprintf("readDataFile(%s): startRow (%d) > endRow (%d)!\n", basename(dataFile), startRow, endRow))
+            stop(sprintf("readDataFile(%s): startRow (%d) > endRow (%d)!\n",
+                         basename(dataFile), startRow, endRow))
         }
         
         # Datei einlesen
-        #printf("Lese %s von Zeile %d bis %d: ", basename(dataFile), startRow, endRow)
+        # printf("Lese %s von Zeile %d bis %d: ", basename(dataFile), startRow, endRow)
         # TODO Auf off-by-one-Fehler prüfen!
         newlyReadData <- read_fst(dataFile, c("Time", "Price"), startRow, endRow, as.data.table=TRUE)
-        newlyReadData$RowNum <- startRow:endRow
+        newlyReadData[, RowNum:=startRow:endRow]
         
-        result <- rbind(result, newlyReadData)
-        #printf("%d weitere Datensätze, %d insgesamt.\n", nrow(newlyReadData), nrow(result))
+        result <- rbindlist(list(result, newlyReadData), use.names=TRUE)
+        # printf("%d weitere Datensätze, %d insgesamt.\n", nrow(newlyReadData), nrow(result))
         
         # Letzter Datensatz liegt nach endDate oder Datei ist abgeschlossen
         if (last(result$Time) > endDate || endRow == meta$nrOfRows) {
             break
         }
         
-        # Weitere 10.000 Datenpunkte lesen
-        startRow <- startRow + 10000
+        # Weitere `numDatasetsPerRead` Datenpunkte lesen
+        startRow <- startRow + numDatasetsPerRead
     }
     
     return(result)
@@ -142,13 +151,9 @@ readAndAppendNewTickData <- function(
     if (nrow(dataset$data) > 0) {
         
         # Speicherbereinigung: Bereits verarbeitete Daten löschen
-        # Ansatz 1: Feste Anzahl an Ticks beibehalten
-        #dataset$data <- tail(dataset$data, n=5000)
-        
-        # Ansatz 2 (neu):
-        # Einen Zeitraum von fünf Minuten vor dem aktuell 
+        # Einen Zeitraum von wenigen Minuten vor dem aktuell 
         # betrachteten Tick beibehalten.
-        dataset$data <- dataset$data[Time >= (baseMonth - 5*60),]
+        dataset$data <- dataset$data[Time >= (baseMonth - 2 * 60),]
         
         # Lese Daten ab dem letzten Tick ein
         baseMonth <- last(dataset$data$Time)
@@ -177,34 +182,34 @@ readAndAppendNewTickData <- function(
             stop(sprintf("Datei nicht gefunden: %s", dataFile))
         }
         
-        printf("Lese %s ab Zeile %s bis ", basename(dataFile), startRow |> numberFormat())
+        # printf("Lese %s ab Zeile %s bis ", basename(dataFile), startRow |> numberFormat())
         newData <- readDataFile(dataFile, startRow, endDate)
         numNewRows <- numNewRows + nrow(newData)
         
         # Letzte Zeile nur für Debug-Zwecke speichern
-        lastRowNumber <- last(newData$RowNum)
-        if (is.null(lastRowNumber)) {
-            lastRowNumber <- startRow
-        }
+        # lastRowNumber <- last(newData$RowNum)
+        # if (is.null(lastRowNumber)) {
+        #     lastRowNumber <- startRow
+        # }
         
         if (numNewRows > 0) {
             # Format anpassen und neue Daten anfügen
-            newData$Exchange <- dataset$Exchange
-            printf("%s (von %s): %s Datensätze.\n", 
-                        lastRowNumber |> numberFormat(),
-                        metadata_fst(dataFile)$nrOfRows |> numberFormat(),
-                        numNewRows |> numberFormat()
-            )
-            dataset$data <- rbindlist(list(dataset$data, newData))
+            newData[, Exchange:=dataset$Exchange]
+            # printf("%s (von %s): %s Datensätze.\n", 
+            #             lastRowNumber |> numberFormat(),
+            #             metadata_fst(dataFile)$nrOfRows |> numberFormat(),
+            #             numNewRows |> numberFormat()
+            # )
+            dataset$data <- rbindlist(list(dataset$data, newData), use.names=TRUE)
         } else {
-            printf("%s: Keine neuen Datensätze.\n", lastRowNumber |> numberFormat())
+            # printf("%s: Keine neuen Datensätze.\n", lastRowNumber |> numberFormat())
         }
         
         # Zieldatum erreicht und mehr als 100 Datensätze geladen:
         # Keine weiteren Daten laden.
         if (
             as.integer(format(endDate, "%Y%m")) <= as.integer(format(baseMonth, "%Y%m")) &&
-            (loadFileOfNextMonthIfNotSufficientTicks == FALSE || numNewRows > 100)
+            (isFALSE(loadFileOfNextMonthIfNotSufficientTicks) || numNewRows > 100)
         ) {
             break
         }
@@ -225,44 +230,37 @@ readAndAppendNewTickData <- function(
 #' @return `NA` (`dataset_a` und `dataset_b` werden per Referenz verändert)
 filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
     
-    # Parameter validieren
+    # Parameter und Daten validieren
     stopifnot(
         inherits(dataset_a, "Dataset"),
-        inherits(dataset_b, "Dataset")
+        inherits(dataset_b, "Dataset"),
+        nrow(dataset_a$data) > 0L,
+        nrow(dataset_b$data) > 0L
     )
     
-    # Ein Datensatz ist leer
-    if (nrow(dataset_a$data) == 0L || nrow(dataset_b$data) == 0L) {
-        stop("filterTwoDatasetsByCommonTimeInterval: ein Datensatz ist leer!\n")
+    # Letzte Tick-Zeitpunkte bestimmen
+    last_a <- last(dataset_a$data$Time)
+    last_b <- last(dataset_b$data$Time)
+    
+    # Beide Datensätze enden am exakt gleichen Zeitpunkt.
+    # In diesem Fall muss nichts gefiltert werden.
+    if (last_a == last_b) {
+        return(NA)
     }
     
-    # Letzten gemeinsamen Zeitpunkt bestimmen
-    lastCommonTick <- min(last(dataset_a$data$Time), last(dataset_b$data$Time))
-    
-    # Anmerkung: Es kann natürlich vorkommen, dass beide Datensätze am exakt
-    # gleichen Zeitpunkt enden. In diesem Fall muss nichts gefiltert werden.
-    
-    # Datensatz A enthält mehr Daten als B
-    if (last(dataset_a$data$Time) > lastCommonTick) {
+    # Behalte nur gemeinsame Daten
+    # Ergänze Datensatz um einen weiteren Datenpunkt für letzten Vergleich
+    if (last_a > last_b) {
         
-        # Behalte nur gemeinsame Daten
-        filter_a <- which(dataset_a$data$Time <= lastCommonTick)
+        # Datensatz A enthält mehr Daten als B
+        pos_of_last_common_tick <- last(dataset_a$data[Time <= last_b, which=TRUE])
+        dataset_a$data <- dataset_a$data[1:(pos_of_last_common_tick+1),]
         
-        # Ergänze Datensatz um einen weiteren Datenpunkt für letzten Vergleich
-        filter_a <- c(filter_a, last(filter_a) + 1)
-        dataset_a$data <- dataset_a$data[filter_a,]
+    } else {
         
-    }
-    
-    # Datensatz B enthält mehr Daten als A
-    if (last(dataset_b$data$Time) > lastCommonTick) {
-        
-        # Behalte nur gemeinsame Daten
-        filter_b <- which(dataset_b$data$Time <= lastCommonTick)
-        
-        # Ergänze Datensatz um einen weiteren Datenpunkt für letzten Vergleich
-        filter_b <- c(filter_b, last(filter_b) + 1)
-        dataset_b$data <- dataset_b$data[filter_b,]
+        # Datensatz B enthält mehr Daten als A
+        pos_of_last_common_tick <- last(dataset_b$data[Time <= last_a, which=TRUE])
+        dataset_b$data <- dataset_b$data[1:(pos_of_last_common_tick+1),]
         
     }
     
@@ -289,16 +287,9 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
     
     # Merge, Sort und Filter (nicht: mergesort-Algorithmus)
     
-    # Daten zu einer gemeinsamen Liste verbinden
-    dataset_ab <- data.table(
-        Time = c(dataset_a$data$Time, dataset_b$data$Time),
-        Price = c(dataset_a$data$Price, dataset_b$data$Price),
-        Exchange = c(
-            rep_len(dataset_a$Exchange, nrow(dataset_a$data)), 
-            rep_len(dataset_b$Exchange, nrow(dataset_b$data))
-        ),
-        RowNum = c(dataset_a$data$RowNum, dataset_b$data$RowNum)
-    )
+    # Daten zu einer gemeinsamen Liste verbinden.
+    # Enthaltene Spalten: Time, Price, RowNum und Exchange.
+    dataset_ab <- rbindlist(list(dataset_a$data, dataset_b$data), use.names=TRUE)
     
     # Liste nach Zeit sortieren
     setorder(dataset_ab, Time)
@@ -327,7 +318,7 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
         ),
         T
     )
-    dataset_ab <- dataset_ab[-which(unset),]
+    dataset_ab <- dataset_ab[!unset,]
     
     return(dataset_ab)
 }
@@ -342,6 +333,7 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
 #' @param currencyPair Kurspaar (z.B. EURUSD)
 #' @param startDate Beginne Vergleich ab diesem Datum
 #'                  (= Zeitpunkt des ersten gemeinsamen Datensatzes)
+#' @return `data.table` Eine Tabelle mit gemeinsamen Tickdaten innerhalb einer Zeitspanne von 5s
 compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate) {
     
     # Bis einschließlich vergangenen Monat vergleichen
@@ -368,28 +360,28 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
     
     # Daten für die ersten 60 Minuten beider Börsen laden
     loadUntil <- startDate + 60 * 60
-    printf("Lade von %s bis mindestens %s\n", startDate, loadUntil)
+    # printf("Lade von %s bis mindestens %s\n", startDate, loadUntil)
     
     readAndAppendNewTickData(dataset_a, startDate, loadUntil)
     readAndAppendNewTickData(dataset_b, startDate, loadUntil)
     
-    printf("A: %d Tickdaten von %s bis %s\n", 
-                nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
-    printf("B: %d Tickdaten von %s bis %s\n", 
-                nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
+    # printf("A: %d Tickdaten von %s bis %s\n", 
+    #             nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+    # printf("B: %d Tickdaten von %s bis %s\n", 
+    #             nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
     
     # Begrenze auf gemeinsamen Zeitraum
     filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)
     
-    printf("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
-                nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
-    printf("B (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
-                nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
+    # printf("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
+    #             nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+    # printf("B (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
+    #             nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
     
     # Merge + Sort + Filter, danke an Lukas Fischer (@o1oo11oo) für die Idee
     dataset_ab <- mergeSortAndFilterTwoDatasets(dataset_a, dataset_b)
-    printf("A+B: %d Tickdaten von %s bis %s\n", 
-                nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time))
+    # printf("A+B: %d Tickdaten von %s bis %s\n", 
+    #             nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time))
     
     # Position merken
     currentRow <- 0L
@@ -403,10 +395,32 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
     
     # -- Ende nötige Wiederholung --
     
+    # Ergebnisvektor
+    result <- data.table()
+    
+    # Dauer aufzeichnen
+    processedDatasets <- 0L
+    now <- proc.time()["elapsed"]
+    
     # Hauptschleife: Paarweise vergleichen
-    cat("Beginne Auswertungsschleife (noch: keine Aktion)\n")
+    cat("Beginne Auswertung\n")
     while (TRUE) {
+        
+        # Zähler erhöhen
         currentRow <- currentRow + 1L
+        nextRow <- currentRow + 1L
+        
+        # Laufzeit und aktuellen Stand periodisch ausgeben
+        processedDatasets <- processedDatasets + 1L
+        if (processedDatasets %% 5e4 == 0) {
+            runtime <- proc.time()["elapsed"] - now
+            printf("\r%s Ticks verarbeitet\tAktuell: %s\t%s Sekunden\t%s Ticks/s ",
+                   numberFormat(processedDatasets),
+                   format(dataset_ab[currentRow,Time], "%d.%m.%Y %H:%M:%S"),
+                   numberFormat(round(runtime, 0)),
+                   numberFormat(round(processedDatasets/runtime, 0))
+            )
+        }
         
         # Ende des Datensatzes erreicht
         if (currentRow == numRows) {
@@ -420,7 +434,7 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
         # Neue Daten laden
         if (currentRow >= loadNewDataAtRowNumber && !endAfterCurrentDataset) {
             
-            printf("\nZeile %d/%d erreicht, lade neue Daten.\n", currentRow, numRows)
+            # printf("\nZeile %d/%d erreicht, lade neue Daten.\n", currentRow, numRows)
             currentTick <- dataset_ab[currentRow,]
             
             # Lese weitere Daten ab letztem gemeinsamen Datenpunkt
@@ -438,22 +452,25 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
             readAndAppendNewTickData(dataset_b, baseDate, loadUntil, 
                                      loadFileOfNextMonthIfNotSufficientTicks=!endAfterCurrentDataset)
             
-            printf("A: %d Tickdaten von %s bis %s\n", 
-                        nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
-            printf("B: %d Tickdaten von %s bis %s\n", 
-                        nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
+            # printf("A: %d Tickdaten von %s bis %s\n", 
+            #             nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+            # printf("B: %d Tickdaten von %s bis %s\n", 
+            #             nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
             
             # Begrenze auf gemeinsamen Zeitraum
             filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)
             
             # Zu wenig gemeinsame Daten (Datenlücke eines Datensatzes!)
             # Weitere Daten nachladen, bis mehr als 50 gemeinsame Daten vorliegen
+            # TODO Hier müsste im Grunde ein dynamisches Limit greifen
+            # - min. 50 gemeinsame Daten - manchmal aber auch 500 nötig
+            # - nicht zu nah an der *neuen* currentRow! -> Problematisch?
             while (
                 !endAfterCurrentDataset &&
-                (nrow(dataset_a$data) < 50 || nrow(dataset_b$data) < 50)
+                (nrow(dataset_a$data) < 500 || nrow(dataset_b$data) < 500)
             ) {
-                loadUntil <- loadUntil + 60*60
-                printf("Weniger als 50 gemeinsame Daten, lade weitere.\n")
+                loadUntil <- min(last(dataset_a$data$Time), last(dataset_b$data$Time)) + 60*60
+                # printf("Weniger als 500 gemeinsame Daten (Datenlücke!), lade weitere.\n")
                 readAndAppendNewTickData(dataset_b, baseDate, loadUntil, 
                                          loadFileOfNextMonthIfNotSufficientTicks=!endAfterCurrentDataset)
                 readAndAppendNewTickData(dataset_a, baseDate, loadUntil, 
@@ -463,15 +480,15 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
                 filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)
             }
             
-            printf("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
-                        nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
-            printf("B (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
-                        nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
+            # printf("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
+            #             nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+            # printf("B (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
+            #             nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
             
             # Merge + Sort + Filter, danke an Lukas Fischer (@o1oo11oo) für die Idee
             dataset_ab <- mergeSortAndFilterTwoDatasets(dataset_a, dataset_b)
-            printf("A+B: %d Tickdaten von %s bis %s\n", 
-                        nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time))
+            # printf("A+B: %d Tickdaten von %s bis %s\n", 
+            #             nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time))
             
             # Aktuelle Position (`currentRow`) korrigieren, befindet sich nun
             # am Beginn des (neuen) Datensatzes
@@ -485,29 +502,21 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
             
             # Aktuelle Position in neuem Betrachtungsfenster nicht gefunden!
             if (length(currentRow) == 0) {
-                dataset_ab_after_moving_window_loading <<- dataset_ab
-                currentTick <<- currentTick
                 stop(sprintf("Aktueller Arbeitspunkt (%s) in neu geladenen Daten nicht vorhanden!",
                              format(currentTick$Time)))
             }
             
-            printf("Aktueller Datenpunkt nun in Zeile %d.\n", currentRow)
+            # printf("Aktueller Datenpunkt nun in Zeile %d.\n", currentRow)
+            nextRow <- currentRow + 1L
             
-            # Neue Daten kurz vor Ende des Datensatzes laden
+            # Neue Daten erst kurz vor Ende des Datensatzes laden
             numRows <- nrow(dataset_ab)
             loadNewDataAtRowNumber <- numRows - 5L
-            
-            # TEST
-            #break
-            
         }
         
-        # TODO Zunächst Ladealgorithmus testen
-        next
-        
-        # Vergleiche
+        # Aktuelle und nächste Zeile lesen
         tick_a <- dataset_ab[currentRow,]
-        tick_b <- dataset_ab[(currentRow+1),]
+        tick_b <- dataset_ab[nextRow,]
         
         # Gleiche Börse, überspringe.
         if (tick_a$Exchange == tick_b$Exchange) {
@@ -515,145 +524,139 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
         }
         
         # Zeitdifferenz zu groß, überspringe.
-        timeDifference <- as.double(tick_b$data$Time - tick_a$data$Time, units="secs")
+        # TODO Variabel statt hartkodiert
+        timeDifference <- as.double(tick_a$Time - tick_b$Time, units="secs")
         if (timeDifference > 5) {
-            next
+           next
         }
+        # Vergleiche
+        result <- rbindlist(list(result, data.table(
+            Time_A = tick_a$Time,
+            Time_B = tick_b$Time,
+            Price_A = tick_a$Price,
+            Price_B = tick_b$Price,
+            Exchange_A = tick_a$Exchange,
+            Exchange_B = tick_b$Exchange
+        )), use.names=TRUE)
         
         # TODO
         # - In zweier-Sets Preise vergleichen
-        # [OK] Zeitliche Differenz beider Daten prüfen und ggf. überspringen
         # - Differenz inkl. Zeit und ggf. Preisniveau notieren
         # -> rollapply bietet sich grundsätzlich wieder an? Aber wie/wann neue Daten laden?
         # -> Berechnung eines Arbitrageindex wie in der Literatur?
-        
-        # Alter Code:
-        
-        # matchedPriceDifferences <- data.table()
-        # ...
-        # matchedPriceDifferences <- rbind(matchedPriceDifferences, data.table(
-        #     TimeA = tick_a$Time,
-        #     TimeB = tick_b$Time,
-        #     TimeDifference = tick_a$Time - tick_b$Time,
-        #     PriceA = tick_a$Price,
-        #     PriceB = tick_b$Price,
-        #     PriceDifference = tick_a$Price - tick_b$Price,
-        #     ExchangeA = exchange_a,
-        #     ExchangeB = exchange_b
-        # ))
     }
+    
+    return(result)
 }
 
+#compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-10-14 00:00:00"))
+result <- compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2021-09-01 00:00:00"))
 
 # Alle Währungspaare und alle Börsen untersuchen
-for (index in 1:nrow(currencyPairs)) {
-    pair <- currencyPairs$CurrencyPair[index]
-    startDate <- as.POSIXct(paste0(currencyPairs$StartMonth[index], "-01"))
-    
-    # Daten bis vor einen Monat verarbeiten
-    endDate <- floor_date(floor_date(Sys.Date(), unit = "months") - 1, unit = "months")
-    
-    printf("======== Untersuche %s ab %s ========\n", pair, format(startDate, "%Y-%m"))
-    
-    # TEST
-    compareTwoExchanges("bitfinex", "bitstamp", pair, startDate)
-    
-    # TODO Startdatum für jede Börse und jedes Währungspaar separat hinterlegen, s.o.
-    # Dann jeweils compareTwoExchanges("a", "b", currencyPair, startDate)
-    break
-    
-    # === ALT ===
-    
-    # Jedes Börsenpaar vergleichen
-    # Bitfinex - Bitstamp
-    # Bitfinex - Coinbase Pro
-    # Bitfinex - Kraken
-    if (length(bitfinex) > 1 && !is.na(bitfinex)) {
-        if (length(bitstamp) > 1 && !is.na(bitstamp)) {
-            cat("Vergleiche Bitfinex - Bitstamp\n")
-            matchedPriceDifferences <- rbind(
-                matchedPriceDifferences, 
-                compareTwoExchanges(
-                    dataset_a = bitfinex,
-                    exchange_a = "Bitfinex",
-                    dataset_b = bitstamp,
-                    exchange_b = "Bitstamp",
-                    threshold = 5
-                )
-            )
-        }
-        if (length(coinbase) > 1 && !is.na(coinbase)) {
-            cat("Vergleiche Bitfinex - Coinbase Pro\n")
-            matchedPriceDifferences <- rbind(
-                matchedPriceDifferences, 
-                compareTwoExchanges(
-                    dataset_a = bitfinex,
-                    exchange_a = "Bitfinex",
-                    dataset_b = coinbase,
-                    exchange_b = "Coinbase Pro",
-                    threshold = 5
-                )
-            )
-        }
-        if (length(kraken) > 1 && !is.na(kraken)) {
-            cat("Vergleiche Bitfinex - Kraken\n")
-            matchedPriceDifferences <- rbind(
-                matchedPriceDifferences, 
-                compareTwoExchanges(
-                    dataset_a = bitfinex,
-                    exchange_a = "Bitfinex",
-                    dataset_b = kraken,
-                    exchange_b = "Kraken",
-                    threshold = 5
-                )
-            )
-        }
-    }
-    # Bitstamp - Coinbase Pro
-    # Bitstamp - Kraken
-    if (length(bitstamp) > 1 && !is.na(bitstamp)) {
-        if (length(coinbase) > 1 && !is.na(coinbase)) {
-            cat("Vergleiche Bitstamp - Coinbase Pro\n")
-            matchedPriceDifferences <- rbind(
-                matchedPriceDifferences, 
-                compareTwoExchanges(
-                    dataset_a = bitstamp,
-                    exchange_a = "Bitstamp",
-                    dataset_b = coinbase,
-                    exchange_b = "Coinbase Pro",
-                    threshold = 5
-                )
-            )
-        }
-        if (length(kraken) > 1 && !is.na(kraken)) {
-            cat("Vergleiche Bitstamp - Kraken\n")
-            matchedPriceDifferences <- rbind(
-                matchedPriceDifferences, 
-                compareTwoExchanges(
-                    dataset_a = bitstamp,
-                    exchange_a = "Bitstamp",
-                    dataset_b = kraken,
-                    exchange_b = "Kraken",
-                    threshold = 5
-                )
-            )
-        }
-    }
-    # Coinbase Pro - Kraken
-    if (length(coinbase) > 1 && !is.na(coinbase)) {
-        if (length(kraken) > 1 && !is.na(kraken)) {
-            cat("Vergleiche Coinbase Pro - Kraken\n")
-            matchedPriceDifferences <- rbind(
-                matchedPriceDifferences, 
-                compareTwoExchanges(
-                    dataset_a = coinbase,
-                    exchange_a = "Coinbase Pro",
-                    dataset_b = kraken,
-                    exchange_b = "Kraken",
-                    threshold = 5
-                )
-            )
-        }
-    }
-}
+# for (index in 1:nrow(currencyPairs)) {
+#     pair <- currencyPairs$CurrencyPair[index]
+#     startDate <- as.POSIXct(paste0(currencyPairs$StartMonth[index], "-01"))
+#     
+#     # Daten bis vor einen Monat verarbeiten
+#     endDate <- floor_date(floor_date(Sys.Date(), unit = "months") - 1, unit = "months")
+#     
+#     printf("======== Untersuche %s ab %s ========\n", pair, format(startDate, "%Y-%m"))
+#     
+#     # TODO Startdatum für jede Börse und jedes Währungspaar separat hinterlegen, s.o.
+#     # -> for-Schleife überhaupt nötig?
+#     # Dann jeweils compareTwoExchanges("a", "b", currencyPair, startDate)
+#     # === ALT ===
+#     
+#     # Jedes Börsenpaar vergleichen
+#     # Bitfinex - Bitstamp
+#     # Bitfinex - Coinbase Pro
+#     # Bitfinex - Kraken
+#     if (length(bitfinex) > 1 && !is.na(bitfinex)) {
+#         if (length(bitstamp) > 1 && !is.na(bitstamp)) {
+#             cat("Vergleiche Bitfinex - Bitstamp\n")
+#             matchedPriceDifferences <- rbind(
+#                 matchedPriceDifferences, 
+#                 compareTwoExchanges(
+#                     dataset_a = bitfinex,
+#                     exchange_a = "Bitfinex",
+#                     dataset_b = bitstamp,
+#                     exchange_b = "Bitstamp",
+#                     threshold = 5
+#                 )
+#             )
+#         }
+#         if (length(coinbase) > 1 && !is.na(coinbase)) {
+#             cat("Vergleiche Bitfinex - Coinbase Pro\n")
+#             matchedPriceDifferences <- rbind(
+#                 matchedPriceDifferences, 
+#                 compareTwoExchanges(
+#                     dataset_a = bitfinex,
+#                     exchange_a = "Bitfinex",
+#                     dataset_b = coinbase,
+#                     exchange_b = "Coinbase Pro",
+#                     threshold = 5
+#                 )
+#             )
+#         }
+#         if (length(kraken) > 1 && !is.na(kraken)) {
+#             cat("Vergleiche Bitfinex - Kraken\n")
+#             matchedPriceDifferences <- rbind(
+#                 matchedPriceDifferences, 
+#                 compareTwoExchanges(
+#                     dataset_a = bitfinex,
+#                     exchange_a = "Bitfinex",
+#                     dataset_b = kraken,
+#                     exchange_b = "Kraken",
+#                     threshold = 5
+#                 )
+#             )
+#         }
+#     }
+#     # Bitstamp - Coinbase Pro
+#     # Bitstamp - Kraken
+#     if (length(bitstamp) > 1 && !is.na(bitstamp)) {
+#         if (length(coinbase) > 1 && !is.na(coinbase)) {
+#             cat("Vergleiche Bitstamp - Coinbase Pro\n")
+#             matchedPriceDifferences <- rbind(
+#                 matchedPriceDifferences, 
+#                 compareTwoExchanges(
+#                     dataset_a = bitstamp,
+#                     exchange_a = "Bitstamp",
+#                     dataset_b = coinbase,
+#                     exchange_b = "Coinbase Pro",
+#                     threshold = 5
+#                 )
+#             )
+#         }
+#         if (length(kraken) > 1 && !is.na(kraken)) {
+#             cat("Vergleiche Bitstamp - Kraken\n")
+#             matchedPriceDifferences <- rbind(
+#                 matchedPriceDifferences, 
+#                 compareTwoExchanges(
+#                     dataset_a = bitstamp,
+#                     exchange_a = "Bitstamp",
+#                     dataset_b = kraken,
+#                     exchange_b = "Kraken",
+#                     threshold = 5
+#                 )
+#             )
+#         }
+#     }
+#     # Coinbase Pro - Kraken
+#     if (length(coinbase) > 1 && !is.na(coinbase)) {
+#         if (length(kraken) > 1 && !is.na(kraken)) {
+#             cat("Vergleiche Coinbase Pro - Kraken\n")
+#             matchedPriceDifferences <- rbind(
+#                 matchedPriceDifferences, 
+#                 compareTwoExchanges(
+#                     dataset_a = coinbase,
+#                     exchange_a = "Coinbase Pro",
+#                     dataset_b = kraken,
+#                     exchange_b = "Kraken",
+#                     threshold = 5
+#                 )
+#             )
+#         }
+#     }
+# }
 
