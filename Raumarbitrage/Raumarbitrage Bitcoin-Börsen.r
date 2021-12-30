@@ -132,7 +132,7 @@ readDataFileChunked <- function(dataFile, startRow, endDate) {
 #' @param loadNextFileIfNotSufficientTicks Sollen auch Daten eines weiteren Monats
 #'   (über endDate hinaus) geladen werden, wenn weniger als 100 neue Ticks in der
 #'   aktuellen Datei liegen?
-#' @return NULL (Verändert den angegebenen Datensatz per Referenz.)
+#' @return `NULL` (Verändert den angegebenen Datensatz per Referenz.)
 readAndAppendNewTickData <- function(
     dataset, 
     currentTime,
@@ -153,6 +153,8 @@ readAndAppendNewTickData <- function(
         # Speicherbereinigung: Bereits verarbeitete Daten löschen
         # Einen Zeitraum von wenigen Minuten vor dem aktuell 
         # betrachteten Tick beibehalten.
+        # `data.table` kann leider noch kein subsetting per Referenz, sodass eine
+        # Kopie (`<-`) notwendig ist.
         # printf("Bereinige Daten vor %s.\n", format(currentTime - 2 * 60))
         dataset$data <- dataset$data[Time >= (currentTime - 2 * 60),]
         
@@ -226,9 +228,13 @@ readAndAppendNewTickData <- function(
 
 #' Zwei Datensätze auf den gemeinsamen Zeitraum beschränken
 #' 
+#' Beide Datensätze starten aufgrund der Art und Weise,
+#' wie Daten geladen werden, immer ungefähr zum gleichen Zeitpunkt.
+#' Es muss also nur ein Enddatum bestimmt werden.
+#' 
 #' @param dataset_a Eine Instanz der Klasse `Dataset`
 #' @param dataset_b Eine Instanz der Klasse `Dataset`
-#' @return `NA` (`dataset_a` und `dataset_b` werden per Referenz verändert)
+#' @return `NULL` (Verändert die angegebenen Datensätze per Referenz.)
 filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
     
     # Parameter und Daten validieren
@@ -249,8 +255,10 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
         return(NA)
     }
     
-    # Behalte nur gemeinsame Daten
-    # Ergänze Datensatz um einen weiteren Datenpunkt für letzten Vergleich
+    # Behalte nur gemeinsame Daten.
+    # Ergänze Datensatz um einen weiteren Datenpunkt für letzten Vergleich.
+    # `data.table` kann leider noch kein subsetting per Referenz, sodass eine
+    # Kopie (`<-`) notwendig ist.
     if (last_a > last_b) {
         
         # Datensatz A enthält mehr Daten als B
@@ -295,7 +303,7 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
     # Liste nach Zeit sortieren
     setorder(dataset_ab, Time)
     
-    # `dataset_ab` enthält nun beide Datensätze nach Zeit sortiert.
+    # `dataset_ab` enthält nun Ticks beider Börsen nach Zeit sortiert.
     # Aufeinanderfolgende Daten der selben Börse interessieren nicht, da der Tickpunkt
     # davor bzw. danach immer näher am nächsten Tick der anderen Börse ist.
     # Aufeinanderfolgende Tripel daher herausfiltern.
@@ -307,9 +315,12 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
     #  * * *           *         * *        Nicht benötigte Ticks
     #        A B B A B   B A A B     B A    Reduzierter Datensatz
     
-    # Filtern
-    # Einschränkung: Erste und letzte Zeile werden immer entfernt
-    unset <- c(
+    # Tripel filtern
+    # Einschränkung: Erste und letzte Zeile werden immer entfernt,
+    # diese können an dieser Stelle nicht sinnvoll geprüft werden.
+    # Aus diesem Grund wird beim Neuladen von Daten immer etwas Puffer
+    # in beide Richtungen gelassen.
+    triplets <- c(
         T,
         rollapply(
             dataset_ab$Exchange,
@@ -319,9 +330,8 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
         ),
         T
     )
-    dataset_ab <- dataset_ab[!unset,]
     
-    return(dataset_ab)
+    return(dataset_ab[!triplets,])
 }
 
 
