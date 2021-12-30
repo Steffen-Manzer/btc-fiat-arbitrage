@@ -85,7 +85,7 @@ readDataFileChunked <- function(dataFile, startRow, endDate) {
     
     # Keine weiteren Daten in dieser Datei: Abbruch
     if (startRow == numRowsInFile) {
-        return(result)
+        return(data.table())
     }
     
     # Lese Daten iterativ ein
