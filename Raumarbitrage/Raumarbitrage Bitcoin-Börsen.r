@@ -128,14 +128,15 @@ readDataFileChunked <- function(dataFile, startRow, endDate) {
 #' @param dataset Eine Instanz der Klasse `Dataset`
 #' @param baseMonth Datum des zuletzt gelesenen Datenpunktes
 #' @param endDate Zieldatum, bis zu dem mindestens gelesen werden soll
-#' @param loadFileOfNextMonthIfNotSufficientTicks Sollen auch Daten eines weiteren Monats
-#'   (über endDate hinaus) geladen werden, wenn nicht genug Daten in der aktuellen Datei liegen?
-#' @return `NA` (`dataset` wird per Referenz verändert)
+#' @param loadNextFileIfNotSufficientTicks Sollen auch Daten eines weiteren Monats
+#'   (über endDate hinaus) geladen werden, wenn weniger als 100 neue Ticks in der
+#'   aktuellen Datei liegen?
+#' @return NULL (Verändert den angegebenen Datensatz per Referenz.)
 readAndAppendNewTickData <- function(
     dataset, 
     baseMonth,
     endDate, 
-    loadFileOfNextMonthIfNotSufficientTicks = TRUE
+    loadNextFileIfNotSufficientTicks = TRUE
 ) {
     
     # Parameter validieren
@@ -151,6 +152,7 @@ readAndAppendNewTickData <- function(
         # Speicherbereinigung: Bereits verarbeitete Daten löschen
         # Einen Zeitraum von wenigen Minuten vor dem aktuell 
         # betrachteten Tick beibehalten.
+        # printf("Bereinige Daten vor %s.\n", format(baseMonth - 2 * 60))
         dataset$data <- dataset$data[Time >= (baseMonth - 2 * 60),]
         
         # Lese Daten ab dem letzten Tick ein
@@ -159,7 +161,7 @@ readAndAppendNewTickData <- function(
         
         # Bereits Daten bis über das angegebene Enddatum hinaus eingelesen
         if (baseMonth > endDate) {
-            return()
+            return(invisible())
         }
         
     } else {
@@ -185,29 +187,29 @@ readAndAppendNewTickData <- function(
         numNewRows <- numNewRows + nrow(newData)
         
         # Letzte Zeile nur für Debug-Zwecke speichern
-        # lastRowNumber <- last(newData$RowNum)
-        # if (is.null(lastRowNumber)) {
-        #     lastRowNumber <- startRow
-        # }
+        lastRowNumber <- last(newData$RowNum)
+        if (is.null(lastRowNumber)) {
+            lastRowNumber <- startRow
+        }
         
         if (numNewRows > 0) {
             # Format anpassen und neue Daten anfügen
             newData[, Exchange:=dataset$Exchange]
-            # printf("%s (von %s): %s Datensätze.\n", 
+            # printf("%s (von %s): %s Datensätze.\n",
             #             lastRowNumber |> numberFormat(),
             #             metadata_fst(dataFile)$nrOfRows |> numberFormat(),
             #             numNewRows |> numberFormat()
             # )
             dataset$data <- rbindlist(list(dataset$data, newData), use.names=TRUE)
         } else {
-            # printf("%s: Keine neuen Datensätze.\n", lastRowNumber |> numberFormat())
+            printf("%s: Keine neuen Datensätze.\n", lastRowNumber |> numberFormat())
         }
         
         # Zieldatum erreicht und mehr als 100 Datensätze geladen:
         # Keine weiteren Daten laden.
         if (
             as.integer(format(endDate, "%Y%m")) <= as.integer(format(baseMonth, "%Y%m")) &&
-            (isFALSE(loadFileOfNextMonthIfNotSufficientTicks) || numNewRows > 100)
+            (isFALSE(loadNextFileIfNotSufficientTicks) || numNewRows > 100)
         ) {
             break
         }
@@ -217,7 +219,7 @@ readAndAppendNewTickData <- function(
         startRow <- 1L
     }
     
-    return(NA)
+    return(invisible())
 }
 
 
