@@ -123,10 +123,11 @@ readDataFileChunked <- function(dataFile, startRow, endDate) {
 #' mehrere Quelldateien hinweg
 #' 
 #' Das gewählte Intervall darf dabei einen ganzen Monat (28-31 Tage) 
-#' nicht überschreiten.
+#' nicht überschreiten. Daten bis zwei Minuten vor `currentTime` werden
+#' entfernt, um Speicher freizugeben.
 #' 
 #' @param dataset Eine Instanz der Klasse `Dataset`
-#' @param baseMonth Datum des zuletzt gelesenen Datenpunktes
+#' @param currentTime Zeitpunkt des aktuellen (zuletzt verwendeten) Ticks
 #' @param endDate Zieldatum, bis zu dem mindestens gelesen werden soll
 #' @param loadNextFileIfNotSufficientTicks Sollen auch Daten eines weiteren Monats
 #'   (über endDate hinaus) geladen werden, wenn weniger als 100 neue Ticks in der
@@ -134,7 +135,7 @@ readDataFileChunked <- function(dataFile, startRow, endDate) {
 #' @return NULL (Verändert den angegebenen Datensatz per Referenz.)
 readAndAppendNewTickData <- function(
     dataset, 
-    baseMonth,
+    currentTime,
     endDate, 
     loadNextFileIfNotSufficientTicks = TRUE
 ) {
@@ -142,7 +143,7 @@ readAndAppendNewTickData <- function(
     # Parameter validieren
     stopifnot(
         inherits(dataset, "Dataset"),
-        is.POSIXct(baseMonth),
+        is.POSIXct(currentTime),
         is.POSIXct(endDate)
     )
     
@@ -152,15 +153,15 @@ readAndAppendNewTickData <- function(
         # Speicherbereinigung: Bereits verarbeitete Daten löschen
         # Einen Zeitraum von wenigen Minuten vor dem aktuell 
         # betrachteten Tick beibehalten.
-        # printf("Bereinige Daten vor %s.\n", format(baseMonth - 2 * 60))
-        dataset$data <- dataset$data[Time >= (baseMonth - 2 * 60),]
+        # printf("Bereinige Daten vor %s.\n", format(currentTime - 2 * 60))
+        dataset$data <- dataset$data[Time >= (currentTime - 2 * 60),]
         
         # Lese Daten ab dem letzten Tick ein
-        baseMonth <- last(dataset$data$Time)
+        currentTime <- last(dataset$data$Time)
         startRow <- last(dataset$data$RowNum)
         
         # Bereits Daten bis über das angegebene Enddatum hinaus eingelesen
-        if (baseMonth > endDate) {
+        if (currentTime > endDate) {
             return(invisible())
         }
         
@@ -176,7 +177,7 @@ readAndAppendNewTickData <- function(
         # Beginne immer bei aktuellem Monat
         dataFile <- sprintf(
             "%s-%d-%02d.fst",
-            dataset$PathPrefix, year(baseMonth), month(baseMonth)
+            dataset$PathPrefix, year(currentTime), month(currentTime)
         )
         if (!file.exists(dataFile)) {
             stop(sprintf("Datei nicht gefunden: %s", dataFile))
@@ -208,14 +209,14 @@ readAndAppendNewTickData <- function(
         # Zieldatum erreicht und mehr als 100 Datensätze geladen:
         # Keine weiteren Daten laden.
         if (
-            as.integer(format(endDate, "%Y%m")) <= as.integer(format(baseMonth, "%Y%m")) &&
+            as.integer(format(endDate, "%Y%m")) <= as.integer(format(currentTime, "%Y%m")) &&
             (isFALSE(loadNextFileIfNotSufficientTicks) || numNewRows > 100)
         ) {
             break
         }
         
         # Lese zusätzlich nächsten Monat
-        baseMonth <- addOneMonth(baseMonth)
+        currentTime <- addOneMonth(currentTime)
         startRow <- 1L
     }
     
