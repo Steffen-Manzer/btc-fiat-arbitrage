@@ -1,6 +1,7 @@
 # Bibliotheken und Hilfsfunktionen laden
 source("Klassen/Dataset.r")
 source("Funktionen/AddOneMonth.r")
+source("Funktionen/AppendToDataTable.r")
 source("Funktionen/NumberFormat.r")
 source("Funktionen/printf.r")
 library("fst")
@@ -291,7 +292,8 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
 #' 
 #' @param dataset_a Eine Instanz der Klasse `Dataset`
 #' @param dataset_b Eine Instanz der Klasse `Dataset`
-#' @return `data.table` Eine Tabelle der Tickdaten beider Börsen
+#' @return `data.table` Eine Tabelle der Tickdaten beider Börsen,
+#'   bestehend aus den Spalten `Time`, `Price`, `RowNum` und `Exchange`.
 mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
     
     # Merge, Sort und Filter (nicht: mergesort-Algorithmus)
@@ -325,12 +327,14 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
         rollapply(
             dataset_ab$Exchange,
             width = 3,
-            # Prüfe, ob Börse im vorherigen, aktuellen und nächsten Tick identisch ist
+            # Tripel, wenn Börse im vorherigen, aktuellen und nächsten Tick identisch ist
             FUN = function(exchg) (exchg[1] == exchg[2] && exchg[2] == exchg[3])
         ),
         T
     )
     
+    # `data.table` kann leider noch kein subsetting per Referenz, sodass eine
+    # Kopie zurückgegeben wird.
     return(dataset_ab[!triplets,])
 }
 
@@ -350,7 +354,9 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
     # Bis einschließlich vergangenen Monat vergleichen
     endDate <- as.POSIXct(format(Sys.time(), "%Y-%m-01 00:00:00")) - 1
     
-    # Datenobjekte initialisieren
+    # Datenobjekte initialisieren, die später per Referenz übergeben
+    # werden können. So kann direkt an den Daten gearbeitet werden,
+    # ohne dass immer eine Kopie angelegt werden muss.
     dataset_a <- new("Dataset",
         Exchange = exchange_a,
         CurrencyPair = currencyPair,
@@ -367,15 +373,12 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
         data = data.table()
     )
     
-    # -- Diese Schritte müssen regelmäßig wiederholt werden, um neue Daten zu laden --
+    # -- Diese Schritte werden regelmäßig wiederholt, um sequentiell weitere Daten zu laden --
     
     # Daten für die ersten 60 Minuten beider Börsen laden
     loadUntil <- startDate + 60 * 60
-    # printf("Lade von %s bis mindestens %s\n", startDate, loadUntil)
-    
     readAndAppendNewTickData(dataset_a, startDate, loadUntil)
     readAndAppendNewTickData(dataset_b, startDate, loadUntil)
-    
     # printf("A: %d Tickdaten von %s bis %s\n", 
     #             nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
     # printf("B: %d Tickdaten von %s bis %s\n", 
@@ -383,7 +386,6 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
     
     # Begrenze auf gemeinsamen Zeitraum
     filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)
-    
     # printf("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
     #             nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
     # printf("B (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n", 
@@ -394,22 +396,24 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
     # printf("A+B: %d Tickdaten von %s bis %s\n", 
     #             nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time))
     
-    # Position merken
+    # Aktuelle Position merken
     currentRow <- 0L
     
-    # Rechtzeitig neue Daten laden
+    # Neue Daten erst unmittelbar vor Ende des Datensatzes nachladen,
+    # aber etwas Puffer für `mergeSortAndFilterTwoDatasets` lassen.
     numRows <- nrow(dataset_ab)
     loadNewDataAtRowNumber <- numRows - 5L
     
-    # Ende des Datensatzes erreicht
+    # Flag: Ende der verfügbaren Daten erreicht, keine weiteren Dateien mehr lesen
     endAfterCurrentDataset <- FALSE
     
     # -- Ende nötige Wiederholung --
     
     # Ergebnisvektor
     result <- data.table()
+    result_index <- data.table() # TODO Nach Tests nur noch diesen Wert behalten
     
-    # Dauer aufzeichnen
+    # Fortschritt aufzeichnen und ausgeben
     processedDatasets <- 0L
     now <- proc.time()["elapsed"]
     
@@ -423,7 +427,7 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
         
         # Laufzeit und aktuellen Stand periodisch ausgeben
         processedDatasets <- processedDatasets + 1L
-        if (processedDatasets %% 5e4 == 0) {
+        if (processedDatasets %% 10000 == 0) {
             runtime <- proc.time()["elapsed"] - now
             printf("\r%s Ticks verarbeitet\tAktuell: %s\t%s Sekunden\t%s Ticks/s ",
                    numberFormat(processedDatasets),
@@ -508,7 +512,7 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
                 Price == currentTick$Price &
                 Exchange == currentTick$Exchange &
                 RowNum == currentTick$RowNum,
-                which = TRUE
+                which=TRUE
             ]
             
             # Aktuelle Position in neuem Betrachtungsfenster nicht gefunden!
@@ -540,28 +544,43 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
         if (timeDifference > 5) {
            next
         }
-        # Vergleiche
-        result <- rbindlist(list(result, data.table(
-            Time_A = tick_a$Time,
-            Time_B = tick_b$Time,
-            Price_A = tick_a$Price,
-            Price_B = tick_b$Price,
-            Exchange_A = tick_a$Exchange,
-            Exchange_B = tick_b$Exchange
-        )), use.names=TRUE)
+        
+        # Vergleich bzw. Index speichern
+        # result <- appendDT(result, list(
+        #     Time_A = as.double(tick_a$Time), # TODO Temporär: Probleme mit appendDT vermeiden
+        #     Time_B = as.double(tick_b$Time), # Dito
+        #     Price_A = tick_a$Price,
+        #     Price_B = tick_b$Price,
+        #     Exchange_A = tick_a$Exchange,
+        #     Exchange_B = tick_b$Exchange
+        # ))
+        
+        result_index <- appendDT(result_index, list(
+            Time = as.double(tick_b$Time), # TODO Temporär: Probleme mit appendDT vermeiden
+            Diff = abs(tick_a$Price - tick_b$Price),
+            MaxPrice = max(tick_a$Price, tick_b$Price)
+            #DiffIndex = abs(tick_a$Price - tick_b$Price) / max(tick_a$Price, tick_b$Price)
+        ))
         
         # TODO
-        # - In zweier-Sets Preise vergleichen
-        # - Differenz inkl. Zeit und ggf. Preisniveau notieren
-        # -> rollapply bietet sich grundsätzlich wieder an? Aber wie/wann neue Daten laden?
-        # -> Berechnung eines Arbitrageindex wie in der Literatur?
+        # Berechnung eines Arbitrageindex wie in der Literatur?
+        # Begrenze auf maximale Differenz innerhalb einer Sekunde/fünf Sekunden/einer Minute?
     }
     
-    return(result)
+    # Ergebnis um zwischenzeitlich eingefügte NAs bereinigen
+    result_index <- cleanupDT(result_index)
+    
+    # TODO Temporär: double wieder zurück zu POSIXct
+    result_index[,Time:=as.POSIXct(Time,origin="1970-01-01")]
+    
+    # Index berechnen
+    result_index[,Index:=Diff/MaxPrice]
+    
+    return(result_index)
 }
 
 #compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-10-14 00:00:00"))
-result <- compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2021-09-01 00:00:00"))
+result <- compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2021-11-01 00:00:00"))
 
 # Alle Währungspaare und alle Börsen untersuchen
 # for (index in 1:nrow(currencyPairs)) {
