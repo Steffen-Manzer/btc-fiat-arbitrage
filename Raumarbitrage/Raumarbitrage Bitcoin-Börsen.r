@@ -71,7 +71,7 @@ numDatasetsPerRead <- 10000L
 #' @param startRow Zeilennummer, ab der gelesen werden soll
 #' @param endDate Zieldatum, bis zu dem mindestens gelesen werden soll
 #' @return `data.table` mit den gelesenen Daten
-readDataFile <- function(dataFile, startRow, endDate) {
+readDataFileChunked <- function(dataFile, startRow, endDate) {
     
     # Umgebungsbedingungen prüfen
     stopifnot(
@@ -79,11 +79,11 @@ readDataFile <- function(dataFile, startRow, endDate) {
         file.exists(dataFile)
     )
     
-    result <- data.table()
-    meta <- metadata_fst(dataFile)
+    # Metadaten der Datei lesen
+    numRowsInFile <- metadata_fst(dataFile)$nrOfRows
     
     # Keine weiteren Daten in dieser Datei: Abbruch
-    if (startRow == meta$nrOfRows) {
+    if (startRow == numRowsInFile) {
         return(result)
     }
     
@@ -91,25 +91,23 @@ readDataFile <- function(dataFile, startRow, endDate) {
     while (TRUE) {
         
         # Limit bestimmen: `numDatasetsPerRead` Datensätze oder bis zum Ende der Datei
-        endRow <- min(meta$nrOfRows, startRow + numDatasetsPerRead)
-        
-        # Dateiende bereits erreicht?
-        if (startRow > endRow) {
-            stop(sprintf("readDataFile(%s): startRow (%d) > endRow (%d)!\n",
-                         basename(dataFile), startRow, endRow))
-        }
+        endRow <- min(numRowsInFile, startRow + numDatasetsPerRead - 1L)
         
         # Datei einlesen
         # printf("Lese %s von Zeile %d bis %d: ", basename(dataFile), startRow, endRow)
-        # TODO Auf off-by-one-Fehler prüfen!
-        newlyReadData <- read_fst(dataFile, c("Time", "Price"), startRow, endRow, as.data.table=TRUE)
-        newlyReadData[, RowNum:=startRow:endRow]
+        newData <- read_fst(dataFile, c("Time", "Price"), startRow, endRow, as.data.table=TRUE)
+        newData[, RowNum:=startRow:endRow]
         
-        result <- rbindlist(list(result, newlyReadData), use.names=TRUE)
-        # printf("%d weitere Datensätze, %d insgesamt.\n", nrow(newlyReadData), nrow(result))
+        # Daten anhängen
+        if (exists("result")) {
+            result <- rbindlist(list(result, newData), use.names=TRUE)
+        } else {
+            result <- newData
+        }
+        # printf("%d weitere Datensätze, %d insgesamt.\n", nrow(newData), nrow(result))
         
-        # Letzter Datensatz liegt nach endDate oder Datei ist abgeschlossen
-        if (last(result$Time) > endDate || endRow == meta$nrOfRows) {
+        # endDate wurde erreicht oder Datei ist abgeschlossen
+        if (last(result$Time) > endDate || endRow == numRowsInFile) {
             break
         }
         
@@ -183,7 +181,7 @@ readAndAppendNewTickData <- function(
         }
         
         # printf("Lese %s ab Zeile %s bis ", basename(dataFile), startRow |> numberFormat())
-        newData <- readDataFile(dataFile, startRow, endDate)
+        newData <- readDataFileChunked(dataFile, startRow, endDate)
         numNewRows <- numNewRows + nrow(newData)
         
         # Letzte Zeile nur für Debug-Zwecke speichern
