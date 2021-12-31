@@ -47,7 +47,7 @@ readDataFileChunked <- function(dataFile, startRow, endDate, numDatasetsPerRead 
     
     # Umgebungsbedingungen prüfen
     stopifnot(
-        is.integer(numDatasetPerRead), length(numDatasetsPerRead) == 1L,
+        is.integer(numDatasetsPerRead), length(numDatasetsPerRead) == 1L,
         file.exists(dataFile)
     )
     
@@ -380,7 +380,7 @@ compareTwoExchanges <- function(
     
     # Bis einschließlich vergangenen Monat vergleichen
     endDate <- as.POSIXct(format(Sys.time(), "%Y-%m-01 00:00:00")) - 1
-    stopifnot(startDate > endDate)
+    stopifnot(startDate < endDate)
     
     # Datenobjekte initialisieren, die später per Referenz übergeben
     # werden können. So kann direkt an den Daten gearbeitet werden,
@@ -446,7 +446,8 @@ compareTwoExchanges <- function(
     now <- proc.time()["elapsed"]
     
     # Hauptschleife: Paarweise vergleichen
-    cat("Beginne Auswertung\n")
+    printf("Beginne Auswertung für %s der Börsen %s und %s ab %s.\n", 
+           toupper(currencyPair), exchange_a, exchange_b, format(startDate, "%d.%m.%Y %H:%M:%S"))
     while (TRUE) {
         
         # Zähler erhöhen
@@ -457,6 +458,7 @@ compareTwoExchanges <- function(
         processedDatasets <- processedDatasets + 1L
         if (processedDatasets %% 10000 == 0) {
             runtime <- proc.time()["elapsed"] - now
+            cat("\r", rep(" ", 150), sep="") # Zeile leeren. Bug in manchen Terminals: \t füllt nicht
             printf("\r%s verarbeitet\t%s im Ergebnisvektor\tAktuell: %s\t%s Sekunden\t%s Ticks/s        ",
                    numberFormat(processedDatasets),
                    numberFormat(nrowDT(result)),
