@@ -338,6 +338,44 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
 }
 
 
+#' Teilergebnis speichern, um Arbeitsspeicher wieder freizugeben
+#' 
+#' @param result Eine data.table mit den Spalten `Time`, `Diff` und `MaxPrice`
+#' @param index Nummer dieses Teilergebnisses
+#' @param exchange_a Name der ersten Börse
+#' @param exchange_b Name der zweiten Börse
+#' @param currencyPair Name des Kurspaares
+saveInterimResult <- function(result, index, exchange_a, exchange_b, currencyPair) {
+    
+    # Parameter validieren
+    stopifnot(
+        is.data.table(result), nrow(result) >= 1L,
+        is.integer(index), length(index) == 1L,
+        is.character(exchange_a), length(exchange_a) == 1L,
+        is.character(exchange_b), length(exchange_b) == 1L,
+        is.character(currencyPair), length(currencyPair) == 1L
+    )
+    
+    # Zieldatei bestimmen
+    outFile <- sprintf("Cache/Raumarbitrage/%s-%s-%s-%d.fst",
+                       tolower(currencyPair), exchange_a, exchange_b, index)
+    stopifnot(!file.exists(outFile))
+    
+    # Ergebnis um zwischenzeitlich eingefügte NAs bereinigen
+    result <- cleanupDT(result)
+    
+    # TODO Temporär: double wieder zurück zu POSIXct
+    result[,Time:=as.POSIXct(Time,origin="1970-01-01")]
+    
+    # Index berechnen
+    result[,Index:=Diff/MaxPrice]
+    
+    # Ergebnis speichern
+    write_fst(result, outFile, compress=100)
+    
+}
+
+
 #' Preise zweier Börsen vergleichen
 #' 
 #' TODO Dokumentation ggf. korrigieren
@@ -410,7 +448,7 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
     
     # Ergebnisvektor
     result <- data.table()
-    result_index <- data.table() # TODO Nach Tests nur noch diesen Wert behalten
+    result_set_index <- 1L
     
     # Fortschritt aufzeichnen und ausgeben
     processedDatasets <- 0L
@@ -544,38 +582,33 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
            next
         }
         
-        # Vergleich bzw. Index speichern
-        # result <- appendDT(result, list(
-        #     Time_A = as.double(tick_a$Time), # TODO Temporär: Probleme mit appendDT vermeiden
-        #     Time_B = as.double(tick_b$Time), # Dito
-        #     Price_A = tick_a$Price,
-        #     Price_B = tick_b$Price,
-        #     Exchange_A = tick_a$Exchange,
-        #     Exchange_B = tick_b$Exchange
-        # ))
-        
-        result_index <- appendDT(result_index, list(
+        # Set in Ergebnisvektor speichern
+        result <- appendDT(result, list(
             Time = as.double(tick_b$Time), # TODO Temporär: Probleme mit appendDT vermeiden
             Diff = abs(tick_a$Price - tick_b$Price),
             MaxPrice = max(tick_a$Price, tick_b$Price)
-            #DiffIndex = abs(tick_a$Price - tick_b$Price) / max(tick_a$Price, tick_b$Price)
         ))
         
         # TODO
         # Berechnung eines Arbitrageindex wie in der Literatur?
         # Begrenze auf maximale Differenz innerhalb einer Sekunde/fünf Sekunden/einer Minute?
+        
+        # Alle 1 Mio. Datenpunkte: Ergebnis speichern
+        if (nrowDT(result) > 1e6) {
+            
+            # Ergebnis speichern
+            saveInterimResult(result, result_set_index, exchange_a, exchange_b, currencyPair)
+            result_set_index <- result_set_index + 1L
+            
+            # Ergebnisspeicher leeren
+            result <- data.table()
+        }
     }
     
-    # Ergebnis um zwischenzeitlich eingefügte NAs bereinigen
-    result_index <- cleanupDT(result_index)
+    # Rest speichern
+    saveInterimResult(result, result_set_index, exchange_a, exchange_b, currencyPair)
     
-    # TODO Temporär: double wieder zurück zu POSIXct
-    result_index[,Time:=as.POSIXct(Time,origin="1970-01-01")]
-    
-    # Index berechnen
-    result_index[,Index:=Diff/MaxPrice]
-    
-    return(result_index)
+    return(NULL)
 }
 
 #compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-10-14 00:00:00"))
