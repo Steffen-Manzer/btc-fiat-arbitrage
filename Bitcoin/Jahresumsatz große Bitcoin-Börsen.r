@@ -72,7 +72,7 @@ volumeSet <- data.table(
     Share=double()
 )
 
-for (i in 1:nrow(srcsets)) {
+for (i in seq_len(nrow(srcsets))) {
     srcset <- srcsets[i]
     cat("Reading", srcset$Exchange, srcset$Pair, "\n")
     
@@ -124,7 +124,7 @@ for (pair in unique(volumeSet$Pair)) {
 }
 
 # Berechne prozentuale Anteile
-for (i in 1:nrow(volumeSet)) {
+for (i in seq_len(nrow(volumeSet))) {
     set <- volumeSet[i]
     totalVolumeThisExchange <- sum(volumeSet[volumeSet$Exchange == set$Exchange]$Volume)
     volumeSet[i]$Share <- round(set$Volume / totalVolumeThisExchange * 100, 1)
@@ -151,7 +151,7 @@ for (template in templateFiles) {
     
     # LaTeX-Templates aktualisieren
     latexTemplate <- read_file(templateSourceFile)
-    for (i in 1:nrow(volumeSet)) {
+    for (i in seq_len(nrow(volumeSet))) {
         set <- volumeSet[i]
         
         thisVolume <- set$VolumeTsdPretty

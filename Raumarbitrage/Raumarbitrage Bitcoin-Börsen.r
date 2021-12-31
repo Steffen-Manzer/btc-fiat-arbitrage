@@ -197,7 +197,7 @@ readAndAppendNewTickData <- function(
         }
         
         if (numNewRows > 0) {
-            # Format anpassen und neue Daten anfügen
+            # Börse hinterlegen und an bestehende Daten anfügen
             newData[, Exchange:=dataset$Exchange]
             # printf("%s (von %s): %s Datensätze.\n",
             #             lastRowNumber |> numberFormat(),
@@ -206,7 +206,7 @@ readAndAppendNewTickData <- function(
             # )
             dataset$data <- rbindlist(list(dataset$data, newData), use.names=TRUE)
         } else {
-            printf("%s: Keine neuen Datensätze.\n", lastRowNumber |> numberFormat())
+            # printf("%s: Keine neuen Datensätze.\n", lastRowNumber |> numberFormat())
         }
         
         # Zieldatum erreicht und mehr als 100 Datensätze geladen:
@@ -333,8 +333,7 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
         T
     )
     
-    # `data.table` kann leider noch kein subsetting per Referenz, sodass eine
-    # Kopie zurückgegeben wird.
+    # Datensatz ohne gefundene Tripel zurückgeben
     return(dataset_ab[!triplets,])
 }
 
@@ -583,7 +582,7 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
 result <- compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2021-11-01 00:00:00"))
 
 # Alle Währungspaare und alle Börsen untersuchen
-# for (index in 1:nrow(currencyPairs)) {
+# for (index in seq_len(nrow(currencyPairs))) {
 #     pair <- currencyPairs$CurrencyPair[index]
 #     startDate <- as.POSIXct(paste0(currencyPairs$StartMonth[index], "-01"))
 #     
