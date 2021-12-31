@@ -20,12 +20,14 @@ Die Dateien ohne Monatsangabe enthalten alle Daten bis zur Umstellung auf monats
 - Abfrage folgender URLs:
     - https://www.bitstamp.net/api/v2/transactions/btcusd/?time=day
     - https://www.bitstamp.net/api/v2/transactions/btceur/?time=day
-- Aktualisierung erfolgt alle 7 Stunden
+    - https://www.bitstamp.net/api/v2/transactions/btcgbp/?time=day
+- Aktualisierung erfolgt alle 7 Stunden.
 
 ## Enthaltener Zeitraum
 
-- BTCUSD enthält Daten von 01.09.2019, 00:00:00 (UTC) bis heute
-- BTCEUR enthält Daten von 01.09.2019, 00:00:00 (UTC) bis heute
+- BTCUSD enthält Daten von 01.09.2019, 00:00:00 (UTC) bis heute.
+- BTCEUR enthält Daten von 01.09.2019, 00:00:00 (UTC) bis heute.
+- BTCGBP enthält Daten von 14.12.2021, 14:48:35 (UTC) bis heute.
 
 ## Dateistruktur
 - Vorgangs-ID

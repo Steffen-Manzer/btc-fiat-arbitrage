@@ -1,4 +1,25 @@
-# Bibliotheken und Hilfsfunktionen laden
+# Finde Kurspaare zur Analyse von Raumarbitrage.
+# 
+# Grundablauf: Immer paarweiser Vergleich zweier Börsen mit "Moving Window",
+# ähnlich zum Verfahren des `mergesort`-Algorithmus.
+#
+# - Erste x Daten beider Börsen laden = "Betrachtungsfenster" initialisieren:
+#   [t = 0, ..., t = 1h], mindestens jedoch je 10.000 Datenpunkte.
+# - Filtere beide Datensätze auf gemeinsamen Zeitraum.
+# - Liste beider Kurse in eine einzelne Liste vereinen, nach Datum sortieren
+#   und filtern (siehe unten).
+# - Solange Daten für beide Börsen vorhanden sind:
+#   - Nächsten Datensatz vergleichen und Ergebnis speichern
+#   - Prüfen, ob noch genug Daten beider Börsen für Vergleich vorhanden sind, sonst:
+#       - neues Datenfenster laden: [t = 1h, ..., t = 2h]
+#       - Speicher freigeben: Daten des ersten Betrachtungsfensters entfernen (0...1h)
+#       - Letzte paar Datenpunkte des vorherigen Betrachtungsfensters behalten, um
+#         korrekt filtern/vergleichen zu können
+# - Alle fünf Millionen Datenpunkte: Teilergebnisse in einer eigenen Datei speichern,
+#   um Arbeitsspeicher freizugeben.
+
+
+# Bibliotheken und externe Hilfsfunktionen laden ==============================
 source("Klassen/Dataset.r")
 source("Funktionen/AddOneMonth.r")
 source("Funktionen/AppendToDataTable.r")
@@ -10,60 +31,8 @@ library("dplyr") # filter
 library("lubridate") # floor_date
 library("zoo") # rollapply für Filterfunktion
 
-# Datenbeginn aller Börsen:
-# - Bitfinex:
-#   BTCUSD enthält Daten von 14.01.2013, 16:47:23 (UTC) bis heute
-#   BTCGBP enthält Daten von 29.03.2018, 14:40:57 (UTC) bis heute
-#   BTCJPY enthält Daten von 29.03.2018, 15:55:31 (UTC) bis heute
-#   BTCEUR enthält Daten von 01.09.2019, 00:00:00 (UTC) bis heute
-# - Bitstamp:
-#   BTCUSD enthält Daten von 13.09.2011, 13:53:36 (UTC) bis heute
-#   BTCEUR enthält Daten von 05.12.2017, 11:43:49 (UTC) bis heute
-# - Coinbase Pro:
-#   BTCUSD enthält Daten von 01.12.2014, 05:33:56.761199 (UTC) bis heute.
-#   BTCEUR enthält Daten von 23.04.2015, 01:42:34.182104 (UTC) bis heute.
-#   BTCGBP enthält Daten von 21.04.2015, 22:22:41.294060 (UTC) bis heute.
-# - Kraken:
-#   BTCUSD enthält Daten von 06.10.2013, 21:34:15 (UTC) bis heute
-#   BTCEUR enthält Daten von 10.09.2013, 23:47:11 (UTC) bis heute
-#   BTCGBP enthält Daten von 06.11.2014, 16:13:43 (UTC) bis heute
-#   BTCJPY enthält Daten von 05.11.2014, 22:21:30 (UTC) bis heute
-#   BTCCAD enthält Daten von 29.06.2015, 03:27:41 (UTC) bis heute
-#   BTCCHF enthält Daten von 06.12.2019, 16:33:17 (UTC) bis heute
-# 
-# Zeitpunkt für die ersten gemeinsamen Datensätze:
-#  BTCUSD: 14.01.2013, 16:47:23 (Bitfinex + Bitstamp)
-#  BTCEUR: 23.04.2015, 01:42:34.182104 (Coinbase Pro + Kraken)
-#  BTCGBP: 21.04.2015, 22:22:41.294060 (Coinbase Pro + Kraken)
-#  BTCJPY: 29.03.2018, 15:55:31 (Bitfinex + Kraken)
-#  BTCCAD: -
-#  BTCCHF: -
 
-# Konfiguration
-currencyPairs <- data.table(
-    CurrencyPair = c("BTCUSD",  "BTCEUR",  "BTCGBP",  "BTCJPY"),
-    StartMonth   = c("2013-01", "2015-04", "2015-04", "2018-03")
-)
-exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
-
-# Anzahl der Datensätze, die eingelesen werden, bevor geprüft wird,
-# ob die geforderte Anzahl Daten gelesen wurde
-numDatasetsPerRead <- 10000L
-
-# Ende Konfiguration
-
-# Grundablauf: Immer paarweiser Vergleich zweier Börsen mit "Moving Window", ähnlich zu mergesort
-# - Erste x Daten beider Börsen laden = "Betrachtungsfenster" initialisieren:
-#   [t = 0, ..., t = 1h] in Gruppen von je 10.000 Datenpunkten
-# - Beschränke Datensatz auf gemeinsame Daten
-# - Solange Daten für beide Börsen vorhanden sind:
-#   - Nächsten Datensatz vergleichen und Ergebnis speichern
-#   - Prüfen, ob noch genug Daten beider Börsen für Vergleich vorhanden sind, sonst:
-#       - neues Datenfenster laden: [t = 1h, ..., t = 2h]
-#       - Speicher freigeben: Daten des ersten Betrachtungsfensters entfernen (0...1h)
-#       - Letzte paar Datenpunkte des vorherigen Betrachtungsfensters behalten, um
-#         korrekt filtern/vergleichen zu können
-
+# Hilfsfunktionen =============================================================
 
 #' Liest eine einzelne angegebene .fst-Datei bis zum Dateiende oder 
 #' bis endDate, je nachdem was früher eintritt.
@@ -71,12 +40,14 @@ numDatasetsPerRead <- 10000L
 #' @param dataFile Absoluter Pfad zu einer .fst-Datei
 #' @param startRow Zeilennummer, ab der gelesen werden soll
 #' @param endDate Zieldatum, bis zu dem mindestens gelesen werden soll
+#' @param numDatasetsPerRead Anzahl der Datensätze, die eingelesen werden,
+#'   bevor geprüft wird, ob die geforderte Anzahl Daten gelesen wurde
 #' @return `data.table` mit den gelesenen Daten
-readDataFileChunked <- function(dataFile, startRow, endDate) {
+readDataFileChunked <- function(dataFile, startRow, endDate, numDatasetsPerRead = 10000L) {
     
     # Umgebungsbedingungen prüfen
     stopifnot(
-        exists("numDatasetsPerRead"),
+        is.integer(numDatasetPerRead), length(numDatasetsPerRead) == 1L,
         file.exists(dataFile)
     )
     
@@ -376,20 +347,40 @@ saveInterimResult <- function(result, index, exchange_a, exchange_b, currencyPai
 }
 
 
+# Haupt-Auswertungsfunktion ===================================================
+
 #' Preise zweier Börsen vergleichen
-#' 
-#' TODO Dokumentation ggf. korrigieren
 #' 
 #' @param exchange_a Name der ersten Börse
 #' @param exchange_b Name der zweiten Börse
 #' @param currencyPair Kurspaar (z.B. EURUSD)
 #' @param startDate Beginne Vergleich ab diesem Datum
 #'                  (= Zeitpunkt des ersten gemeinsamen Datensatzes)
-#' @return `data.table` Eine Tabelle mit gemeinsamen Tickdaten innerhalb einer Zeitspanne von 5s
-compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate) {
+#' @param comparisonThreshold Zeitliche Differenz zweier Ticks in Sekunden,
+#'                            ab der das Tick-Paar verworfen wird.
+#' @return `NULL` Ergebnisse werden in mehreren Dateien (i = 1...n) unter
+#'   Cache/Raumarbitrage/`currencyPair`-`exchange_a`-`exchange_b`-`i`.fst
+#'   gespeichert (siehe `saveInterimResult`).
+compareTwoExchanges <- function(
+    exchange_a, 
+    exchange_b, 
+    currencyPair, 
+    startDate, 
+    comparisonThreshold = 5L
+) {
+    
+    # Parameter validieren
+    stopifnot(
+        is.character(exchange_a), length(exchange_a) == 1L,
+        is.character(exchange_b), length(exchange_b) == 1L,
+        is.character(currencyPair), length(currencyPair) == 1L,
+        is.POSIXct(startDate), length(startDate) == 1L,
+        is.integer(comparisonThreshold), length(comparisonThreshold) == 1L
+    )
     
     # Bis einschließlich vergangenen Monat vergleichen
     endDate <- as.POSIXct(format(Sys.time(), "%Y-%m-01 00:00:00")) - 1
+    stopifnot(startDate > endDate)
     
     # Datenobjekte initialisieren, die später per Referenz übergeben
     # werden können. So kann direkt an den Daten gearbeitet werden,
@@ -466,20 +457,27 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
         processedDatasets <- processedDatasets + 1L
         if (processedDatasets %% 10000 == 0) {
             runtime <- proc.time()["elapsed"] - now
-            printf("\r%s Ticks verarbeitet\tAktuell: %s\t%s Sekunden\t%s Ticks/s ",
+            printf("\r%s verarbeitet\t%s im Ergebnisvektor\tAktuell: %s\t%s Sekunden\t%s Ticks/s        ",
                    numberFormat(processedDatasets),
+                   numberFormat(nrowDT(result)),
                    format(dataset_ab[currentRow,Time], "%d.%m.%Y %H:%M:%S"),
                    numberFormat(round(runtime, 0)),
                    numberFormat(round(processedDatasets/runtime, 0))
             )
         }
         
+        # Nur für Benchmark-/Vergleichszwecke: Abbruch nach 500.000 Ticks
+        # if (processedDatasets >= 500000) {
+        #     printf("\nBenchmark beendet.")
+        #     break
+        # }
+        
         # Ende des Datensatzes erreicht
         if (currentRow == numRows) {
-            printf("Zeile %d erreicht, Ende.\n", currentRow)
             if (!endAfterCurrentDataset) {
                 stop("Keine neuen Daten geladen, obwohl Ende des Datensatzes erreicht wurde!")
             }
+            printf("\nZeile %d erreicht, Ende.\n", currentRow)
             break
         }
         
@@ -576,25 +574,22 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
         }
         
         # Zeitdifferenz zu groß, überspringe.
-        # TODO Variabel statt hartkodiert
         timeDifference <- as.double(tick_a$Time - tick_b$Time, units="secs")
-        if (timeDifference > 5) {
+        if (timeDifference > comparisonThreshold) {
            next
         }
         
         # Set in Ergebnisvektor speichern
         result <- appendDT(result, list(
-            Time = as.double(tick_b$Time), # TODO Temporär: Probleme mit appendDT vermeiden
+            Time = as.double(tick_b$Time), # TODO Temporär: Probleme mit appendDT (NA+POSIXct) umgehen
             Diff = abs(tick_a$Price - tick_b$Price),
             MaxPrice = max(tick_a$Price, tick_b$Price)
         ))
         
-        # TODO
-        # Berechnung eines Arbitrageindex wie in der Literatur?
-        # Begrenze auf maximale Differenz innerhalb einer Sekunde/fünf Sekunden/einer Minute?
-        
-        # Alle 1 Mio. Datenpunkte: Ergebnis speichern
-        if (nrowDT(result) > 1e6) {
+        # Alle 5 Mio. Datenpunkte: Ergebnis speichern
+        if (nrowDT(result) > 5e6) {
+            
+            printf("\n5.000.000 Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...\n")
             
             # Ergebnis speichern
             saveInterimResult(result, result_set_index, exchange_a, exchange_b, currencyPair)
@@ -611,114 +606,62 @@ compareTwoExchanges <- function(exchange_a, exchange_b, currencyPair, startDate)
     return(NULL)
 }
 
-#compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-10-14 00:00:00"))
-result <- compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2021-11-01 00:00:00"))
+# Nur Testlauf
+#compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2021-09-01 00:00:00"))
 
-# Alle Währungspaare und alle Börsen untersuchen
-# for (index in seq_len(nrow(currencyPairs))) {
-#     pair <- currencyPairs$CurrencyPair[index]
-#     startDate <- as.POSIXct(paste0(currencyPairs$StartMonth[index], "-01"))
-#     
-#     # Daten bis vor einen Monat verarbeiten
-#     endDate <- floor_date(floor_date(Sys.Date(), unit = "months") - 1, unit = "months")
-#     
-#     printf("======== Untersuche %s ab %s ========\n", pair, format(startDate, "%Y-%m"))
-#     
-#     # TODO Startdatum für jede Börse und jedes Währungspaar separat hinterlegen, s.o.
-#     # -> for-Schleife überhaupt nötig?
-#     # Dann jeweils compareTwoExchanges("a", "b", currencyPair, startDate)
-#     # === ALT ===
-#     
-#     # Jedes Börsenpaar vergleichen
-#     # Bitfinex - Bitstamp
-#     # Bitfinex - Coinbase Pro
-#     # Bitfinex - Kraken
-#     if (length(bitfinex) > 1 && !is.na(bitfinex)) {
-#         if (length(bitstamp) > 1 && !is.na(bitstamp)) {
-#             cat("Vergleiche Bitfinex - Bitstamp\n")
-#             matchedPriceDifferences <- rbind(
-#                 matchedPriceDifferences, 
-#                 compareTwoExchanges(
-#                     dataset_a = bitfinex,
-#                     exchange_a = "Bitfinex",
-#                     dataset_b = bitstamp,
-#                     exchange_b = "Bitstamp",
-#                     threshold = 5
-#                 )
-#             )
-#         }
-#         if (length(coinbase) > 1 && !is.na(coinbase)) {
-#             cat("Vergleiche Bitfinex - Coinbase Pro\n")
-#             matchedPriceDifferences <- rbind(
-#                 matchedPriceDifferences, 
-#                 compareTwoExchanges(
-#                     dataset_a = bitfinex,
-#                     exchange_a = "Bitfinex",
-#                     dataset_b = coinbase,
-#                     exchange_b = "Coinbase Pro",
-#                     threshold = 5
-#                 )
-#             )
-#         }
-#         if (length(kraken) > 1 && !is.na(kraken)) {
-#             cat("Vergleiche Bitfinex - Kraken\n")
-#             matchedPriceDifferences <- rbind(
-#                 matchedPriceDifferences, 
-#                 compareTwoExchanges(
-#                     dataset_a = bitfinex,
-#                     exchange_a = "Bitfinex",
-#                     dataset_b = kraken,
-#                     exchange_b = "Kraken",
-#                     threshold = 5
-#                 )
-#             )
-#         }
-#     }
-#     # Bitstamp - Coinbase Pro
-#     # Bitstamp - Kraken
-#     if (length(bitstamp) > 1 && !is.na(bitstamp)) {
-#         if (length(coinbase) > 1 && !is.na(coinbase)) {
-#             cat("Vergleiche Bitstamp - Coinbase Pro\n")
-#             matchedPriceDifferences <- rbind(
-#                 matchedPriceDifferences, 
-#                 compareTwoExchanges(
-#                     dataset_a = bitstamp,
-#                     exchange_a = "Bitstamp",
-#                     dataset_b = coinbase,
-#                     exchange_b = "Coinbase Pro",
-#                     threshold = 5
-#                 )
-#             )
-#         }
-#         if (length(kraken) > 1 && !is.na(kraken)) {
-#             cat("Vergleiche Bitstamp - Kraken\n")
-#             matchedPriceDifferences <- rbind(
-#                 matchedPriceDifferences, 
-#                 compareTwoExchanges(
-#                     dataset_a = bitstamp,
-#                     exchange_a = "Bitstamp",
-#                     dataset_b = kraken,
-#                     exchange_b = "Kraken",
-#                     threshold = 5
-#                 )
-#             )
-#         }
-#     }
-#     # Coinbase Pro - Kraken
-#     if (length(coinbase) > 1 && !is.na(coinbase)) {
-#         if (length(kraken) > 1 && !is.na(kraken)) {
-#             cat("Vergleiche Coinbase Pro - Kraken\n")
-#             matchedPriceDifferences <- rbind(
-#                 matchedPriceDifferences, 
-#                 compareTwoExchanges(
-#                     dataset_a = coinbase,
-#                     exchange_a = "Coinbase Pro",
-#                     dataset_b = kraken,
-#                     exchange_b = "Kraken",
-#                     threshold = 5
-#                 )
-#             )
-#         }
-#     }
-# }
+# Abarbeitung händisch parallelisieren, falls möglich.
+if (FALSE) {
+    
+    # Datenbeginn aller Börsen:
+    # - Bitfinex:
+    #   BTCUSD enthält Daten von 14.01.2013, 16:47:23 (UTC) bis heute
+    #   BTCGBP enthält Daten von 29.03.2018, 14:40:57 (UTC) bis heute
+    #   BTCJPY enthält Daten von 29.03.2018, 15:55:31 (UTC) bis heute
+    #   BTCEUR enthält Daten von 01.09.2019, 00:00:00 (UTC) bis heute
+    # - Bitstamp:
+    #   BTCUSD enthält Daten von 13.09.2011, 13:53:36 (UTC) bis heute
+    #   BTCEUR enthält Daten von 05.12.2017, 11:43:49 (UTC) bis heute
+    #   BTCGBP enthält Daten von 14.12.2021, 14:48:35 (UTC) bis heute
+    # - Coinbase Pro:
+    #   BTCUSD enthält Daten von 01.12.2014, 05:33:56.761199 (UTC) bis heute.
+    #   BTCEUR enthält Daten von 23.04.2015, 01:42:34.182104 (UTC) bis heute.
+    #   BTCGBP enthält Daten von 21.04.2015, 22:22:41.294060 (UTC) bis heute.
+    # - Kraken:
+    #   BTCUSD enthält Daten von 06.10.2013, 21:34:15 (UTC) bis heute
+    #   BTCEUR enthält Daten von 10.09.2013, 23:47:11 (UTC) bis heute
+    #   BTCGBP enthält Daten von 06.11.2014, 16:13:43 (UTC) bis heute
+    #   BTCJPY enthält Daten von 05.11.2014, 22:21:30 (UTC) bis heute
+    #   BTCCAD enthält Daten von 29.06.2015, 03:27:41 (UTC) bis heute
+    #   BTCCHF enthält Daten von 06.12.2019, 16:33:17 (UTC) bis heute
+    
+    # BTC/USD
+    compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-01-14 16:47:23"))
+    compareTwoExchanges("bitfinex", "coinbase", "btcusd", as.POSIXct("2014-12-01 05:33:56"))
+    compareTwoExchanges("bitfinex", "kraken",   "btcusd", as.POSIXct("2013-10-06 21:34:15"))
+    compareTwoExchanges("bitstamp", "coinbase", "btcusd", as.POSIXct("2014-12-01 05:33:56"))
+    compareTwoExchanges("bitstamp", "kraken",   "btcusd", as.POSIXct("2013-10-06 21:34:15"))
+    compareTwoExchanges("coinbase", "kraken",   "btcusd", as.POSIXct("2014-12-01 05:33:56"))
+    
+    # BTC/EUR
+    compareTwoExchanges("bitfinex", "bitstamp", "btceur", as.POSIXct("2019-09-01 00:00:00"))
+    compareTwoExchanges("bitfinex", "coinbase", "btceur", as.POSIXct("2019-09-01 00:00:00"))
+    compareTwoExchanges("bitfinex", "kraken",   "btceur", as.POSIXct("2019-09-01 00:00:00"))
+    compareTwoExchanges("bitstamp", "coinbase", "btceur", as.POSIXct("2017-12-05 11:43:49"))
+    compareTwoExchanges("bitstamp", "kraken",   "btceur", as.POSIXct("2017-12-05 11:43:49"))
+    compareTwoExchanges("coinbase", "kraken",   "btceur", as.POSIXct("2015-04-23 01:42:34"))
+    
+    # BTC/GBP
+    compareTwoExchanges("bitfinex", "bitstamp", "btcgbp", as.POSIXct("2021-12-14 14:48:35"))
+    compareTwoExchanges("bitfinex", "coinbase", "btcgbp", as.POSIXct("2018-03-29 14:40:57"))
+    compareTwoExchanges("bitfinex", "kraken",   "btcgbp", as.POSIXct("2018-03-29 14:40:57"))
+    compareTwoExchanges("bitstamp", "coinbase", "btcgbp", as.POSIXct("2021-12-14 14:48:35"))
+    compareTwoExchanges("bitstamp", "kraken",   "btcgbp", as.POSIXct("2021-12-14 14:48:35"))
+    compareTwoExchanges("coinbase", "kraken",   "btcgbp", as.POSIXct("2015-04-21 22:22:41"))
+    
+    # BTC/JPY
+    compareTwoExchanges("bitfinex", "kraken",   "btcjpy", as.POSIXct("2018-03-29 15:55:31"))
+    
+    # BTC/CHF: Nur bei Kraken
+    # BTC/CAD: Nur bei Kraken
+}
 
