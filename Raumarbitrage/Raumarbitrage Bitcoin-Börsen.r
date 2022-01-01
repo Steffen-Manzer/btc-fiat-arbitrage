@@ -291,19 +291,17 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
     #        A B B A B   B A A B     B A    Reduzierter Datensatz
     
     # Tripel filtern
-    # Einschränkung: Erste und letzte Zeile werden immer entfernt,
+    # Einschränkung: Erste und letzte Zeile werden nie entfernt,
     # diese können an dieser Stelle nicht sinnvoll geprüft werden.
-    # Aus diesem Grund wird beim Neuladen von Daten immer etwas Puffer
-    # in beide Richtungen gelassen.
     triplets <- c(
-        T,
+        FALSE,
         rollapply(
             dataset_ab$Exchange,
             width = 3,
             # Tripel, wenn Börse im vorherigen, aktuellen und nächsten Tick identisch ist
             FUN = function(exchg) (exchg[1] == exchg[2] && exchg[2] == exchg[3])
         ),
-        T
+        FALSE
     )
     
     # Datensatz ohne gefundene Tripel zurückgeben
@@ -414,7 +412,8 @@ compareTwoExchanges <- function(
     printf.debug("B: %d Tickdaten von %s bis %s\n",
                 nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
     
-    # Begrenze auf gemeinsamen Zeitraum
+    # Begrenze auf gemeinsamen Zeitraum. Beschleunigt anschließendes
+    # Merge + Sort + Filter je nach Struktur der Daten deutlich.
     filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)
     printf.debug("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n",
                 nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
@@ -488,7 +487,10 @@ compareTwoExchanges <- function(
         # Neue Daten laden
         if (currentRow >= loadNewDataAtRowNumber && !endAfterCurrentDataset) {
             
-            printf.debug("\nZeile %d/%d erreicht, lade neue Daten.\n", currentRow, numRows)
+            printf.debug("\nZeile %d/%d (%s) erreicht, lade neue Daten.\n", 
+                         currentRow, 
+                         numRows,
+                         format(dataset_ab$Time[currentRow]))
             currentTick <- dataset_ab[currentRow,]
             
             # Lese weitere Daten ab letztem gemeinsamen Datenpunkt
@@ -611,7 +613,7 @@ compareTwoExchanges <- function(
 }
 
 # Nur Testlauf
-#compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2021-09-01 00:00:00"))
+#compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-01-14 00:00:00"))
 
 # Abarbeitung händisch parallelisieren, falls möglich.
 if (FALSE) {
