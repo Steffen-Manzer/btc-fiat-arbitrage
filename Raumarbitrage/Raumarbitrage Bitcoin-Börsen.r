@@ -501,6 +501,7 @@ compareTwoExchanges <- function(
             if (loadUntil > endDate) {
                 loadUntil <- endDate
                 endAfterCurrentDataset <- TRUE
+                printf.debug("Datenende erreicht, Stop nach aktuellem Monat.\n")
             }
             
             readAndAppendNewTickData(dataset_a, baseDate, loadUntil, 
@@ -521,12 +522,21 @@ compareTwoExchanges <- function(
             # TODO Hier müsste im Grunde ein dynamisches Limit greifen
             # - min. 50 gemeinsame Daten - manchmal aber auch 500 nötig
             # - nicht zu nah an der *neuen* currentRow! -> Problematisch?
+            # Außerdem: Verletzung des DRY-Prinzips
             while (
                 !endAfterCurrentDataset &&
                 (nrow(dataset_a$data) < 500 || nrow(dataset_b$data) < 500)
             ) {
-                loadUntil <- min(last(dataset_a$data$Time), last(dataset_b$data$Time)) + 60*60
                 printf.debug("Weniger als 500 gemeinsame Daten (Datenlücke!), lade weitere.\n")
+                loadUntil <- min(last(dataset_a$data$Time), last(dataset_b$data$Time)) + 60*60
+                
+                # Ende erreicht
+                if (loadUntil > endDate) {
+                    loadUntil <- endDate
+                    endAfterCurrentDataset <- TRUE
+                    printf.debug("Datenende erreicht, Stop nach aktuellem Monat.\n")
+                }
+                
                 readAndAppendNewTickData(dataset_b, baseDate, loadUntil, 
                                          loadNextFileIfNotSufficientTicks=!endAfterCurrentDataset)
                 readAndAppendNewTickData(dataset_a, baseDate, loadUntil, 
