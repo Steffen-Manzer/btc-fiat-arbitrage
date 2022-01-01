@@ -26,7 +26,7 @@ $context = stream_context_create([
 ]);
 
 echo "${bold}Suche Daten von TrueFX${normal}" . PHP_EOL;
-echo 'Zeitraum: ' . $yearFrom . '-' . $yearTo . ', Monate ' . $monthsFrom . '-' . $monthsTo . PHP_EOL;
+echo 'Zeitraum: ' . $dateFrom->format('m/Y') . ' bis ' . $dateTo->format('m/Y') . PHP_EOL;
 echo 'Ziel: ' . $outPath . PHP_EOL;
 echo 'Filter: ' . implode(', ', $forexFilter) . PHP_EOL;
 
@@ -36,6 +36,10 @@ foreach ($forexFilter as $pair) {
 }
 
 $baseHTML = file_get_contents('https://www.truefx.com/truefx-historical-downloads/', false, $context);
+
+if (preg_match('~Please.+log in.+or.+register~', $baseHTML)) {
+    dieWithError("Anmeldetoken ist abgelaufen.");
+}
 
 if (preg_match_all('~data-category="(\d+)".+current_category_slug.+value="(.+)".+wpfd-categories.+>(.+)</div>~sU', $baseHTML, $allCategoryHTML, PREG_SET_ORDER) === 0) {
 	dieWithError("Konnte Basis-HTML nicht parsen:" . PHP_EOL . $baseHTML);
@@ -58,7 +62,7 @@ function translateCategoryToMonth(string $category) : string
 		'December' => 12
 	][$category] ?? $category;
 }
-$years = [];
+$truefxCategoryDataThisYearByYear = [];
 foreach ($allCategoryHTML as $categoryHTML) {
 	if (preg_match_all('~data-idcat="(\d+)".+title="(.+)"~sU', $categoryHTML[3], $allSubCategoriesRaw, PREG_SET_ORDER) === 0) {
 		echo "${bold}${red}Kein Set gefunden für Kategorie #" . $categoryHTML[2] . $normal . PHP_EOL;
@@ -69,79 +73,79 @@ foreach ($allCategoryHTML as $categoryHTML) {
 		$allSubCategories[translateCategoryToMonth($subCategory[2])] = $subCategory[1];
 	}
 	
-	$years[$categoryHTML[2]] = [
+	$truefxCategoryDataThisYearByYear[$categoryHTML[2]] = [
 		'year' => $categoryHTML[2],
 		'id' => $categoryHTML[1],
 		'months' => $allSubCategories
 	]; 
 }
 
-for ($year = $yearFrom; $year <= $yearTo; $year++) {
+$currentDate = $dateFrom->sub(new \DateInterval('P1M'));
+while ($currentDate < $dateTo) {
+    $currentDate = $currentDate = $currentDate->add(new \DateInterval('P1M'));
     
-	if (!isset($years[$year])) {
-		echo "${bold}${red}!!! Kann " . $year . " nicht verarbeiten, nicht gefunden!${normal}" . PHP_EOL;
+    $year = (int)$currentDate->format('Y');
+    $month = (int)$currentDate->format('m');
+	if (!isset($truefxCategoryDataThisYearByYear[$year])) {
+		echo "${bold}${red}!!! Kann " . $currentDate->format('m/Y') . " nicht verarbeiten, Jahr nicht gefunden!${normal}" . PHP_EOL;
 		continue;
 	}
-	$thisYear = $years[$year];
+	$truefxCategoryDataThisYear = $truefxCategoryDataThisYearByYear[$year];
 	
-    for ($month = $monthsFrom; $month <= $monthsTo; $month++) {
-        
-        echo "${bold}Verarbeite $year / $month ...${normal}" . PHP_EOL;
-        
-		if (!isset($thisYear['months'][$month])) {
-			echo "${bold}${red}!!! Kann " . $year . '/' . $month . " nicht verarbeiten, nicht gefunden!${normal}" . PHP_EOL;
-			continue;
-		}
-		
-		$thisMonthId = $thisYear['months'][$month];
-		
-		// 2020 = 66
-		// Juni = 72
-		// https://www.truefx.com/wp-admin/admin-ajax.php?juwpfisadmin=false&action=wpfd&task=categories.display&view=categories&id=72&top=66
-        
-        // get link list
-        $url = 
-            'https://www.truefx.com/wp-admin/admin-ajax.php?juwpfisadmin=false&action=wpfd&task=files.display&view=files&id=' . 
-            $thisMonthId . '&rootCat=42&page=undefined';
-            
-        echo "Lade $url ..." . PHP_EOL;
-        
-        $downloadList = file_get_contents($url, false, $context);
-        if ($downloadList === false) {
-            echo "${bold}${red}!!! Konnte $year / $month nicht laden!" . PHP_EOL;
-            continue;
-        }
-        
-        $files = json_decode($downloadList);
-        
-        // find only relevant links
-        if (empty($files) || empty($files->files)) {
-            echo "${bold}${red}!!! Keine Links für $year / $month gefunden!${normal}" . PHP_EOL;
-            continue;
-        }
-        
-        foreach($files->files as $file) {
-        	    
-	        $set = strtoupper(substr($file->post_name, 0, 6));
-	        if (!in_array($set, $forexFilter)) {
-	        	//echo 'Überspringe ' . strtoupper($file->post_name) . ' ...' . PHP_EOL;
-	        	continue;
-	        }
-        
-            echo "Verarbeite " . strtoupper($file->post_name) . " ..." . PHP_EOL;
-            
-            $cmdOut .=
-                '[ ! -f ' . escapeshellarg($outPath . $set . "/" . str_replace('.ZIP', '.zip', strtoupper(basename($file->linkdownload)))) . ' ] && ' . 
-                'curl ' . implode(' ', [
-                    '-v',
-                    '-o', escapeshellarg($outPath . $set . "/" . str_replace('.ZIP', '.zip', strtoupper(basename($file->linkdownload)))),
-                    escapeshellarg($file->linkdownload)
-            ]);
-            
-            $cmdOut .= " && sleep 1" . PHP_EOL;
-        }
+    echo "${bold}Verarbeite $month/$year ...${normal}" . PHP_EOL;
+    
+    if (!isset($truefxCategoryDataThisYear['months'][$month])) {
+        echo "${bold}${red}!!! Kann " . $year . '/' . $month . " nicht verarbeiten, Monat nicht gefunden!${normal}" . PHP_EOL;
+        continue;
     }
     
+    $thisMonthId = $truefxCategoryDataThisYear['months'][$month];
+    
+    // 2020 = 66
+    // Juni = 72
+    // https://www.truefx.com/wp-admin/admin-ajax.php?juwpfisadmin=false&action=wpfd&task=categories.display&view=categories&id=72&top=66
+    
+    // get link list
+    $url = 
+        'https://www.truefx.com/wp-admin/admin-ajax.php?juwpfisadmin=false&action=wpfd&task=files.display&view=files&id=' . 
+        $thisMonthId . '&rootCat=42&page=undefined';
+        
+    echo "Lade $url ..." . PHP_EOL;
+    
+    $downloadList = file_get_contents($url, false, $context);
+    if ($downloadList === false) {
+        echo "${bold}${red}!!! Konnte $year / $month nicht laden!" . PHP_EOL;
+        continue;
+    }
+    
+    $files = json_decode($downloadList);
+    
+    // find only relevant links
+    if (empty($files) || empty($files->files)) {
+        echo "${bold}${red}!!! Keine Links für $year / $month gefunden!${normal}" . PHP_EOL;
+        continue;
+    }
+    
+    foreach($files->files as $file) {
+            
+        $set = strtoupper(substr($file->post_name, 0, 6));
+        if (!in_array($set, $forexFilter)) {
+            //echo 'Überspringe ' . strtoupper($file->post_name) . ' ...' . PHP_EOL;
+            continue;
+        }
+    
+        echo "Verarbeite " . strtoupper($file->post_name) . " ..." . PHP_EOL;
+        
+        $cmdOut .=
+            '[ ! -f ' . escapeshellarg($outPath . $set . "/" . str_replace('.ZIP', '.zip', strtoupper(basename($file->linkdownload)))) . ' ] && ' . 
+            'curl ' . implode(' ', [
+                '-v',
+                '-o', escapeshellarg($outPath . $set . "/" . str_replace('.ZIP', '.zip', strtoupper(basename($file->linkdownload)))),
+                escapeshellarg($file->linkdownload)
+        ]);
+        
+        $cmdOut .= " && sleep 1" . PHP_EOL;
+    }
 }
 
 $cmdOut .= 'rm -i $0' . PHP_EOL;
