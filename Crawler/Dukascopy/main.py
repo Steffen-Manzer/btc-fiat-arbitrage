@@ -25,7 +25,10 @@ symbols = ["eurusd", "gbpusd", "usdchf", "usdcad", "usdjpy", "audusd"]
 # Alle Daten ab 01.01.2010 bis letzten Monat abfragen
 now = datetime.now()
 start_date = datetime(year=2010, month=1, day=1, tzinfo=timezone.utc)
-end_date = datetime(year=now.year, month=now.month - 1, day=1, tzinfo=timezone.utc)
+if now.month == 1:
+    end_date = datetime(year=now.year - 1, month=12, day=1, tzinfo=timezone.utc)
+else:
+    end_date = datetime(year=now.year, month=now.month - 1, day=1, tzinfo=timezone.utc)
 
 
 # ====== Ende Konfiguration ======
