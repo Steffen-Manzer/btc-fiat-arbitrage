@@ -1,10 +1,8 @@
 <?php
 
-// Abrufzeitraum
-$yearFrom = 2021;
-$yearTo = (int)date('Y');
-$monthsFrom = 11;
-$monthsTo = 12;
+// Abrufzeitraum (jeweils inklusive)
+$dateFrom = new \DateTime('first day of 6 months ago');
+$dateTo = new \DateTime('first day of last month');
 
 // Speicherort
 $outPath = realpath('../../Daten/truefx/') . "/";

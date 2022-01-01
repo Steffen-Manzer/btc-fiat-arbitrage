@@ -28,7 +28,7 @@ $context = stream_context_create([
 echo "${bold}Suche Daten von TrueFX${normal}" . PHP_EOL;
 echo 'Zeitraum: ' . $yearFrom . '-' . $yearTo . ', Monate ' . $monthsFrom . '-' . $monthsTo . PHP_EOL;
 echo 'Ziel: ' . $outPath . PHP_EOL;
-echo 'Filter: ' . $forexFilter . PHP_EOL;
+echo 'Filter: ' . implode(', ', $forexFilter) . PHP_EOL;
 
 $cmdOut = '#!/bin/sh' . PHP_EOL;
 foreach ($forexFilter as $pair) {
