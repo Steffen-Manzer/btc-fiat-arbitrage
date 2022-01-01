@@ -30,8 +30,6 @@ echo 'Zeitraum: ' . $yearFrom . '-' . $yearTo . ', Monate ' . $monthsFrom . '-' 
 echo 'Ziel: ' . $outPath . PHP_EOL;
 echo 'Filter: ' . $forexFilter . PHP_EOL;
 
-$forexFilter = explode('|', $forexFilter);
-
 $cmdOut = '#!/bin/sh' . PHP_EOL;
 foreach ($forexFilter as $pair) {
     $cmdOut .= 'mkdir -p ' . escapeshellarg($outPath . $pair . "/") . PHP_EOL;
