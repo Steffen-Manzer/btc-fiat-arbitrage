@@ -309,6 +309,7 @@ readMonthlyDividedDataset <- function(
                 
                 rm(thisDataset_monthly, thisDataset)
                 toc()
+                gc()
             } # loop: month
         } # loop: year
     } # loop: pair
