@@ -11,7 +11,7 @@
 #'   der CSV-Quelldatei zurückgibt.
 #' @param parseSourceFileCallback Callback, das den Inhalt
 #'   der CSV-Quelldatei zurückgibt.
-#' @param summariseDataCallback Callback, das die Daten aggregiert (`summarise`).
+#' @param summariseDataCallback Callback, das die Daten aggregiert (via data.table).
 #' @param targetBasename Basisverzeichnis für Zieldateien.
 #'   Standard: exchangeName in Kleinbuchstaben, falls NA.
 #' @param sourceFileExtension Dateiendung der Rohdaten.
