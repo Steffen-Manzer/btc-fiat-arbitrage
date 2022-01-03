@@ -35,14 +35,18 @@ library("zoo") # rollapply für Filterfunktion
 # Hilfsfunktionen =============================================================
 
 #' Liest eine einzelne angegebene .fst-Datei bis zum Dateiende oder 
-#' bis endDate, je nachdem was früher eintritt.
+#' bis endDate, je nachdem was früher eintritt
+#' 
+#' Dabei wird geprüft, ob mehrere Ticks zum selben Zeitpunkt auftreten.
+#' Gegebenenfalls werden weitere Daten geladen, bis alle Ticks des letzten
+#' Zeitpunktes im Datensatz enthalten sind.
 #' 
 #' @param dataFile Absoluter Pfad zu einer .fst-Datei
 #' @param startRow Zeilennummer, ab der gelesen werden soll
 #' @param endDate Zieldatum, bis zu dem mindestens gelesen werden soll
-#' @param numDatasetsPerRead Anzahl der Datensätze, die eingelesen werden,
-#'   bevor geprüft wird, ob die geforderte Anzahl Daten gelesen wurde
-#' @return `data.table` mit den gelesenen Daten
+#' @param numDatasetsPerRead Datensätze, die an einem Stück gelesen werden,
+#'   bevor geprüft wird, ob ein Abbruchkriterium erreicht wurde
+#' @return `data.table` mit den gelesenen Daten (`Time`, `Price`, `RowNum`)
 readDataFileChunked <- function(dataFile, startRow, endDate, numDatasetsPerRead = 10000L) {
     
     # Umgebungsbedingungen prüfen
@@ -59,7 +63,7 @@ readDataFileChunked <- function(dataFile, startRow, endDate, numDatasetsPerRead 
         return(data.table())
     }
     
-    # Lese Daten iterativ ein
+    # Lese Daten iterativ ein, bis ein Abbruchkriterium erfüllt ist
     while (TRUE) {
         
         # Limit bestimmen: `numDatasetsPerRead` Datensätze oder bis zum Ende der Datei
@@ -78,10 +82,42 @@ readDataFileChunked <- function(dataFile, startRow, endDate, numDatasetsPerRead 
         }
         # printf.debug("%d weitere Datensätze, %d insgesamt.\n", nrow(newData), nrow(result))
         
-        # endDate wurde erreicht oder Datei ist abgeschlossen
-        if (last(result$Time) > endDate || endRow == numRowsInFile) {
+        # Dateiende wurde erreicht
+        # Da die Daten monatsweise sortiert sind, ist der nächste Tick
+        # immer zu einem anderen Zeitpunkt. Eine Prüfung, ob der nächste
+        # Tick die selbe Zeit aufweist, ist hier also nicht erforderlich
+        if (endRow == numRowsInFile) {
             break
         }
+        
+        # endDate wurde erreicht: Prüfe zusätzlich, ob noch weitere
+        # Ticks mit der exakt selben Zeit vorliegen und lade alle
+        # solchen Ticks, sonst kommt es zu Fehlern in der Auswertung
+        lastTime <- last(result$Time)
+        if (lastTime > endDate) {
+            
+            # Prüfe weitere Ticks nur, solange Dateieende nicht erreicht wurde
+            while (endRow < numRowsInFile) {
+                
+                endRow <- endRow + 1L
+                oneMoreRow <- read_fst(dataFile, c("Time", "Price"), endRow, endRow, as.data.table=TRUE)
+                
+                # Nächster Tick ist nicht in der selben Sekunde:
+                # Einlesen abgeschlossen.
+                if (oneMoreRow$Time[1] > lastTime) {
+                    break
+                }
+                
+                # Nächster Tick ist in der exakt selben Sekunde: anhängen.
+                # printf.debug("Ein weiterer Datensatz zum exakt selben Zeitpunkt hinzugefügt.\n")
+                oneMoreRow[, RowNum:=endRow]
+                result <- rbindlist(list(result, oneMoreRow), use.names=TRUE)
+            }
+            
+            # Fertig.
+            break
+        }
+        
         
         # Weitere `numDatasetsPerRead` Datenpunkte lesen
         startRow <- startRow + numDatasetsPerRead
@@ -256,6 +292,29 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
 }
 
 
+#' Mehrfache Ticks mit der exakt selben Zeit zusammenfassen
+#' 
+#' Beim Einlesen der Daten muss zwingend darauf geachtet werden, dass sämtliche
+#' Ticks der exakt selben Zeit vollständig geladen werden.
+#' Diese Voraussetzung wird in `readDataFileChunked` sichergestellt.
+#' 
+#' @param dataset Eine `data.table` mit den Spalten
+#'                `Time`, `Price`, `Exchange` und `RowNum`
+#' @return `data.table` Wie `dataset`, nur mit gruppierten Zeitpunkten
+summariseMultipleTicksAtSameTime <- function(dataset) {
+    return(dataset[, 
+        .(
+            PriceLow = min(Price), 
+            PriceHigh = max(Price), 
+            Exchange = last(Exchange),
+            RowNum = last(RowNum),
+            n = .N
+        ), 
+        by=Time
+    ])
+}
+
+
 #' Zwei Datensätze in eine gemeinsame Liste zusammenführen
 #' 
 #' Verbindet zwei Sätze von Tickdaten in eine gemeinsame Liste,
@@ -263,17 +322,15 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
 #' drei oder mehr aufeinanderfolgenden Ticks der selben Börse, 
 #' da diese für die Auswertung nicht relevant sind.
 #' 
-#' @param dataset_a Eine Instanz der Klasse `Dataset`
-#' @param dataset_b Eine Instanz der Klasse `Dataset`
-#' @return `data.table` Eine Tabelle der Tickdaten beider Börsen,
-#'   bestehend aus den Spalten `Time`, `Price`, `RowNum` und `Exchange`.
+#' @param dataset_a `data.table` mit mindestens den Spalten `Time` und `Exchange`
+#' @param dataset_b Wie `dataset_a`.
+#' @return `data.table` Eine Tabelle der Tickdaten beider Börsen
 mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
     
     # Merge, Sort und Filter (nicht: mergesort-Algorithmus)
     
-    # Daten zu einer gemeinsamen Liste verbinden.
-    # Enthaltene Spalten: Time, Price, RowNum und Exchange.
-    dataset_ab <- rbindlist(list(dataset_a$data, dataset_b$data), use.names=TRUE)
+    # Daten zu einer gemeinsamen Liste verbinden
+    dataset_ab <- rbindlist(list(dataset_a, dataset_b), use.names=TRUE)
     
     # Liste nach Zeit sortieren
     setorder(dataset_ab, Time)
@@ -281,7 +338,8 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
     # `dataset_ab` enthält nun Ticks beider Börsen nach Zeit sortiert.
     # Aufeinanderfolgende Daten der selben Börse interessieren nicht, da der Tickpunkt
     # davor bzw. danach immer näher am nächsten Tick der anderen Börse ist.
-    # Aufeinanderfolgende Tripel daher herausfiltern.
+    # Aufeinanderfolgende Tripel daher herausfiltern, dies beschleunigt
+    # die weitere Verarbeitung signifikant (etwa um den Faktor 5).
     #
     # Beispiel:
     # |--------------------------------->   Zeitachse
@@ -293,12 +351,15 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
     # Tripel filtern
     # Einschränkung: Erste und letzte Zeile werden nie entfernt,
     # diese können an dieser Stelle nicht sinnvoll geprüft werden.
+    # Im weiteren Verlauf wird erneut auf die gleiche Börse 
+    # aufeinanderfolgender Ticks geprüft.
     triplets <- c(
         FALSE,
         rollapply(
             dataset_ab$Exchange,
             width = 3,
-            # Tripel, wenn Börse im vorherigen, aktuellen und nächsten Tick identisch ist
+            # Es handelt sich um ein zu entfernendes Tripel, wenn  die
+            # Börse im vorherigen, aktuellen und nächsten Tick identisch ist
             FUN = function(exchg) (exchg[1] == exchg[2] && exchg[2] == exchg[3])
         ),
         FALSE
@@ -332,14 +393,19 @@ saveInterimResult <- function(result, index, exchange_a, exchange_b, currencyPai
                        tolower(currencyPair), exchange_a, exchange_b, index)
     stopifnot(!file.exists(outFile))
     
-    # Ergebnis um zwischenzeitlich eingefügte NAs bereinigen
+    # Ergebnis um zwischenzeitlich eingefügte `NA`s
+    # (= reservierter Speicher für weitere Ergebnisse) bereinigen
     result <- cleanupDT(result)
     
-    # TODO Temporär: double wieder zurück zu POSIXct
-    result[,Time:=as.POSIXct(Time,origin="1970-01-01")]
+    # Um Probleme mit appendDT (NA+POSIXct) zu umgehen, wurde der Zeitstempel
+    # unten in ein double umgewandelt und wird an dieser Stelle (nachdem der
+    # reservierte Speicher in Form von `NA`s entfernt wurde) wieder in 
+    # POSIXct konvertiert.
+    result[, Time:=as.POSIXct(Time, origin="1970-01-01")]
     
     # Index berechnen
-    result[,Index:=Diff/MaxPrice]
+    result[, IndexLow:=DiffLow/PriceHigh]
+    result[, IndexHigh:=DiffHigh/PriceHigh]
     
     # Ergebnis speichern
     write_fst(result, outFile, compress=100)
@@ -421,7 +487,13 @@ compareTwoExchanges <- function(
                 nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
     
     # Merge + Sort + Filter, danke an Lukas Fischer (@o1oo11oo) für die Idee
-    dataset_ab <- mergeSortAndFilterTwoDatasets(dataset_a, dataset_b)
+    # Zuvor mehrerer Ticks am selben Zeitpunkt zu einem einzigen Datenpunkt
+    # zusammenfassen und dabei Mindest-/Höchstpreis berechnen
+    dataset_ab <- mergeSortAndFilterTwoDatasets(
+        dataset_a$data |> summariseMultipleTicksAtSameTime(),
+        dataset_b$data |> summariseMultipleTicksAtSameTime()
+    )
+    
     printf.debug("A+B: %d Tickdaten von %s bis %s\n",
                 nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time))
     
@@ -455,15 +527,16 @@ compareTwoExchanges <- function(
         currentRow <- currentRow + 1L
         nextRow <- currentRow + 1L
         
-        # Laufzeit und aktuellen Stand periodisch ausgeben
+        # Laufzeit und aktuellen Fortschritt periodisch ausgeben
         processedDatasets <- processedDatasets + 1L
         if (processedDatasets %% 10000 == 0) {
-            runtime <- proc.time()["elapsed"] - now
-            cat("\r", rep(" ", 150), sep="") # Zeile leeren. Bug in manchen Terminals: \t füllt nicht
+            runtime <- as.integer(proc.time()["elapsed"] - now)
+            # Zeile leeren, denn in manchen Terminals überschreibt \t bisherige Ausgaben nicht
+            cat("\r", rep(" ", 150), sep="")
             printf("\r%s verarbeitet\t%s im Ergebnisvektor\tAktuell: %s\t%s Sekunden\t%s Ticks/s        ",
                    numberFormat(processedDatasets),
                    numberFormat(nrowDT(result)),
-                   format(dataset_ab[currentRow,Time], "%d.%m.%Y %H:%M:%S"),
+                   format(dataset_ab[currentRow,Time], "%d.%m.%Y %H:%M:%OS"),
                    numberFormat(round(runtime, 0)),
                    numberFormat(round(processedDatasets/runtime, 0))
             )
@@ -520,7 +593,7 @@ compareTwoExchanges <- function(
             # Zu wenig gemeinsame Daten (Datenlücke eines Datensatzes!)
             # Weitere Daten nachladen, bis mehr als 50 gemeinsame Daten vorliegen
             # TODO Hier müsste im Grunde ein dynamisches Limit greifen
-            # - min. 50 gemeinsame Daten - manchmal aber auch 500 nötig
+            # - min. 50 gemeinsame Daten - manchmal aber auch > 100 nötig
             # - nicht zu nah an der *neuen* currentRow! -> Problematisch?
             # Außerdem: Verletzung des DRY-Prinzips
             while (
@@ -551,8 +624,11 @@ compareTwoExchanges <- function(
             printf.debug("B (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n",
                         nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
             
-            # Merge + Sort + Filter, danke an Lukas Fischer (@o1oo11oo) für die Idee
-            dataset_ab <- mergeSortAndFilterTwoDatasets(dataset_a, dataset_b)
+            # Ticks zum selben Zeitpunkt zusammenfassen, dann Merge + Sort + Filter
+            dataset_ab <- mergeSortAndFilterTwoDatasets(
+                dataset_a$data |> summariseMultipleTicksAtSameTime(),
+                dataset_b$data |> summariseMultipleTicksAtSameTime()
+            )
             printf.debug("A+B: %d Tickdaten von %s bis %s\n",
                         nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time))
             
@@ -560,7 +636,8 @@ compareTwoExchanges <- function(
             # am Beginn des (neuen) Datensatzes
             currentRow <- dataset_ab[
                 Time == currentTick$Time & 
-                Price == currentTick$Price &
+                PriceLow == currentTick$PriceLow &
+                PriceHigh == currentTick$PriceHigh &
                 Exchange == currentTick$Exchange &
                 RowNum == currentTick$RowNum,
                 which=TRUE
@@ -580,7 +657,7 @@ compareTwoExchanges <- function(
             loadNewDataAtRowNumber <- numRows - 5L
         }
         
-        # Aktuelle und nächste Zeile lesen
+        # Aktuelle und nächste Zeile speichern
         tick_a <- dataset_ab[currentRow,]
         tick_b <- dataset_ab[nextRow,]
         
@@ -590,16 +667,27 @@ compareTwoExchanges <- function(
         }
         
         # Zeitdifferenz zu groß, überspringe.
-        timeDifference <- as.double(tick_a$Time - tick_b$Time, units="secs")
-        if (timeDifference > comparisonThreshold) {
-           next
+        if (difftime(tick_b$Time, tick_a$Time, units="secs") > comparisonThreshold) {
+            next
         }
         
+        # Preisdifferenz berechnen
+        # Je nachdem an welcher Börse das Preisniveau höher ist, ist
+        # priceDifference_1 oder _2 höher/niedriger.
+        priceDifference_1 <- abs(tick_a$PriceHigh - tick_b$PriceLow)
+        priceDifference_2 <- abs(tick_a$PriceLow - tick_b$PriceHigh)
+        
         # Set in Ergebnisvektor speichern
+        # Anmerkung:
+        # Um Probleme mit appendDT (NA+POSIXct) zu umgehen, wird der Zeitstempel
+        # hier temporär in ein double (= Unixzeit inkl. Sekundenbruchteile) umgewandelt
+        # und später wieder in POSIXct konvertiert. Dieses Vorgehen ist ohne
+        # Informationsverlust und noch immer signifikant schneller als rbind()
         result <- appendDT(result, list(
-            Time = as.double(tick_b$Time), # TODO Temporär: Probleme mit appendDT (NA+POSIXct) umgehen
-            Diff = abs(tick_a$Price - tick_b$Price),
-            MaxPrice = max(tick_a$Price, tick_b$Price)
+            Time = as.double(tick_b$Time),
+            DiffLow = min(priceDifference_1, priceDifference_2),
+            DiffHigh = max(priceDifference_1, priceDifference_2),
+            PriceHigh = max(tick_a$PriceHigh, tick_b$PriceHigh)
         ))
         
         # Alle 5 Mio. Datenpunkte: Ergebnis speichern
@@ -613,6 +701,7 @@ compareTwoExchanges <- function(
             
             # Ergebnisspeicher leeren
             result <- data.table()
+            gc()
         }
     }
     
