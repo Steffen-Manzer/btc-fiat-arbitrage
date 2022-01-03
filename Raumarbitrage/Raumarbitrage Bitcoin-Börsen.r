@@ -137,16 +137,8 @@ readDataFileChunked <- function(dataFile, startRow, endDate, numDatasetsPerRead 
 #' @param dataset Eine Instanz der Klasse `Dataset`
 #' @param currentTime Zeitpunkt des aktuellen (zuletzt verwendeten) Ticks
 #' @param endDate Zieldatum, bis zu dem mindestens gelesen werden soll
-#' @param loadNextFileIfNotSufficientTicks Sollen auch Daten eines weiteren Monats
-#'   (über endDate hinaus) geladen werden, wenn weniger als 100 neue Ticks in der
-#'   aktuellen Datei liegen?
 #' @return `NULL` (Verändert den angegebenen Datensatz per Referenz.)
-readAndAppendNewTickData <- function(
-    dataset, 
-    currentTime,
-    endDate, 
-    loadNextFileIfNotSufficientTicks = TRUE
-) {
+readAndAppendNewTickData <- function(dataset, currentTime, endDate) {
     
     # Parameter validieren
     stopifnot(
@@ -222,7 +214,7 @@ readAndAppendNewTickData <- function(
         # Keine weiteren Daten laden.
         if (
             as.integer(format(endDate, "%Y%m")) <= as.integer(format(currentTime, "%Y%m")) &&
-            (isFALSE(loadNextFileIfNotSufficientTicks) || numNewRows > 100)
+            numNewRows > 100
         ) {
             break
         }
@@ -230,6 +222,11 @@ readAndAppendNewTickData <- function(
         # Lese zusätzlich nächsten Monat
         currentTime <- addOneMonth(currentTime)
         startRow <- 1L
+        
+        # Nächster Monat liegt außerhalb des verfügbaren Datenbereichs, abbrechen.
+        if (currentTime > dataset$EndDate) {
+            break
+        }
     }
     
     return(invisible())
@@ -456,6 +453,7 @@ compareTwoExchanges <- function(
         CurrencyPair = currencyPair,
         PathPrefix = sprintf("Cache/%s/%s/tick/%1$s-%2$s-tick",
                              exchange_a, tolower(currencyPair)),
+        EndDate = endDate,
         data = data.table()
     )
     
@@ -464,6 +462,7 @@ compareTwoExchanges <- function(
         CurrencyPair = currencyPair,
         PathPrefix = sprintf("Cache/%s/%s/tick/%1$s-%2$s-tick",
                              exchange_b, tolower(currencyPair)),
+        EndDate = endDate,
         data = data.table()
     )
     
@@ -577,10 +576,8 @@ compareTwoExchanges <- function(
                 printf.debug("Datenende erreicht, Stop nach aktuellem Monat.\n")
             }
             
-            readAndAppendNewTickData(dataset_a, baseDate, loadUntil, 
-                                     loadNextFileIfNotSufficientTicks=!endAfterCurrentDataset)
-            readAndAppendNewTickData(dataset_b, baseDate, loadUntil, 
-                                     loadNextFileIfNotSufficientTicks=!endAfterCurrentDataset)
+            readAndAppendNewTickData(dataset_a, baseDate, loadUntil)
+            readAndAppendNewTickData(dataset_b, baseDate, loadUntil)
             
             printf.debug("A: %d Tickdaten von %s bis %s\n",
                         nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
@@ -610,10 +607,8 @@ compareTwoExchanges <- function(
                     printf.debug("Datenende erreicht, Stop nach aktuellem Monat.\n")
                 }
                 
-                readAndAppendNewTickData(dataset_b, baseDate, loadUntil, 
-                                         loadNextFileIfNotSufficientTicks=!endAfterCurrentDataset)
-                readAndAppendNewTickData(dataset_a, baseDate, loadUntil, 
-                                         loadNextFileIfNotSufficientTicks=!endAfterCurrentDataset)
+                readAndAppendNewTickData(dataset_b, baseDate, loadUntil)
+                readAndAppendNewTickData(dataset_a, baseDate, loadUntil)
                 
                 # Begrenze auf gemeinsamen Zeitraum
                 filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)
@@ -714,24 +709,26 @@ compareTwoExchanges <- function(
 # Nur Testlauf
 #compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-01-14 00:00:00"))
 
-# Abarbeitung händisch parallelisieren, falls möglich.
+# Abarbeitung händisch parallelisieren
 if (FALSE) {
     
-    # Datenbeginn aller Börsen:
-    # - Bitfinex:
+    # Bitfinex:
     #   BTCUSD enthält Daten von 14.01.2013, 16:47:23 (UTC) bis heute
     #   BTCGBP enthält Daten von 29.03.2018, 14:40:57 (UTC) bis heute
     #   BTCJPY enthält Daten von 29.03.2018, 15:55:31 (UTC) bis heute
     #   BTCEUR enthält Daten von 01.09.2019, 00:00:00 (UTC) bis heute
-    # - Bitstamp:
+    #
+    # Bitstamp:
     #   BTCUSD enthält Daten von 13.09.2011, 13:53:36 (UTC) bis heute
     #   BTCEUR enthält Daten von 05.12.2017, 11:43:49 (UTC) bis heute
     #   BTCGBP enthält Daten von 14.12.2021, 14:48:35 (UTC) bis heute
-    # - Coinbase Pro:
+    #
+    # Coinbase Pro:
     #   BTCUSD enthält Daten von 01.12.2014, 05:33:56.761199 (UTC) bis heute.
     #   BTCEUR enthält Daten von 23.04.2015, 01:42:34.182104 (UTC) bis heute.
     #   BTCGBP enthält Daten von 21.04.2015, 22:22:41.294060 (UTC) bis heute.
-    # - Kraken:
+    #
+    # Kraken:
     #   BTCUSD enthält Daten von 06.10.2013, 21:34:15 (UTC) bis heute
     #   BTCEUR enthält Daten von 10.09.2013, 23:47:11 (UTC) bis heute
     #   BTCGBP enthält Daten von 06.11.2014, 16:13:43 (UTC) bis heute
@@ -766,7 +763,7 @@ if (FALSE) {
     # BTC/JPY
     compareTwoExchanges("bitfinex", "kraken",   "btcjpy", as.POSIXct("2018-03-29 15:55:31"))
     
-    # BTC/CHF: Nur bei Kraken
-    # BTC/CAD: Nur bei Kraken
+    # BTC/CHF: Nur bei Kraken handelbar
+    # BTC/CAD: Nur bei Kraken handelbar
 }
 

@@ -7,6 +7,7 @@ setRefClass(
         Exchange = "character",
         CurrencyPair = "character",
         PathPrefix = "character",
+        EndDate = "POSIXct",
         data = "data.table"
     )
 )
