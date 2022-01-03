@@ -736,7 +736,8 @@ if (FALSE) {
     #   BTCCAD enthält Daten von 29.06.2015, 03:27:41 (UTC) bis heute
     #   BTCCHF enthält Daten von 06.12.2019, 16:33:17 (UTC) bis heute
     
-    # BTC/USD
+    
+    # BTC/USD =================================================================
     compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-01-14 16:47:23"))
     compareTwoExchanges("bitfinex", "coinbase", "btcusd", as.POSIXct("2014-12-01 05:33:56"))
     compareTwoExchanges("bitfinex", "kraken",   "btcusd", as.POSIXct("2013-10-06 21:34:15"))
@@ -744,7 +745,8 @@ if (FALSE) {
     compareTwoExchanges("bitstamp", "kraken",   "btcusd", as.POSIXct("2013-10-06 21:34:15"))
     compareTwoExchanges("coinbase", "kraken",   "btcusd", as.POSIXct("2014-12-01 05:33:56"))
     
-    # BTC/EUR
+    
+    # BTC/EUR =================================================================
     compareTwoExchanges("bitfinex", "bitstamp", "btceur", as.POSIXct("2019-09-01 00:00:00"))
     compareTwoExchanges("bitfinex", "coinbase", "btceur", as.POSIXct("2019-09-01 00:00:00"))
     compareTwoExchanges("bitfinex", "kraken",   "btceur", as.POSIXct("2019-09-01 00:00:00"))
@@ -752,18 +754,46 @@ if (FALSE) {
     compareTwoExchanges("bitstamp", "kraken",   "btceur", as.POSIXct("2017-12-05 11:43:49"))
     compareTwoExchanges("coinbase", "kraken",   "btceur", as.POSIXct("2015-04-23 01:42:34"))
     
-    # BTC/GBP
+    
+    # BTC/GBP =================================================================
+    
+    # Bitfinex - Bitstamp: Abgeschlossen in 6s
+    # Beginne Auswertung für BTCGBP der Börsen bitfinex und bitstamp ab 14.12.2021 14:48:35.
+    # 40.000 verarbeitet      10.801 im Ergebnisvektor        Aktuell: 31.12.2021 14:58:33.269999     6 Sekunden      6.667 Ticks/s                         
+    # Zeile 24 erreicht, Ende.
     compareTwoExchanges("bitfinex", "bitstamp", "btcgbp", as.POSIXct("2021-12-14 14:48:35"))
     compareTwoExchanges("bitfinex", "coinbase", "btcgbp", as.POSIXct("2018-03-29 14:40:57"))
     compareTwoExchanges("bitfinex", "kraken",   "btcgbp", as.POSIXct("2018-03-29 14:40:57"))
+    
+    # Bitstamp - Coinbase Pro: Abgeschlossen in 9s
+    # Beginne Auswertung für BTCGBP der Börsen bitstamp und coinbase ab 14.12.2021 14:48:35.
+    # 50.000 verarbeitet      26.028 im Ergebnisvektor        Aktuell: 31.12.2021 12:20:52.996440     9 Sekunden      5.556 Ticks/s                         
+    # Zeile 596 erreicht, Ende.
     compareTwoExchanges("bitstamp", "coinbase", "btcgbp", as.POSIXct("2021-12-14 14:48:35"))
+    
+    # Bitstamp - Kraken: Abgeschlossen in 2s
+    # Beginne Auswertung für BTCGBP der Börsen bitstamp und kraken ab 14.12.2021 14:48:35.
+    # 20.000 verarbeitet      2.747 im Ergebnisvektor Aktuell: 28.12.2021 01:38:13.405900     2 Sekunden      10.000 Ticks/s                                
+    # Zeile 7 erreicht, Ende.
     compareTwoExchanges("bitstamp", "kraken",   "btcgbp", as.POSIXct("2021-12-14 14:48:35"))
+    
     compareTwoExchanges("coinbase", "kraken",   "btcgbp", as.POSIXct("2015-04-21 22:22:41"))
     
-    # BTC/JPY
+    
+    # BTC/JPY =================================================================
+    
+    # Bitfinex - Kraken: Abgeschlossen in 2m40s
+    # Beginne Auswertung für BTCJPY der Börsen bitfinex und kraken ab 29.03.2018 15:55:31.
+    # 330.000 verarbeitet     113.932 im Ergebnisvektor       Aktuell: 21.12.2021 22:56:50.003000     160 Sekunden    2.062 Ticks/s                         
+    # Zeile 33 erreicht, Ende.
     compareTwoExchanges("bitfinex", "kraken",   "btcjpy", as.POSIXct("2018-03-29 15:55:31"))
     
-    # BTC/CHF: Nur bei Kraken handelbar
-    # BTC/CAD: Nur bei Kraken handelbar
+    
+    # BTC/CHF =================================================================
+    # Nur bei Kraken handelbar
+    
+    
+    # BTC/CAD =================================================================
+    # Nur bei Kraken handelbar
 }
 
