@@ -8,7 +8,6 @@ source("Funktionen/ReadMonthlyDividedDataset.r")
 # Bibliotheken laden
 library("data.table")
 library("fasttime")
-library("dplyr") # summarise
 
 # Hilfsfunktion: Eine .csv-Datei einlesen
 parseDukascopyTickData <- function(srcFile) {
@@ -37,13 +36,13 @@ parseDukascopyTickData <- function(srcFile) {
 }
 
 # Hilfsfunktion: Daten eines Zeitabschnittes aggregieren
-summariseDukascopyTickData <- function(dataset) {
-    dataset |> summarise(
+summariseDukascopyTickData <- function() {
+    return(expression(.(
         CloseBid = last(Bid),
         CloseAsk = last(Ask),
         CloseMittel = last(Mittel),
-        numDatasets = n(),
-    )
+        numDatasets = .N,
+    )))
 }
 
 # Daten einlesen und aggregieren

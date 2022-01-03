@@ -31,6 +31,8 @@ Die Dateien ohne Monatsangabe enthalten alle Daten bis zur Umstellung auf monats
 - Gehandelte Menge in BTC ("How much was bought (positive) or sold (negative).")
 - Preis in USD/EUR/GBP/JPY
 
+Anmerkung: Die Daten sind nicht strikt chronologisch sortiert, Abweichungen auf ms-Basis können bestehen.
+
 ---
     ID,Time,Amount,Price
     148668312,2018-01-01T00:00:00.000000Z,0.01475502,13769

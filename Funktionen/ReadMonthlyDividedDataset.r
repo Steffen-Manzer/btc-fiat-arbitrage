@@ -54,7 +54,6 @@ readMonthlyDividedDataset <- function(
     # Bibliotheken laden ------------------------------------------------------
     library("fst")
     library("data.table")
-    library("dplyr")
     library("fasttime")
     library("tictoc")
     library("lubridate") # floor_date
@@ -229,8 +228,13 @@ readMonthlyDividedDataset <- function(
                     # Tickdaten aus CSV einlesen
                     thisDataset <- parseSourceFileCallback(srcFile)
                     
+                    # Tickdaten nach Datum sortieren
+                    # Nicht alle Datensätze sind exakt nach Zeit sortiert, beispielsweise
+                    # für Coinbase Pro kann es Abweichungen auf ms-Basis geben.
+                    setorder(thisDataset, Time)
+                    
                     # Tickdaten speichern
-                    write_fst(thisDataset, targetFileTick)
+                    write_fst(thisDataset, targetFileTick, compress=100)
                 }
                 
                 # Statistiken ausgeben
@@ -243,11 +247,12 @@ readMonthlyDividedDataset <- function(
                 # Auf 1s aggregieren
                 if (!file.exists(targetFile1s)) {
                     cat(" - 1s")
-                    thisDataset_1s <- thisDataset |>
-                        group_by(floor_date(Time, unit = "second")) |>
-                        summariseDataCallback()
+                    thisDataset_1s <- thisDataset[
+                        j=eval(summariseDataCallback()),
+                        by=floor_date(Time, unit = "second")
+                    ]
                     colnames(thisDataset_1s)[1] <- "Time"
-                    write_fst(thisDataset_1s, targetFile1s)
+                    write_fst(thisDataset_1s, targetFile1s, compress=100)
                     
                     # Speicher freigeben
                     rm(thisDataset_1s)
@@ -256,11 +261,12 @@ readMonthlyDividedDataset <- function(
                 # Auf 5s aggregieren
                 if (!file.exists(targetFile5s)) {
                     cat(", 5s")
-                    thisDataset_5s <- thisDataset |>
-                        group_by(floor_date(Time, unit = "5 seconds")) |>
-                        summariseDataCallback()
+                    thisDataset_5s <- thisDataset[
+                        j=eval(summariseDataCallback()),
+                        by=floor_date(Time, unit = "5 seconds")
+                    ]
                     colnames(thisDataset_5s)[1] <- "Time"
-                    write_fst(thisDataset_5s, targetFile5s)
+                    write_fst(thisDataset_5s, targetFile5s, compress=100)
                     
                     # Speicher freigeben
                     rm(thisDataset_5s)
@@ -269,11 +275,12 @@ readMonthlyDividedDataset <- function(
                 # Auf 60s aggregieren
                 if (!file.exists(targetFile60s)) {
                     cat(", 60s")
-                    thisDataset_60s <- thisDataset |>
-                        group_by(floor_date(Time, unit = "minute")) |>
-                        summariseDataCallback()
+                    thisDataset_60s <- thisDataset[
+                        j=eval(summariseDataCallback()),
+                        by=floor_date(Time, unit = "minute")
+                    ]
                     colnames(thisDataset_60s)[1] <- "Time"
-                    write_fst(thisDataset_60s, targetFile60s)
+                    write_fst(thisDataset_60s, targetFile60s, compress=100)
                     
                     # Speicher freigeben
                     rm(thisDataset_60s)
@@ -281,22 +288,24 @@ readMonthlyDividedDataset <- function(
                 
                 # Auf 1d aggregieren (einzelne Datei für gesamten Datensatz)
                 cat(", 1d ")
-                thisDataset_daily <- thisDataset |>
-                    group_by(floor_date(Time, unit = "1 day")) |>
-                    summariseDataCallback()
+                thisDataset_daily <- thisDataset[
+                    j=eval(summariseDataCallback()),
+                    by=floor_date(Time, unit = "1 day")
+                ]
                 colnames(thisDataset_daily)[1] <- "Time"
                 dataset_daily <- rbind(dataset_daily, thisDataset_daily)
-                write_fst(dataset_daily, targetFileDaily)
+                write_fst(dataset_daily, targetFileDaily, compress=100)
                 rm(thisDataset_daily)
                 
                 # Auf 1 Monat aggregieren (einzelne Datei für gesamten Datensatz)
                 cat(", 1mo ")
-                thisDataset_monthly <- thisDataset |>
-                    group_by(floor_date(Time, unit = "1 month")) |>
-                    summariseDataCallback()
+                thisDataset_monthly <- thisDataset[
+                    j=eval(summariseDataCallback()),
+                    by=floor_date(Time, unit = "1 month")
+                ]
                 colnames(thisDataset_monthly)[1] <- "Time"
                 dataset_monthly <- rbind(dataset_monthly, thisDataset_monthly)
-                write_fst(dataset_monthly, targetFileMonthly)
+                write_fst(dataset_monthly, targetFileMonthly, compress=100)
                 
                 rm(thisDataset_monthly, thisDataset)
                 toc()

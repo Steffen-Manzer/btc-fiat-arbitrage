@@ -27,7 +27,6 @@ source("Funktionen/NumberFormat.r")
 source("Funktionen/printf.r")
 library("fst")
 library("data.table")
-library("dplyr") # filter
 library("lubridate") # floor_date
 library("zoo") # rollapply für Filterfunktion
 
@@ -299,8 +298,8 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
 #'                `Time`, `Price`, `Exchange` und `RowNum`
 #' @return `data.table` Wie `dataset`, nur mit gruppierten Zeitpunkten
 summariseMultipleTicksAtSameTime <- function(dataset) {
-    return(dataset[, 
-        .(
+    return(dataset[ 
+        j=.(
             PriceLow = min(Price), 
             PriceHigh = max(Price), 
             Exchange = last(Exchange),

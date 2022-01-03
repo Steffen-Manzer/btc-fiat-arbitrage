@@ -6,13 +6,13 @@ source("Funktionen/ReadMonthlyDividedDataset.r")
 # Bibliotheken laden
 library("data.table") # fread
 library("fasttime")
-library("dplyr") # summarise
+library("lubridate") # floor_date
 
 # Hilfsfunktion: Daten eines Zeitabschnittes aggregieren
 # Die Art und Weise, wie Daten zu 1s/5s/60s/1d aggregiert werden, ist
 # für alle Bitcoin-Börsen identisch.
-bitcoinSummariseCallback <- function(dataset) {
-    dataset |> summarise(
+bitcoinSummariseCallback <- function() {
+    return(expression(.(
         Amount = sum(abs(Amount)),
         Open = first(Price),
         High = max(Price),
@@ -20,8 +20,8 @@ bitcoinSummariseCallback <- function(dataset) {
         Close = last(Price),
         Mean = mean(Price),
         Median = median(Price),
-        numTrades = n()
-    )
+        numTrades = .N
+    )))
 }
 
 

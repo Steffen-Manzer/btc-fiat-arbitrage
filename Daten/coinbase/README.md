@@ -28,6 +28,8 @@ Abfrage folgender URLs:
 - Preis in USD/EUR/GBP
 - Art (Kauf = 0 / Verkauf = 1)
 
+Anmerkung: Die Daten sind nicht strikt chronologisch sortiert, Abweichungen auf ms-Basis können bestehen.
+
 ---
     ID,Time,Amount,Price,Type
     31503403,2017-12-31T23:59:03.515000Z,0.00337300,13922.51000000,0

@@ -8,7 +8,6 @@ source("Funktionen/ReadMonthlyDividedDataset.r")
 # Bibliotheken laden
 library("data.table") # fread
 library("lubridate") # parse_date_time
-library("dplyr") # summarise
 
 # Hilfsfunktion: Eine .csv-Datei einlesen
 parseTrueFXTickData <- function(srcFile) {
@@ -42,13 +41,13 @@ parseTrueFXTickData <- function(srcFile) {
 }
 
 # Hilfsfunktion: Daten eines Zeitabschnittes aggregieren
-summariseTrueFXTickData <- function(thisDataset) {
-    thisDataset |> summarise(
+summariseTrueFXTickData <- function() {
+    return(expression(.(
         CloseBid = last(Bid),
         CloseAsk = last(Ask),
         CloseMittel = last(Mittel),
-        numDatasets = n(),
-    )
+        numDatasets = .N,
+    )))
 }
 
 # Daten einlesen und aggregieren
