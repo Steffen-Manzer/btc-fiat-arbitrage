@@ -66,7 +66,7 @@ readDataFileChunked <- function(dataFile, startRow, endDate, numDatasetsPerRead 
     # Lese Daten iterativ ein, bis ein Abbruchkriterium erfüllt ist
     while (TRUE) {
         
-        # Limit bestimmen: `numDatasetsPerRead` Datensätze oder bis zum Ende der Datei
+        # Limit bestimmen: `numDatasetsPerRead` Datensätze, maximal bis zum Ende der Datei
         endRow <- min(numRowsInFile, startRow + numDatasetsPerRead - 1L)
         
         # Datei einlesen
@@ -148,7 +148,7 @@ readAndAppendNewTickData <- function(dataset, currentTime, endDate) {
     )
     
     numNewRows <- 0L
-    if (nrow(dataset$data) > 0) {
+    if (nrow(dataset$data) > 0L) {
         
         # Speicherbereinigung: Bereits verarbeitete Daten löschen
         # Einen Zeitraum von wenigen Minuten vor dem aktuell 
@@ -197,7 +197,7 @@ readAndAppendNewTickData <- function(dataset, currentTime, endDate) {
             }
         }
         
-        if (numNewRows > 0) {
+        if (numNewRows > 0L) {
             # Börse hinterlegen und an bestehende Daten anfügen
             newData[, Exchange:=dataset$Exchange]
             printf.debug("%s (von %s): %s Datensätze.\n",
@@ -214,7 +214,7 @@ readAndAppendNewTickData <- function(dataset, currentTime, endDate) {
         # Keine weiteren Daten laden.
         if (
             as.integer(format(endDate, "%Y%m")) <= as.integer(format(currentTime, "%Y%m")) &&
-            numNewRows > 100
+            numNewRows > 100L
         ) {
             break
         }
@@ -270,13 +270,13 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
         
         # Datensatz A enthält mehr Daten als B
         pos_of_last_common_tick <- last(dataset_a$data[Time <= last_b, which=TRUE])
-        dataset_a$data <- dataset_a$data[1:(pos_of_last_common_tick+1),]
+        dataset_a$data <- dataset_a$data[1L:(pos_of_last_common_tick+1L),]
         
     } else {
         
         # Datensatz B enthält mehr Daten als A
         pos_of_last_common_tick <- last(dataset_b$data[Time <= last_a, which=TRUE])
-        dataset_b$data <- dataset_b$data[1:(pos_of_last_common_tick+1),]
+        dataset_b$data <- dataset_b$data[1L:(pos_of_last_common_tick+1L),]
         
     }
     
@@ -351,7 +351,7 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
     # Im weiteren Verlauf wird erneut auf die gleiche Börse 
     # aufeinanderfolgender Ticks geprüft.
     triplets <- c(
-        FALSE,
+        FALSE, # Ersten Tick immer beibehalten
         rollapply(
             dataset_ab$Exchange,
             width = 3,
@@ -359,7 +359,7 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
             # Börse im vorherigen, aktuellen und nächsten Tick identisch ist
             FUN = function(exchg) (exchg[1] == exchg[2] && exchg[2] == exchg[3])
         ),
-        FALSE
+        FALSE # Letzten Tick immer beibehalten
     )
     
     # Datensatz ohne gefundene Tripel zurückgeben
@@ -703,7 +703,9 @@ compareTwoExchanges <- function(
     # Rest speichern
     saveInterimResult(result, result_set_index, exchange_a, exchange_b, currencyPair)
     
-    return(NULL)
+    printf("Abgeschlossen.\n")
+    
+    return(invisible(NULL))
 }
 
 # Nur Testlauf
@@ -740,13 +742,39 @@ if (FALSE) {
     # BTC/USD =================================================================
     compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-01-14 16:47:23"))
     compareTwoExchanges("bitfinex", "coinbase", "btcusd", as.POSIXct("2014-12-01 05:33:56"))
+    
+    # Bitfinex - Kraken: Abgeschlossen in ~2h05min
+    # Beginne Auswertung für BTCUSD der Börsen bitfinex und kraken ab 06.10.2013 21:34:15.
+    # 9.440.000 verarbeitet   4.995.706 im Ergebnisvektor     Aktuell: 25.03.2018 18:41:10.240200     1.791 Sekunden  5.271 Ticks/s                         
+    # 5.000.000 Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...
+    # 19.000.000 verarbeitet  4.998.349 im Ergebnisvektor     Aktuell: 25.10.2019 08:09:35.913000     3.462 Sekunden  5.488 Ticks/s                         
+    # 5.000.000 Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...
+    # 28.510.000 verarbeitet  4.999.702 im Ergebnisvektor     Aktuell: 08.01.2021 18:29:23.358000     5.074 Sekunden  5.619 Ticks/s                         
+    # 5.000.000 Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...
+    # 36.920.000 verarbeitet  4.995.607 im Ergebnisvektor     Aktuell: 30.05.2021 08:03:57.400000     6.431 Sekunden  5.741 Ticks/s                         
+    # 5.000.000 Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...
+    # 43.460.000 verarbeitet  3.525.996 im Ergebnisvektor     Aktuell: 31.12.2021 21:47:18.462800     7.503 Sekunden  5.792 Ticks/s
     compareTwoExchanges("bitfinex", "kraken",   "btcusd", as.POSIXct("2013-10-06 21:34:15"))
     compareTwoExchanges("bitstamp", "coinbase", "btcusd", as.POSIXct("2014-12-01 05:33:56"))
+    
+    # Bitstamp - Kraken: Abgeschlossen in ~1h30min
+    # Beginne Auswertung für BTCUSD der Börsen bitstamp und kraken ab 06.10.2013 21:34:15.
+    # 10.280.000 verarbeitet  4.994.432 im Ergebnisvektor     Aktuell: 14.11.2018 17:09:17.000000     1.830 Sekunden  5.617 Ticks/s
+    # 5.000.000 Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...
+    # 20.650.000 verarbeitet  4.994.159 im Ergebnisvektor     Aktuell: 16.11.2020 15:10:49.000000     3.512 Sekunden  5.880 Ticks/s
+    # 5.000.000 Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...
+    # 29.290.000 verarbeitet  4.999.316 im Ergebnisvektor     Aktuell: 07.09.2021 23:24:44.289299     4.930 Sekunden  5.941 Ticks/s
+    # 5.000.000 Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...
+    # 31.520.000 verarbeitet  1.152.041 im Ergebnisvektor     Aktuell: 31.12.2021 13:26:55.000000     5.268 Sekunden  5.983 Ticks/s
     compareTwoExchanges("bitstamp", "kraken",   "btcusd", as.POSIXct("2013-10-06 21:34:15"))
     compareTwoExchanges("coinbase", "kraken",   "btcusd", as.POSIXct("2014-12-01 05:33:56"))
     
     
     # BTC/EUR =================================================================
+    
+    # Bitfinex - Bitstamp: Abgeschlossen in ~22min
+    # Beginne Auswertung für BTCEUR der Börsen bitfinex und bitstamp ab 01.09.2019 00:00:00.
+    # 8.140.000 verarbeitet   3.986.002 im Ergebnisvektor     Aktuell: 31.12.2021 08:49:06.043999     1.281 Sekunden  6.354 Ticks/s
     compareTwoExchanges("bitfinex", "bitstamp", "btceur", as.POSIXct("2019-09-01 00:00:00"))
     compareTwoExchanges("bitfinex", "coinbase", "btceur", as.POSIXct("2019-09-01 00:00:00"))
     compareTwoExchanges("bitfinex", "kraken",   "btceur", as.POSIXct("2019-09-01 00:00:00"))
@@ -759,33 +787,40 @@ if (FALSE) {
     
     # Bitfinex - Bitstamp: Abgeschlossen in 6s
     # Beginne Auswertung für BTCGBP der Börsen bitfinex und bitstamp ab 14.12.2021 14:48:35.
-    # 40.000 verarbeitet      10.801 im Ergebnisvektor        Aktuell: 31.12.2021 14:58:33.269999     6 Sekunden      6.667 Ticks/s                         
-    # Zeile 24 erreicht, Ende.
+    # 40.000 verarbeitet      10.801 im Ergebnisvektor        Aktuell: 31.12.2021 14:58:33.269999     6 Sekunden      6.667 Ticks/s
     compareTwoExchanges("bitfinex", "bitstamp", "btcgbp", as.POSIXct("2021-12-14 14:48:35"))
+    
+    # Bitfinex - Coinbase Pro: Abgeschlossen in ~26min
+    # Beginne Auswertung für BTCGBP der Börsen bitfinex und coinbase ab 29.03.2018 14:40:57.
+    # 8.580.000 verarbeitet   4.451.725 im Ergebnisvektor     Aktuell: 31.12.2021 16:58:50.378000     1.545 Sekunden  5.553 Ticks/s
     compareTwoExchanges("bitfinex", "coinbase", "btcgbp", as.POSIXct("2018-03-29 14:40:57"))
     compareTwoExchanges("bitfinex", "kraken",   "btcgbp", as.POSIXct("2018-03-29 14:40:57"))
     
     # Bitstamp - Coinbase Pro: Abgeschlossen in 9s
+    # Anmerkung: Daten für BTC/GBP an Bitstamp wurden erst ab 14.12.2021 erfasst und sind daher
+    # für eine repräsentative Auswertung nicht geeignet.
     # Beginne Auswertung für BTCGBP der Börsen bitstamp und coinbase ab 14.12.2021 14:48:35.
-    # 50.000 verarbeitet      26.028 im Ergebnisvektor        Aktuell: 31.12.2021 12:20:52.996440     9 Sekunden      5.556 Ticks/s                         
-    # Zeile 596 erreicht, Ende.
+    # 50.000 verarbeitet      26.028 im Ergebnisvektor        Aktuell: 31.12.2021 12:20:52.996440     9 Sekunden      5.556 Ticks/s
     compareTwoExchanges("bitstamp", "coinbase", "btcgbp", as.POSIXct("2021-12-14 14:48:35"))
     
     # Bitstamp - Kraken: Abgeschlossen in 2s
+    # Anmerkung: Daten für BTC/GBP an Bitstamp wurden erst ab 14.12.2021 erfasst und sind daher
+    # für eine repräsentative Auswertung nicht geeignet.
     # Beginne Auswertung für BTCGBP der Börsen bitstamp und kraken ab 14.12.2021 14:48:35.
-    # 20.000 verarbeitet      2.747 im Ergebnisvektor Aktuell: 28.12.2021 01:38:13.405900     2 Sekunden      10.000 Ticks/s                                
-    # Zeile 7 erreicht, Ende.
+    # 20.000 verarbeitet      2.747 im Ergebnisvektor        Aktuell: 28.12.2021 01:38:13.405900     2 Sekunden      10.000 Ticks/s
     compareTwoExchanges("bitstamp", "kraken",   "btcgbp", as.POSIXct("2021-12-14 14:48:35"))
     
+    # Coinbase Pro - Kraken: Abgeschlossen in ~10min
+    # Beginne Auswertung für BTCGBP der Börsen coinbase und kraken ab 21.04.2015 22:22:41.
+    # 2.970.000 verarbeitet   1.394.485 im Ergebnisvektor     Aktuell: 31.12.2021 03:36:18.994821     553 Sekunden    5.371 Ticks/s
     compareTwoExchanges("coinbase", "kraken",   "btcgbp", as.POSIXct("2015-04-21 22:22:41"))
     
     
     # BTC/JPY =================================================================
     
-    # Bitfinex - Kraken: Abgeschlossen in 2m40s
+    # Bitfinex - Kraken: Abgeschlossen in ~3min
     # Beginne Auswertung für BTCJPY der Börsen bitfinex und kraken ab 29.03.2018 15:55:31.
-    # 330.000 verarbeitet     113.932 im Ergebnisvektor       Aktuell: 21.12.2021 22:56:50.003000     160 Sekunden    2.062 Ticks/s                         
-    # Zeile 33 erreicht, Ende.
+    # 330.000 verarbeitet     113.932 im Ergebnisvektor       Aktuell: 21.12.2021 22:56:50.003000     160 Sekunden    2.062 Ticks/s
     compareTwoExchanges("bitfinex", "kraken",   "btcjpy", as.POSIXct("2018-03-29 15:55:31"))
     
     
