@@ -1,4 +1,4 @@
-# Finde Kurspaare zur Analyse von Raumarbitrage.
+# Finde Kurspaare zur (späteren) Analyse von Raumarbitrage.
 # 
 # Grundablauf: Immer paarweiser Vergleich zweier Börsen mit "Moving Window",
 # ähnlich zum Verfahren des `mergesort`-Algorithmus.
@@ -200,9 +200,9 @@ readAndAppendNewTickData <- function(dataset, currentTime, endDate) {
             # Börse hinterlegen und an bestehende Daten anfügen
             newData[, Exchange:=dataset$Exchange]
             printf.debug("%s (von %s): %s Datensätze.\n",
-                        lastRowNumber |> numberFormat(),
-                        metadata_fst(dataFile)$nrOfRows |> numberFormat(),
-                        numNewRows |> numberFormat()
+                         lastRowNumber |> numberFormat(),
+                         metadata_fst(dataFile)$nrOfRows |> numberFormat(),
+                         numNewRows |> numberFormat()
             )
             dataset$data <- rbindlist(list(dataset$data, newData), use.names=TRUE)
         } else {
@@ -472,17 +472,17 @@ compareTwoExchanges <- function(
     readAndAppendNewTickData(dataset_a, startDate, loadUntil)
     readAndAppendNewTickData(dataset_b, startDate, loadUntil)
     printf.debug("A: %d Tickdaten von %s bis %s\n",
-                nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+                 nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
     printf.debug("B: %d Tickdaten von %s bis %s\n",
-                nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
+                 nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
     
     # Begrenze auf gemeinsamen Zeitraum. Beschleunigt anschließendes
     # Merge + Sort + Filter je nach Struktur der Daten deutlich.
     filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)
     printf.debug("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n",
-                nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+                 nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
     printf.debug("B (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n",
-                nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
+                 nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
     
     # Merge + Sort + Filter, danke an Lukas Fischer (@o1oo11oo) für die Idee
     # Zuvor mehrerer Ticks am selben Zeitpunkt zu einem einzigen Datenpunkt
@@ -493,7 +493,7 @@ compareTwoExchanges <- function(
     )
     
     printf.debug("A+B: %d Tickdaten von %s bis %s\n",
-                nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time))
+                 nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time))
     
     # Aktuelle Position merken
     currentRow <- 0L
@@ -579,9 +579,9 @@ compareTwoExchanges <- function(
             readAndAppendNewTickData(dataset_b, baseDate, loadUntil)
             
             printf.debug("A: %d Tickdaten von %s bis %s\n",
-                        nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+                         nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
             printf.debug("B: %d Tickdaten von %s bis %s\n",
-                        nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
+                         nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
             
             # Begrenze auf gemeinsamen Zeitraum
             filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)
@@ -614,9 +614,9 @@ compareTwoExchanges <- function(
             }
             
             printf.debug("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n",
-                        nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+                         nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
             printf.debug("B (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n",
-                        nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
+                         nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
             
             # Ticks zum selben Zeitpunkt zusammenfassen, dann Merge + Sort + Filter
             dataset_ab <- mergeSortAndFilterTwoDatasets(
@@ -624,7 +624,7 @@ compareTwoExchanges <- function(
                 dataset_b$data |> summariseMultipleTicksAtSameTime()
             )
             printf.debug("A+B: %d Tickdaten von %s bis %s\n",
-                        nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time))
+                         nrow(dataset_ab), first(dataset_ab$Time), last(dataset_ab$Time))
             
             # Aktuelle Position (`currentRow`) korrigieren, befindet sich nun
             # am Beginn des (neuen) Datensatzes
@@ -707,6 +707,8 @@ compareTwoExchanges <- function(
     return(invisible(NULL))
 }
 
+
+# Berechnung starten ==========================================================
 # Nur Testlauf
 #compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-01-14 00:00:00"))
 
@@ -716,9 +718,9 @@ if (FALSE) {
     # Verfügbare Daten nach Börse und Kurspaar:
     # Bitfinex:
     #   BTCUSD enthält Daten von 14.01.2013, 16:47:23 (UTC) bis heute
+    #   BTCEUR enthält Daten von 01.09.2019, 00:00:00 (UTC) bis heute
     #   BTCGBP enthält Daten von 29.03.2018, 14:40:57 (UTC) bis heute
     #   BTCJPY enthält Daten von 29.03.2018, 15:55:31 (UTC) bis heute
-    #   BTCEUR enthält Daten von 01.09.2019, 00:00:00 (UTC) bis heute
     #
     # Bitstamp:
     #   BTCUSD enthält Daten von 13.09.2011, 13:53:36 (UTC) bis heute
@@ -809,7 +811,7 @@ if (FALSE) {
     # Abgeschlossen.
     compareTwoExchanges("bitfinex", "kraken",   "btcusd", as.POSIXct("2013-10-06 21:34:15"))
     
-    # TODO Bitstamp - Coinbase Pro: Abgeschlossen in ~2h25min. Log:
+    # Bitstamp - Coinbase Pro: Abgeschlossen in ~2h25min. Log:
     # > compareTwoExchanges("bitstamp", "coinbase", "btcusd", as.POSIXct("2014-12-01 05:33:56"))
     # Beginne Auswertung für BTCUSD der Börsen bitstamp und coinbase ab 01.12.2014 05:33:56.
     # 10.400.000 verarbeitet  4.996.918 im Ergebnisvektor     Aktuell: 13.12.2017 20:21:58.000000     1.475 Sekunden  7.051 Ticks/s

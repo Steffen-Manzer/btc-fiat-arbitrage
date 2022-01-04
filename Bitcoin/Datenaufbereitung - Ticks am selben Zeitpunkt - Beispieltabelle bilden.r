@@ -62,7 +62,7 @@ tabIndentFirst <- "        " # rep() funktioniert mit sprintf nicht korrekt
 tabIndent <- "            " 
 for (i in seq_len(nrow(j))) {
     tick <- j[i,]
-    printf("%s%s &\n", tabIndentFirst, format(tick$Time))
+    printf("%s%s &\n", tabIndentFirst, format(tick$Time, "%d.%m.%Y, %H:%M:%OS"))
     printf("%s%s\\,USD &\n", tabIndent, moneyFormat(tick$Price, digits=2))
     
     if (is.na(tick$PriceLow)) {

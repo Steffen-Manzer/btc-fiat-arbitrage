@@ -6,6 +6,11 @@
 
 (function() {
     
+    # ACHTUNG:
+    # Es handelt sich bei diesem Verfahren um die alte, erste Herangehensweise.
+    # Siehe stattdessen `Raumarbitrage/Arbitrageindex Bitcoin-Börsen berechnen.r`
+    return()
+    
     # Pakete laden ------------------------------------------------------------
     library("fst")
     require("data.table")
@@ -152,9 +157,8 @@
                         rm(thisDataset)
                     }
                     
-                    # Nach Zeit sortieren (paar Sekunden)
+                    # Nach Zeit sortieren
                     setorder(dataset, Time)
-                    #dataset <- dataset[order(dataset$Time),]
                     
                     # Auf Datensätze mit mindestens 2 Börsen beschränken. Langsam.
                     cat(". ", prettyNum(nrow(dataset), big.mark=".", decimal.mark=","), " -> ", sep="")

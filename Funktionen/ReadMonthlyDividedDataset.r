@@ -24,7 +24,7 @@
 #' readMonthlyDividedDataset(
 #'     exchangeName = "Bitstamp",
 #'     currencyPairs = c("btcusd", "btceur"),
-#'     getSourceFileCallback = function(pair, date) {
+#'     getSourceFileCallback = function(pair, year, month) {
 #'         return(sprintf(
 #'             "Daten/bitstamp/%s/bitstamp-tick-%1$s-%2$d-%3$02d.csv.gz",
 #'             pair, year, month
