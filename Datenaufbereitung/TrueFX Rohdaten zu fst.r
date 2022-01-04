@@ -55,12 +55,8 @@ readMonthlyDividedDataset(
     "TrueFX",
     currencyPairs = c("EURUSD", "GBPUSD", "USDJPY"),
     getSourceFileCallback = function(pair, year, month) {
-        return(paste0(
-            "Daten/",
-            "truefx/",
-            pair, "/",
-            pair, "-", year, "-", sprintf("%02d", month), ".zip"
-        ))
+        return(sprintf("Daten/truefx/%s/%1$s-%2$d-%3$02d.zip",
+                       pair, year, month))
     },
     parseSourceFileCallback = parseTrueFXTickData,
     summariseDataCallback = summariseTrueFXTickData

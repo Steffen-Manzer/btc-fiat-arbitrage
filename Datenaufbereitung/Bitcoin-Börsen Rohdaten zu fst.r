@@ -32,12 +32,8 @@ readMonthlyDividedDataset(
     currencyPairs = c("btcusd", "btceur", "btcgbp", "btcjpy"),
     getSourceFileCallback = function(pair, year, month) {
         # Dateinamen der Quelldatei erzeugen
-        return(paste0(
-            "Daten/",
-            "bitfinex/",
-            pair, "/",
-            "bitfinex-tick-", pair, "-", year, "-", sprintf("%02d", month), ".csv.gz"
-        ))
+        return(sprintf("Daten/bitfinex/%s/bitfinex-tick-%1$s-%2$d-%3$02d.csv.gz",
+                       pair, year, month))
     },
     parseSourceFileCallback = function(srcFile) {
         # Daten der angegebenen Quelldatei einlesen
@@ -60,12 +56,8 @@ readMonthlyDividedDataset(
     currencyPairs = c("btcusd", "btceur"),
     getSourceFileCallback = function(pair, year, month) {
         # Dateinamen der Quelldatei erzeugen
-        return(paste0(
-            "Daten/",
-            "bitcoincharts-bitstamp/",
-            pair, "/",
-            "bitcoincharts-bitstamp-tick-", pair, "-", year, "-", sprintf("%02d", month), ".csv.gz"
-        ))
+        return(sprintf("Daten/bitcoincharts-bitstamp/%s/bitcoincharts-bitstamp-tick-%1$s-%2$d-%3$02d.csv.gz",
+                       pair, year, month))
     },
     parseSourceFile = function(srcFile) {
         # Daten der angegebenen Quelldatei einlesen
@@ -92,12 +84,8 @@ readMonthlyDividedDataset(
     currencyPairs = c("btcusd", "btceur", "btcgbp"),
     getSourceFileCallback = function(pair, year, month) {
         # Dateinamen der Quelldatei erzeugen
-        return(paste0(
-            "Daten/",
-            "bitstamp/",
-            pair, "/",
-            "bitstamp-tick-", pair, "-", year, "-", sprintf("%02d", month), ".csv.gz"
-        ))
+        return(sprintf("Daten/bitstamp/%s/bitstamp-tick-%1$s-%2$d-%3$02d.csv.gz",
+                       pair, year, month))
     },
     parseSourceFile = function(srcFile) {
         # Daten der angegebenen Quelldatei einlesen
@@ -118,12 +106,8 @@ readMonthlyDividedDataset(
     currencyPairs = c("btcusd", "btceur", "btcgbp"),
     getSourceFileCallback = function(pair, year, month) {
         # Dateinamen der Quelldatei erzeugen
-        return(paste0(
-            "Daten/",
-            "coinbase/",
-            pair, "/",
-            "coinbase-tick-", pair, "-", year, "-", sprintf("%02d", month), ".csv.gz"
-        ))
+        return(sprintf("Daten/coinbase/%s/coinbase-tick-%1$s-%2$d-%3$02d.csv.gz",
+                       pair, year, month))
     },
     parseSourceFile = function(srcFile) {
         # Daten der angegebenen Quelldatei einlesen
@@ -147,12 +131,8 @@ readMonthlyDividedDataset(
     currencyPairs = c("btcusd", "btceur", "btcgbp", "btcjpy", "btccad", "btcchf"),
     getSourceFileCallback = function(pair, year, month) {
         # Dateinamen der Quelldatei erzeugen
-        return(paste0(
-            "Daten/",
-            "kraken/",
-            pair, "/",
-            "kraken-tick-", pair, "-", year, "-", sprintf("%02d", month), ".csv.gz"
-        ))
+        return(sprintf("Daten/kraken/%s/kraken-tick-%1$s-%2$d-%3$02d.csv.gz",
+                       pair, year, month))
     },
     parseSourceFile = function(srcFile) {
         # Daten der angegebenen Quelldatei einlesen

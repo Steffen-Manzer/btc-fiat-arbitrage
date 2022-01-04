@@ -50,12 +50,8 @@ readMonthlyDividedDataset(
     "Dukascopy",
     currencyPairs = c("eurusd", "gbpusd", "usdcad", "usdchf", "usdjpy", "audusd"),
     getSourceFileCallback = function(pair, year, month) {
-        return(paste0(
-            "Daten/",
-            "dukascopy/",
-            pair, "/",
-            "dukascopy-", pair, "-", year, "-", sprintf("%02d", month), ".csv.gz"
-        ))
+        return(sprintf("Daten/dukascopy/%s/dukascopy-%1$s-%2$d-%3$02d.csv.gz",
+                       pair, year, month))
     },
     parseSourceFileCallback = parseDukascopyTickData,
     summariseDataCallback = summariseDukascopyTickData

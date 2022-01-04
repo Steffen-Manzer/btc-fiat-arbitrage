@@ -208,8 +208,8 @@ readMonthlyDividedDataset <- function(
                 if (!file.exists(srcFile) && !file.exists(targetFileTick)) {
                     # Es sind neue Daten vorhanden, dieser Datensatz fehlt allerdings.
                     if (newDataFound) {
-                        cat(paste0(srcFile, " nicht gefunden! Ende.\n"))
-                        stop = TRUE
+                        printf("%s nicht gefunden! Ende.\n")
+                        stop <- TRUE
                     }
                     next()
                 }
@@ -312,6 +312,7 @@ readMonthlyDividedDataset <- function(
                 rm(thisDataset_monthly, thisDataset)
                 toc()
                 gc()
+                printf("\n")
             } # loop: month
         } # loop: year
     } # loop: pair
