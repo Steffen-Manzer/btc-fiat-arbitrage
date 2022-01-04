@@ -25,9 +25,9 @@
 #'     exchangeName = "Bitstamp",
 #'     currencyPairs = c("btcusd", "btceur"),
 #'     getSourceFileCallback = function(pair, date) {
-#'         return(paste0(
-#'             "Daten/"bitstamp/", pair, "/",
-#'             "bitfinex-tick-", pair, "-", year, "-", sprintf("%02d", month), ".csv.gz"
+#'         return(sprintf(
+#'             "Daten/bitstamp/%s/bitstamp-tick-%1$s-%2$d-%3$02d.csv.gz",
+#'             pair, year, month
 #'         ))
 #'     },
 #'     parseSourceFileCallback = function(srcFile) {
