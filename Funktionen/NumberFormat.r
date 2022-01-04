@@ -3,3 +3,6 @@
 numberFormat <- function(...) {
     prettyNum(..., big.mark=".", decimal.mark=",")
 }
+moneyFormat <- function(..., digits=2) {
+    formatC(..., format="f", big.mark=".", decimal.mark=",", digits=digits)
+}
