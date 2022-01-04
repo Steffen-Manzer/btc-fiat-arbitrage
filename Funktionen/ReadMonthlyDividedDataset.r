@@ -51,12 +51,13 @@ readMonthlyDividedDataset <- function(
     readUntil = NA
 ) {
     
-    # Bibliotheken laden ------------------------------------------------------
+    # Bibliotheken und Hilfsfunktionen laden ----------------------------------
     library("fst")
     library("data.table")
     library("fasttime")
     library("tictoc")
     library("lubridate") # floor_date
+    source("Funktionen/printf.r")
     
     # Parameter verarbeiten ---------------------------------------------------
     if (is.na(targetBasename)) {
@@ -89,11 +90,12 @@ readMonthlyDividedDataset <- function(
     # Jedes Wechselkurspaar dieser Börse durchgehen
     for (pair in currencyPairs) {
         
+        pair <- tolower(pair)
         newDataFound <- FALSE
-        cat("===== ", exchangeName, " ", toupper(pair), " =====\n", sep="")
+        printf("===== %s %s =====\n", exchangeName, toupper(pair))
         
         # Cache-Basisverzeichnis
-        cacheBase <- paste0("Cache/", targetBasename, "/", tolower(pair), "/")
+        cacheBase <- sprintf("Cache/%s/%s", targetBasename, pair)
         
         # Cache-Verzeichnisse anlegen
         for (aggregationLevel in c("tick", "1s", "5s", "60s")) {
@@ -105,16 +107,16 @@ readMonthlyDividedDataset <- function(
         # Basispfade für alle Aggregationsstufen festlegen
         # Genauere Aggregationsstufen werden nach Monaten getrennt
         # Beispiel-Schema: Cache/bitstamp/btcusd/tick/bitstamp-btcusd-tick-2019-09.fst
-        cacheBaseTick <- paste0(cacheBase, "tick/", targetBasename, "-", tolower(pair), "-tick-")
-        cacheBase1s   <- paste0(cacheBase, "1s/",   targetBasename, "-", tolower(pair), "-1s-")
-        cacheBase5s   <- paste0(cacheBase, "5s/",   targetBasename, "-", tolower(pair), "-5s-")
-        cacheBase60s  <- paste0(cacheBase, "60s/",  targetBasename, "-", tolower(pair), "-60s-")
+        cacheBaseTick <- sprintf("%s/tick/%s-%s-tick", cacheBase, targetBasename, pair)
+        cacheBase1s <- sprintf("%s/1s/%s-%s-1s", cacheBase, targetBasename, pair)
+        cacheBase5s <- sprintf("%s/5s/%s-%s-5s", cacheBase, targetBasename, pair)
+        cacheBase60s <- sprintf("%s/60s/%s-%s-60s", cacheBase, targetBasename, pair)
         
         # Tages- und Monatsdaten werden nicht nach Monaten getrennt,
         # sondern alle in eine Datei geschrieben
         # Beispiel-Schema: Cache/bitstamp/btcusd/bitstamp-btcusd-daily.fst
-        targetFileDaily <- paste0(cacheBase, targetBasename, "-", tolower(pair), "-daily.fst")
-        targetFileMonthly <- paste0(cacheBase, targetBasename, "-", tolower(pair), "-monthly.fst")
+        targetFileDaily <- sprintf("%s/%s-%s-daily.fst", cacheBase, targetBasename, pair)
+        targetFileMonthly <- sprintf("%s/%s-%s-monthly.fst", cacheBase, targetBasename, pair)
         
         
         # Anhand der (sehr kleinen) Tagesdaten prüfen, ob der Datensatz 
@@ -123,7 +125,7 @@ readMonthlyDividedDataset <- function(
         if (file.exists(targetFileDaily)) {
             
             if (!file.exists(targetFileMonthly)) {
-                cat("Monatsdaten fehlen, obwohl Tagesdaten verfügbar sind. Fehler!")
+                printf("Monatsdaten fehlen, obwohl Tagesdaten verfügbar sind. Fehler!\n")
                 next
             }
             
@@ -134,12 +136,12 @@ readMonthlyDividedDataset <- function(
             lastMonth = month(lastDataset)
             lastYear = year(lastDataset)
             
-            cat("Datensatz vorhanden, letzter Stand:", lastMonth, "/", lastYear, "...")
+            printf("Datensatz vorhanden, Stand: %02d/%d ...", lastMonth, lastYear)
             
             # Größer-gleich-Vergleich, da Enddatum vor dem Ende 
             # der bereits eingelesenen Daten liegen kann
             if (lastYear >= endYear && lastMonth >= endMonth) {
-                cat(" Überspringe.\n")
+                printf(" Überspringe.\n")
                 next
             }
             
@@ -151,7 +153,7 @@ readMonthlyDividedDataset <- function(
                 startMonth <- lastMonth + 1
             }
             
-            cat("\n")
+            printf("\n")
             
         } else {
             
@@ -197,10 +199,10 @@ readMonthlyDividedDataset <- function(
                 
                 # Quell- und Zieldateien für diesen Monat bestimmen
                 srcFile <- getSourceFileCallback(pair, year, month)
-                targetFileTick <- paste0(cacheBaseTick, year, "-", sprintf("%02d", month), ".fst")
-                targetFile1s <- paste0(cacheBase1s, year, "-", sprintf("%02d", month), ".fst")
-                targetFile5s <- paste0(cacheBase5s, year, "-", sprintf("%02d", month), ".fst")
-                targetFile60s <- paste0(cacheBase60s, year, "-", sprintf("%02d", month), ".fst")
+                targetFileTick <- sprintf("%s-%d-%02d.fst", cacheBaseTick, year, month)
+                targetFile1s <- sprintf("%s-%d-%02d.fst", cacheBase1s, year, month)
+                targetFile5s <- sprintf("%s-%d-%02d.fst", cacheBase5s, year, month)
+                targetFile60s <- sprintf("%s-%d-%02d.fst", cacheBase60s, year, month)
                 
                 # Quell-Datensatz existiert nicht
                 if (!file.exists(srcFile) && !file.exists(targetFileTick)) {
@@ -215,7 +217,7 @@ readMonthlyDividedDataset <- function(
                 # Neue Daten wurden gefunden
                 newDataFound <- TRUE
                 tic()
-                cat(exchangeName, " ", toupper(pair), " ", sprintf("%02d", month), "/", year, ": ", sep="")
+                printf("%s %s %02d/%d: ", exchangeName, toupper(pair), month, year)
                 
                 # Tickdaten verarbeiten
                 if (file.exists(targetFileTick)) {
@@ -238,15 +240,15 @@ readMonthlyDividedDataset <- function(
                 }
                 
                 # Statistiken ausgeben
-                cat(
-                    format(first(thisDataset$Time), format="%d.%m.%Y %H:%M:%S"),
-                    "-",
-                    format(last(thisDataset$Time), format="%d.%m.%Y %H:%M:%S")
+                printf(
+                    "%s - %s",
+                    format(first(thisDataset$Time), format="%d.%m.%Y %H:%M:%OS"),
+                    format(last(thisDataset$Time), format="%d.%m.%Y %H:%M:%OS")
                 )
                 
                 # Auf 1s aggregieren
                 if (!file.exists(targetFile1s)) {
-                    cat(" - 1s")
+                    printf(" - 1s")
                     thisDataset_1s <- thisDataset[
                         j=eval(summariseDataCallback()),
                         by=floor_date(Time, unit = "second")
@@ -260,7 +262,7 @@ readMonthlyDividedDataset <- function(
                 
                 # Auf 5s aggregieren
                 if (!file.exists(targetFile5s)) {
-                    cat(", 5s")
+                    printf(", 5s")
                     thisDataset_5s <- thisDataset[
                         j=eval(summariseDataCallback()),
                         by=floor_date(Time, unit = "5 seconds")
@@ -274,7 +276,7 @@ readMonthlyDividedDataset <- function(
                 
                 # Auf 60s aggregieren
                 if (!file.exists(targetFile60s)) {
-                    cat(", 60s")
+                    printf(", 60s")
                     thisDataset_60s <- thisDataset[
                         j=eval(summariseDataCallback()),
                         by=floor_date(Time, unit = "minute")
@@ -287,7 +289,7 @@ readMonthlyDividedDataset <- function(
                 }
                 
                 # Auf 1d aggregieren (einzelne Datei für gesamten Datensatz)
-                cat(", 1d ")
+                printf(", 1d ")
                 thisDataset_daily <- thisDataset[
                     j=eval(summariseDataCallback()),
                     by=floor_date(Time, unit = "1 day")
@@ -298,7 +300,7 @@ readMonthlyDividedDataset <- function(
                 rm(thisDataset_daily)
                 
                 # Auf 1 Monat aggregieren (einzelne Datei für gesamten Datensatz)
-                cat(", 1mo ")
+                printf(", 1mo ")
                 thisDataset_monthly <- thisDataset[
                     j=eval(summariseDataCallback()),
                     by=floor_date(Time, unit = "1 month")
