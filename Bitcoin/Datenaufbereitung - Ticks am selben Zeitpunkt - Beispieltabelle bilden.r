@@ -1,6 +1,6 @@
 library("fst")
 library("data.table")
-source("Funktionen/NumberFormat.r")
+source("Funktionen/FormatNumber.r")
 source("Funktionen/printf.r")
 
 # Beispieldaten laden

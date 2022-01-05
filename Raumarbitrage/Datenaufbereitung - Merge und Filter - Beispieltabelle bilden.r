@@ -1,7 +1,7 @@
 library("fst")
 library("data.table")
 library("zoo")
-source("Funktionen/NumberFormat.r")
+source("Funktionen/FormatNumber.r")
 source("Funktionen/printf.r")
 
 # Beispieldaten laden
