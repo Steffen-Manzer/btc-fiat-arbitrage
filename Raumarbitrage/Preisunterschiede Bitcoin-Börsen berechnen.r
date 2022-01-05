@@ -519,15 +519,9 @@ compareTwoExchanges <- function(
     # Hauptschleife: Paarweise vergleichen
     printf("\n  Beginne Auswertung für %s der Börsen %s und %s ab %s.\n\n", 
            toupper(currencyPair), exchange_a, exchange_b, format(startDate, "%d.%m.%Y %H:%M:%S"))
-    printf(paste0(
-        "     Laufzeit   ",
-        "Verarbeitet   ",
-        "       Aktueller Datensatz   ",
-        "Ergebnisse   ",
-        "   Größe   ",
-        "   Geschw.   ",
-        "Set\n"
-    ))
+    printf("  % 13s   % 11s   %-26s   % 10s   % 10s   % 10s   % 3s\n",
+           "Laufzeit", "Verarbeitet", "Aktueller Datensatz",
+           "Ergebnisse", "Größe", "Geschw.", "Set")
     while (TRUE) {
         
         # Zähler erhöhen
@@ -538,7 +532,8 @@ compareTwoExchanges <- function(
         processedDatasets <- processedDatasets + 1L
         if (processedDatasets %% 10000 == 0 || currentRow == numRows) {
             runtime <- as.integer(proc.time()["elapsed"] - now)
-            printf("\r% 13s   % 11s   % 26s  % 10s    % 8s   % 6s T/s   % 3d",
+            #           Runtime nInput  Time    nResult Size    Speed      Set
+            printf("\r  % 13s   % 11s   % 26s   % 10s   % 8s   % 6s T/s   % 3d",
                    format.duration(runtime),
                    format.number(processedDatasets),
                    format(dataset_ab[currentRow,Time], "%d.%m.%Y %H:%M:%OS"),
@@ -715,7 +710,9 @@ compareTwoExchanges <- function(
     # Rest speichern
     saveInterimResult(result, result_set_index, exchange_a, exchange_b, currencyPair)
     
-    printf("\n\n  Abgeschlossen.\n")
+    printf("\n\n  Abgeschlossen. Insgesamt %s Datensätze in %s (letzter Datensatz, unkomprimiert).\n",
+           nrowDT(result),
+           format(object.size(cleanupDT(result)), units="auto", standard="SI"))
     
     return(invisible(NULL))
 }
