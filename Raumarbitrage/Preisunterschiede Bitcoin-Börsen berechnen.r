@@ -368,7 +368,7 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
 
 #' Teilergebnis speichern, um Arbeitsspeicher wieder freizugeben
 #' 
-#' @param result Eine data.table mit den Spalten `Time`, `Diff` und `MaxPrice`
+#' @param result Eine data.table mit den Spalten `Time`, `PriceLow` und `PriceHigh`
 #' @param index Nummer dieses Teilergebnisses
 #' @param exchange_a Name der ersten Börse
 #' @param exchange_b Name der zweiten Börse
@@ -399,9 +399,8 @@ saveInterimResult <- function(result, index, exchange_a, exchange_b, currencyPai
     # POSIXct konvertiert.
     result[, Time:=as.POSIXct(Time, origin="1970-01-01")]
     
-    # Index berechnen
-    result[, IndexLow:=DiffLow/PriceHigh]
-    result[, IndexHigh:=DiffHigh/PriceHigh]
+    # Arbitrageindex berechnen
+    result[, ArbitrageIndex:=PriceHigh/PriceLow]
     
     # Ergebnis speichern
     write_fst(result, outFile, compress=100)
@@ -415,7 +414,7 @@ saveInterimResult <- function(result, index, exchange_a, exchange_b, currencyPai
 #' 
 #' @param exchange_a Name der ersten Börse
 #' @param exchange_b Name der zweiten Börse
-#' @param currencyPair Kurspaar (z.B. EURUSD)
+#' @param currencyPair Kurspaar (z.B. btcusd)
 #' @param startDate Beginne Vergleich ab diesem Datum
 #'                  (= Zeitpunkt des ersten gemeinsamen Datensatzes)
 #' @param comparisonThreshold Zeitliche Differenz zweier Ticks in Sekunden,
@@ -424,10 +423,10 @@ saveInterimResult <- function(result, index, exchange_a, exchange_b, currencyPai
 #'   Cache/Raumarbitrage/`currencyPair`-`exchange_a`-`exchange_b`-`i`.fst
 #'   gespeichert (siehe `saveInterimResult`).
 compareTwoExchanges <- function(
-    exchange_a, 
-    exchange_b, 
-    currencyPair, 
-    startDate, 
+    exchange_a,
+    exchange_b,
+    currencyPair,
+    startDate,
     comparisonThreshold = 5L
 ) {
     
@@ -665,11 +664,16 @@ compareTwoExchanges <- function(
             next
         }
         
-        # Preisdifferenz berechnen
-        # Je nachdem an welcher Börse das Preisniveau höher ist, ist
-        # priceDifference_1 oder _2 höher/niedriger.
-        priceDifference_1 <- abs(tick_a$PriceHigh - tick_b$PriceLow)
-        priceDifference_2 <- abs(tick_a$PriceLow - tick_b$PriceHigh)
+        # Höchst-/Tiefstpreise bestimmen: jeweils von zwei verschiedenen Börsen
+        if (tick_a$PriceHigh >= tick_b$PriceHigh) {
+            # Preisniveau an Börse A ist (hier) höher als an Börse B
+            PriceHigh <- tick_a$PriceHigh
+            PriceLow <- tick_b$PriceLow
+        } else {
+            # Preisniveau an Börse B ist (hier) höher als an Börse A
+            PriceHigh <- tick_b$PriceHigh
+            PriceLow <- tick_a$PriceLow
+        }
         
         # Set in Ergebnisvektor speichern
         # Anmerkung:
@@ -679,9 +683,8 @@ compareTwoExchanges <- function(
         # Informationsverlust und noch immer signifikant schneller als rbind()
         result <- appendDT(result, list(
             Time = as.double(tick_b$Time),
-            DiffLow = min(priceDifference_1, priceDifference_2),
-            DiffHigh = max(priceDifference_1, priceDifference_2),
-            PriceHigh = max(tick_a$PriceHigh, tick_b$PriceHigh)
+            PriceLow = PriceLow,
+            PriceHigh = PriceHigh
         ))
         
         # Alle 5 Mio. Datenpunkte: Ergebnis speichern
