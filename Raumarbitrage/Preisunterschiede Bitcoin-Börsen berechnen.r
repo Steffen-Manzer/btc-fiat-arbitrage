@@ -23,6 +23,7 @@
 source("Klassen/Dataset.r")
 source("Funktionen/AddOneMonth.r")
 source("Funktionen/AppendToDataTable.r")
+source("Funktionen/FormatDuration.r")
 source("Funktionen/NumberFormat.r")
 source("Funktionen/printf.r")
 library("fst")
@@ -516,8 +517,17 @@ compareTwoExchanges <- function(
     now <- proc.time()["elapsed"]
     
     # Hauptschleife: Paarweise vergleichen
-    printf("Beginne Auswertung für %s der Börsen %s und %s ab %s.\n", 
+    printf("\n  Beginne Auswertung für %s der Börsen %s und %s ab %s.\n\n", 
            toupper(currencyPair), exchange_a, exchange_b, format(startDate, "%d.%m.%Y %H:%M:%S"))
+    printf(paste0(
+        "    Laufzeit   ",
+        "Verarbeitet   ",
+        "       Aktueller Datensatz   ",
+        "Ergebnisse   ",
+        "   Größe   ",
+        "   Geschw.   ",
+        "Set\n"
+    ))
     while (TRUE) {
         
         # Zähler erhöhen
@@ -526,16 +536,16 @@ compareTwoExchanges <- function(
         
         # Laufzeit und aktuellen Fortschritt periodisch ausgeben
         processedDatasets <- processedDatasets + 1L
-        if (processedDatasets %% 10000 == 0) {
+        if (processedDatasets %% 10000 == 0 || currentRow == numRows) {
             runtime <- as.integer(proc.time()["elapsed"] - now)
-            # Zeile leeren, denn in manchen Terminals überschreibt \t bisherige Ausgaben nicht
-            cat("\r", rep(" ", 150), sep="")
-            printf("\r%s verarbeitet\t%s im Ergebnisvektor\tAktuell: %s\t%s Sekunden\t%s Ticks/s        ",
+            printf("\r% 12s   % 11s   % 26s  % 10s    % 8s   % 6s T/s   % 3d",
+                   format.duration(runtime),
                    numberFormat(processedDatasets),
-                   numberFormat(nrowDT(result)),
                    format(dataset_ab[currentRow,Time], "%d.%m.%Y %H:%M:%OS"),
-                   numberFormat(round(runtime, 0)),
-                   numberFormat(round(processedDatasets/runtime, 0))
+                   numberFormat(nrowDT(result)),
+                   format(object.size(result), units="auto", standard="SI"),
+                   numberFormat(round(processedDatasets/runtime, 0)),
+                   result_set_index
             )
         }
         
@@ -705,7 +715,7 @@ compareTwoExchanges <- function(
     # Rest speichern
     saveInterimResult(result, result_set_index, exchange_a, exchange_b, currencyPair)
     
-    printf("Abgeschlossen.\n")
+    printf("\n\n  Abgeschlossen.\n")
     
     return(invisible(NULL))
 }
