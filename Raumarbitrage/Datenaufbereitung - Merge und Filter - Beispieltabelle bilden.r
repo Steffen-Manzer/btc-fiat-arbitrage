@@ -49,8 +49,8 @@ tabIndent <- "            "
 for (i in seq_len(nrow(ab))) {
     tick <- ab[i,]
     printf("%s%s &\n", tabIndentFirst, format(tick$Time, "%d.%m.%Y, %H:%M:%OS"))
-    printf("%s%s\\,USD &\n", tabIndent, moneyFormat(tick$PriceLow, digits=2))
-    printf("%s%s\\,USD &\n", tabIndent, moneyFormat(tick$PriceHigh, digits=2))
+    printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceLow, digits=2))
+    printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceHigh, digits=2))
     printf("%s%d &\n", tabIndent, tick$n)
     printf("%s%s &\n", tabIndent, tick$Exchange)
     

@@ -49,14 +49,14 @@ tabIndent <- "            "
 for (i in seq_len(nrow(joined))) {
     tick <- joined[i,]
     printf("%s%s &\n", tabIndentFirst, format(tick$Time, "%d.%m.%Y, %H:%M:%OS"))
-    printf("%s%s\\,USD &\n", tabIndent, moneyFormat(tick$Price, digits=2))
+    printf("%s%s\\,USD &\n", tabIndent, format.money(tick$Price, digits=2))
     
     if (is.na(tick$PriceLow)) {
         printf("%s& & \\\\\n", tabIndent)
     } else {
-        printf("%s%s\\,USD &\n", tabIndent, moneyFormat(tick$PriceLow, digits=2))
-        printf("%s%s\\,USD &\n", tabIndent, moneyFormat(tick$PriceHigh, digits=2))
-        printf("%s%s \\\\\n", tabIndent, numberFormat(tick$n))
+        printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceLow, digits=2))
+        printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceHigh, digits=2))
+        printf("%s%s \\\\\n", tabIndent, format.number(tick$n))
     }
     
     printf("\n")

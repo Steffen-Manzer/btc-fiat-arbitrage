@@ -185,7 +185,7 @@ readAndAppendNewTickData <- function(dataset, currentTime, endDate) {
             stop(sprintf("Datei nicht gefunden: %s", dataFile))
         }
         
-        printf.debug("Lese %s ab Zeile %s bis ", basename(dataFile), startRow |> numberFormat())
+        printf.debug("Lese %s ab Zeile %s bis ", basename(dataFile), startRow |> format.number())
         newData <- readDataFileChunked(dataFile, startRow, endDate)
         numNewRows <- numNewRows + nrow(newData)
         
@@ -201,13 +201,13 @@ readAndAppendNewTickData <- function(dataset, currentTime, endDate) {
             # Börse hinterlegen und an bestehende Daten anfügen
             newData[, Exchange:=dataset$Exchange]
             printf.debug("%s (von %s): %s Datensätze.\n",
-                         lastRowNumber |> numberFormat(),
-                         metadata_fst(dataFile)$nrOfRows |> numberFormat(),
-                         numNewRows |> numberFormat()
+                         lastRowNumber |> format.number(),
+                         metadata_fst(dataFile)$nrOfRows |> format.number(),
+                         numNewRows |> format.number()
             )
             dataset$data <- rbindlist(list(dataset$data, newData), use.names=TRUE)
         } else {
-            printf.debug("%s: Keine neuen Datensätze.\n", lastRowNumber |> numberFormat())
+            printf.debug("%s: Keine neuen Datensätze.\n", lastRowNumber |> format.number())
         }
         
         # Zieldatum erreicht und mehr als 100 Datensätze geladen:
@@ -520,7 +520,7 @@ compareTwoExchanges <- function(
     printf("\n  Beginne Auswertung für %s der Börsen %s und %s ab %s.\n\n", 
            toupper(currencyPair), exchange_a, exchange_b, format(startDate, "%d.%m.%Y %H:%M:%S"))
     printf(paste0(
-        "    Laufzeit   ",
+        "     Laufzeit   ",
         "Verarbeitet   ",
         "       Aktueller Datensatz   ",
         "Ergebnisse   ",
@@ -538,13 +538,13 @@ compareTwoExchanges <- function(
         processedDatasets <- processedDatasets + 1L
         if (processedDatasets %% 10000 == 0 || currentRow == numRows) {
             runtime <- as.integer(proc.time()["elapsed"] - now)
-            printf("\r% 12s   % 11s   % 26s  % 10s    % 8s   % 6s T/s   % 3d",
+            printf("\r% 13s   % 11s   % 26s  % 10s    % 8s   % 6s T/s   % 3d",
                    format.duration(runtime),
-                   numberFormat(processedDatasets),
+                   format.number(processedDatasets),
                    format(dataset_ab[currentRow,Time], "%d.%m.%Y %H:%M:%OS"),
-                   numberFormat(nrowDT(result)),
+                   format.number(nrowDT(result)),
                    format(object.size(result), units="auto", standard="SI"),
-                   numberFormat(round(processedDatasets/runtime, 0)),
+                   format.number(round(processedDatasets/runtime, 0)),
                    result_set_index
             )
         }
