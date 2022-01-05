@@ -687,10 +687,10 @@ compareTwoExchanges <- function(
             PriceHigh = PriceHigh
         ))
         
-        # Alle 5 Mio. Datenpunkte: Ergebnis speichern
-        if (nrowDT(result) > 5e6) {
+        # Alle 100 Mio. Datenpunkte: Ergebnis speichern
+        if (nrowDT(result) > 1e8) {
             
-            printf("\n5.000.000 Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...\n")
+            printf.debug("\n100 Mio. Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...\n")
             
             # Ergebnis speichern
             saveInterimResult(result, result_set_index, exchange_a, exchange_b, currencyPair)
@@ -714,6 +714,11 @@ compareTwoExchanges <- function(
 # Berechnung starten ==========================================================
 # Nur Testlauf
 #compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-01-14 00:00:00"))
+
+# Speicher-Warnung anzeigen
+printf("Hinweis: Derzeit wird ab 100 Millionen Ergebnisdatensätzen ")
+printf("eine weitere Datei begonnen und Arbeitsspeicher freigegeben.\n")
+printf("Dies entspricht einer Speicherauslastung von geschätzt 3-4 GB.\n")
 
 # Abarbeitung händisch parallelisieren, da CPU-limitiert
 if (FALSE) {
