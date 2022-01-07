@@ -214,7 +214,7 @@ for (pair in currencyPairs) {
                         # Anzahl Datensätze
                         numDatasets = n()
                     )
-                colnames(thisPriceDifferencesWeekly)[1] = "Time"
+                setnames(thisPriceDifferencesWeekly, 1, "Time")
                 priceDifferencesWeekly <- rbind(priceDifferencesWeekly, thisPriceDifferencesWeekly)
                 
                 # Preisdifferenzen auf Monatsbasis herunterbrechen für Darstellung
@@ -232,7 +232,7 @@ for (pair in currencyPairs) {
                         # Anzahl Datensätze
                         numDatasets = n()
                     )
-                colnames(thisPriceDifferencesMonthly)[1] = "Time"
+                setnames(thisPriceDifferencesMonthly, 1, "Time")
                 priceDifferencesMonthly <- rbind(priceDifferencesMonthly, thisPriceDifferencesMonthly)
                 
                 toc()

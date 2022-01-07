@@ -42,12 +42,13 @@
     rawData$Time <- fastPOSIXct(rawData$Tim, tz="UTC")
     
     # Wochensummen bilden
+    # TODO Gruppieren mittels data.table
     weeklyData <- rawData %>%
         group_by(week = floor_date(Time, unit="week")) %>%
         summarise(
             Volume = sum(Volume)
         )
-    colnames(weeklyData)[1] <- "Time"
+    setnames(weeklyData, 1, "Time")
     weeklyData$Time <- as.Date(weeklyData$Time)
     
     # Letzten Datensatz entfernen, potentiell unvollständig und damit verzerrend

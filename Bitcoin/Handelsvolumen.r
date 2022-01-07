@@ -53,7 +53,7 @@
             maxDailyVolume = max(Volume),
             monthlyVolume = sum(Volume)
         )
-    colnames(btcvolume)[1] <- "Time"
+    setnames(btcvolume, 1, "Time")
     btcvolume$Time <- as.Date(btcvolume$Time)
     
     

@@ -253,7 +253,7 @@ readMonthlyDividedDataset <- function(
                         j=eval(summariseDataCallback()),
                         by=floor_date(Time, unit = "second")
                     ]
-                    colnames(thisDataset_1s)[1] <- "Time"
+                    setnames(thisDataset_1s, 1, "Time")
                     write_fst(thisDataset_1s, targetFile1s, compress=100)
                     
                     # Speicher freigeben
@@ -267,7 +267,7 @@ readMonthlyDividedDataset <- function(
                         j=eval(summariseDataCallback()),
                         by=floor_date(Time, unit = "5 seconds")
                     ]
-                    colnames(thisDataset_5s)[1] <- "Time"
+                    setnames(thisDataset_5s, 1, "Time")
                     write_fst(thisDataset_5s, targetFile5s, compress=100)
                     
                     # Speicher freigeben
@@ -281,7 +281,7 @@ readMonthlyDividedDataset <- function(
                         j=eval(summariseDataCallback()),
                         by=floor_date(Time, unit = "minute")
                     ]
-                    colnames(thisDataset_60s)[1] <- "Time"
+                    setnames(thisDataset_60s, 1, "Time")
                     write_fst(thisDataset_60s, targetFile60s, compress=100)
                     
                     # Speicher freigeben
@@ -294,7 +294,7 @@ readMonthlyDividedDataset <- function(
                     j=eval(summariseDataCallback()),
                     by=floor_date(Time, unit = "1 day")
                 ]
-                colnames(thisDataset_daily)[1] <- "Time"
+                setnames(thisDataset_daily, 1, "Time")
                 dataset_daily <- rbind(dataset_daily, thisDataset_daily)
                 write_fst(dataset_daily, targetFileDaily, compress=100)
                 rm(thisDataset_daily)
@@ -305,7 +305,7 @@ readMonthlyDividedDataset <- function(
                     j=eval(summariseDataCallback()),
                     by=floor_date(Time, unit = "1 month")
                 ]
-                colnames(thisDataset_monthly)[1] <- "Time"
+                setnames(thisDataset_monthly, 1, "Time")
                 dataset_monthly <- rbind(dataset_monthly, thisDataset_monthly)
                 write_fst(dataset_monthly, targetFileMonthly, compress=100)
                 
