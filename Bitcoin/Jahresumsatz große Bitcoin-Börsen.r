@@ -60,8 +60,10 @@ srcsets <- fread("
     Kraken,BTC/JPY,Cache/kraken/btcjpy/kraken-btcjpy-daily.fst,0
     Kraken,BTC/CAD,Cache/kraken/btccad/kraken-btccad-daily.fst,0
     Kraken,BTC/CHF,Cache/kraken/btcchf/kraken-btcchf-daily.fst,1
+    Kraken,BTC/AUD,Cache/kraken/btcaud/kraken-btcaud-daily.fst,1
 ")
-#Kraken BTC/CHF Erst ab Dezember 2019
+#Kraken BTC/CHF erst ab Dezember 2019
+#Kraken BTC/AUD erst ab Juni 2020
 
 # Ergebnistabelle
 volumeSet <- data.table(

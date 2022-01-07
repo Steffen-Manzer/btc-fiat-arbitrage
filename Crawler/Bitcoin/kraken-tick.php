@@ -5,7 +5,7 @@
 require_once '_include.php';
 
 $src = strtolower($_GET['src'] ?? $argv[1] ?? '');
-if ($src !== 'eur' && $src !== 'usd' && $src !== 'gbp' && $src !== 'jpy' && $src !== 'cad' && $src !== 'chf') {
+if (!in_array($src, ['eur', 'usd', 'gbp', 'jpy', 'cad', 'chf', 'aud'])) {
     die('Invalid source.');
 }
 

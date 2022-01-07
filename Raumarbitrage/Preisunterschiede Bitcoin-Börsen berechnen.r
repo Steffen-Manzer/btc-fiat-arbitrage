@@ -756,6 +756,7 @@ if (FALSE) {
     #   BTCJPY enthält Daten von 05.11.2014, 22:21:30 (UTC) bis heute
     #   BTCCAD enthält Daten von 29.06.2015, 03:27:41 (UTC) bis heute
     #   BTCCHF enthält Daten von 06.12.2019, 16:33:17 (UTC) bis heute
+    #   BTCAUD enthält Daten von 16.06.2020, 22:30:13 (UTC) bis heute
     
     
     # BTC/USD =================================================================

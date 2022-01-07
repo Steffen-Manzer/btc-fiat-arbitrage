@@ -130,7 +130,8 @@ readMonthlyDividedDataset(
 cat("\n========= Verarbeite Kraken =========\n")
 readMonthlyDividedDataset(
     "Kraken",
-    currencyPairs = c("btcusd", "btceur", "btcgbp", "btcjpy", "btccad", "btcchf"),
+    currencyPairs = c("btcusd", "btceur", "btcgbp", "btcjpy",
+                      "btccad", "btcchf", "btcaud"),
     getSourceFileCallback = function(pair, year, month) {
         # Dateinamen der Quelldatei erzeugen
         return(sprintf("Daten/kraken/%s/kraken-tick-%1$s-%2$d-%3$02d.csv.gz",
