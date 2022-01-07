@@ -56,8 +56,10 @@ readMonthlyDividedDataset(
     currencyPairs = c("btcusd", "btceur"),
     getSourceFileCallback = function(pair, year, month) {
         # Dateinamen der Quelldatei erzeugen
-        return(sprintf("Daten/bitcoincharts-bitstamp/%s/bitcoincharts-bitstamp-tick-%1$s-%2$d-%3$02d.csv.gz",
-                       pair, year, month))
+        return(sprintf(
+            "Daten/bitcoincharts-bitstamp/%s/bitcoincharts-bitstamp-tick-%1$s-%2$d-%3$02d.csv.gz",
+            pair, year, month
+        ))
     },
     parseSourceFile = function(srcFile) {
         # Daten der angegebenen Quelldatei einlesen

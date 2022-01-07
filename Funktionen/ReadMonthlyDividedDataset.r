@@ -99,8 +99,8 @@ readMonthlyDividedDataset <- function(
         
         # Cache-Verzeichnisse anlegen
         for (aggregationLevel in c("tick", "1s", "5s", "60s")) {
-            if (!dir.exists(paste0(cacheBase, aggregationLevel))) {
-                dir.create(paste0(cacheBase, aggregationLevel), recursive = TRUE)
+            if (!dir.exists(sprintf("%s/%s", cacheBase, aggregationLevel))) {
+                dir.create(sprintf("%s/%s", cacheBase, aggregationLevel), recursive = TRUE)
             }
         }
         
