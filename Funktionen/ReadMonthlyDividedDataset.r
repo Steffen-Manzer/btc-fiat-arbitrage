@@ -310,9 +310,8 @@ readMonthlyDividedDataset <- function(
                 write_fst(dataset_monthly, targetFileMonthly, compress=100)
                 
                 rm(thisDataset_monthly, thisDataset)
-                toc()
+                toc() # x.xxx sec elapsed\n
                 gc()
-                printf("\n")
             } # loop: month
         } # loop: year
     } # loop: pair
