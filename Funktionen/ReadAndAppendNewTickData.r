@@ -1,5 +1,8 @@
-# Benötigt `readDataFileChunked`
+# Benötigte Funktionen und Pakete laden
+source("Funktionen/AddOneMonth.r")
 source("Funktionen/ReadDataFileChunked.r")
+library("data.table")
+library("lubridate") # is.POSIXct
 
 #' Lade Tickdaten für das gesamte angegebene Intervall, ggf. über
 #' mehrere Quelldateien hinweg
@@ -11,8 +14,14 @@ source("Funktionen/ReadDataFileChunked.r")
 #' @param dataset Eine Instanz der Klasse `Dataset`
 #' @param currentTime Zeitpunkt des aktuellen (zuletzt verwendeten) Ticks
 #' @param endDate Zieldatum, bis zu dem mindestens gelesen werden soll
+#' @param ... Weitere Parameter, die an `readDataFileChunked` übergeben werden
 #' @return `NULL` (Verändert den angegebenen Datensatz per Referenz.)
-readAndAppendNewTickData <- function(dataset, currentTime, endDate) {
+readAndAppendNewTickData <- function(
+    dataset,
+    currentTime,
+    endDate,
+    ...
+) {
     
     # Parameter validieren
     stopifnot(
@@ -60,7 +69,7 @@ readAndAppendNewTickData <- function(dataset, currentTime, endDate) {
         }
         
         printf.debug("Lese %s ab Zeile %s bis ", basename(dataFile), startRow |> format.number())
-        newData <- readDataFileChunked(dataFile, startRow, endDate)
+        newData <- readDataFileChunked(dataFile, startRow, endDate, ...)
         numNewRows <- numNewRows + nrow(newData)
         
         # Letzte Zeile nur für Debug-Zwecke speichern

@@ -1,3 +1,7 @@
+# Benötigte Pakete laden
+library("fst")
+library("data.table")
+
 #' Liest eine einzelne angegebene .fst-Datei bis zum Dateiende oder 
 #' bis endDate, je nachdem was früher eintritt
 #' 
@@ -11,7 +15,12 @@
 #' @param numDatasetsPerRead Datensätze, die an einem Stück gelesen werden,
 #'   bevor geprüft wird, ob ein Abbruchkriterium erreicht wurde
 #' @return `data.table` mit den gelesenen Daten (`Time`, `Price`, `RowNum`)
-readDataFileChunked <- function(dataFile, startRow, endDate, numDatasetsPerRead = 10000L) {
+readDataFileChunked <- function(
+    dataFile,
+    startRow,
+    endDate,
+    numDatasetsPerRead = 10000L
+) {
     
     # Umgebungsbedingungen prüfen
     stopifnot(
@@ -19,12 +28,15 @@ readDataFileChunked <- function(dataFile, startRow, endDate, numDatasetsPerRead 
         file.exists(dataFile)
     )
     
+    # Ergebnis aufbauen
+    result <- data.table()
+    
     # Metadaten der Datei lesen
     numRowsInFile <- metadata_fst(dataFile)$nrOfRows
     
     # Keine weiteren Daten in dieser Datei: Abbruch
     if (startRow == numRowsInFile) {
-        return(data.table())
+        return(result)
     }
     
     # Lese Daten iterativ ein, bis ein Abbruchkriterium erfüllt ist
@@ -39,7 +51,7 @@ readDataFileChunked <- function(dataFile, startRow, endDate, numDatasetsPerRead 
         newData[, RowNum:=startRow:endRow]
         
         # Daten anhängen
-        if (exists("result")) {
+        if (nrow(result) > 0) {
             result <- rbindlist(list(result, newData), use.names=TRUE)
         } else {
             result <- newData
