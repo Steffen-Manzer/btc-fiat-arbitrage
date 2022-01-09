@@ -19,16 +19,16 @@ LaTeX-Befehl `executeR` erwähnt:
 ```latex
 % R aus LaTeX heraus ausführen
 \newcommand{\executeR}[1]{%
-	\ignorespaces%
-	\immediate%
-	\write18{%
-	    echo;%
-	    echo "executeR: #1:";%
-	    cd "/Pfad/zu/den/R/Quelldateien";%
-	    R --no-save --no-restore --slave -f '#1' --args FromLaTeX;%
-	    echo;%
+    \ignorespaces%
+    \immediate%
+    \write18{%
+        echo;%
+        echo "executeR: #1:";%
+        cd "/Pfad/zu/den/R/Quelldateien";%
+        R --no-save --no-restore --slave -f '#1' --args FromLaTeX;%
+        echo;%
     }%
-	\ignorespaces%
+    \ignorespaces%
 }
 ```
 
