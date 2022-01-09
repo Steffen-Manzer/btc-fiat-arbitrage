@@ -3,6 +3,8 @@
 Crawler, Aggregatoren und R-Skripte zur Analyse von Arbitragemöglichkeiten zwischen
 Bitcoin- und Devisenmärkten.
 
+![Raumarbitrage BTC/USD](https://research.noecho.de/Logo@2x.png)
+
 ## Versionshinweise
 
 - Die Auswertungsskripte wurden unter R 4.1.2 entwickelt.
