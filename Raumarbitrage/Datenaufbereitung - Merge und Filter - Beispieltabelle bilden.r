@@ -17,8 +17,8 @@ b <- read_fst(
 )
 
 # Auf Beispiel-Zeitfenster beschränken
-a <- a[Time>="2021-12-05 19:35:12.097997" & Time<"2021-12-05 19:35:14.505135",]
-b <- b[Time>="2021-12-05 19:35:12.097997" & Time<"2021-12-05 19:35:14.505135",]
+a <- a[Time %between% c("2021-12-05 19:35:12.097997", "2021-12-05 19:35:14.505134")]
+b <- b[Time %between% c("2021-12-05 19:35:12.097997", "2021-12-05 19:35:14.505134")]
 
 # Gleiche Ticks gruppieren und ursprüngliche Börse vermerken
 a <- a[j=.(PriceLow=min(Price),PriceHigh=max(Price),n=.N),by=Time]

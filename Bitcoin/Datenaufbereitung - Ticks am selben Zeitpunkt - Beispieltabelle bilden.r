@@ -11,7 +11,7 @@ d <- read_fst(
 )
 
 # Auf Beispiel-Zeitfenster beschränken
-d <- d[Time>="2021-12-05 19:35:02.226903" & Time<="2021-12-05 19:35:02.936298",]
+d <- d[Time %between% c("2021-12-05 19:35:02.226903", "2021-12-05 19:35:02.936298")]
 
 # Gruppieren
 grouped <- d[j=.(PriceLow=min(Price),PriceHigh=max(Price),n=.N),by=Time]
