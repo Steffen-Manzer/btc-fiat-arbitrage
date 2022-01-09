@@ -26,8 +26,6 @@
     }
     
     # Bibliotheken laden ------------------------------------------------------
-    setwd("/Users/fox/Documents/Studium - Promotion/Datenanalyse/")
-    source(".Rprofile")
     library("fst")
     library("data.table")
     library("dplyr")

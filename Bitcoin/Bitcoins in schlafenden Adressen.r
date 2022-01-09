@@ -28,8 +28,6 @@
     }
     
     # Arbeitsverzeichnis und Pakete
-    setwd("/Users/fox/Documents/Studium - Promotion/Datenanalyse/")
-    source(".Rprofile")
     library("curl")
     library("stringr")
     library("data.table")

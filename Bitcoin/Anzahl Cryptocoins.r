@@ -28,8 +28,6 @@
     }
     
     # Bibliotheken laden ------------------------------------------------------
-    setwd("/Users/fox/Documents/Studium - Promotion/Datenanalyse/")
-    source(".Rprofile")
     source("Konfiguration/CoinMarketCap_API_KEY.r")
     library("data.table")
     library("rjson")
