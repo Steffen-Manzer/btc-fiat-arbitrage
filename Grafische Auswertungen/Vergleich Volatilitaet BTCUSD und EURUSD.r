@@ -32,8 +32,6 @@
         return(invisible())
     }
     
-    setwd("/Users/fox/Documents/Studium - Promotion/Datenanalyse/")
-    source(".Rprofile")
     library("data.table")
     library("dplyr")
     library("ggplot2")

@@ -32,8 +32,6 @@
         return()
     }
     
-    setwd("/Users/fox/Documents/Studium - Promotion/Datenanalyse/")
-    source(".Rprofile")
     library("data.table")
     #library("rjson") # Für Destatis
     #library("stringr") # Destatis-Datum einlesen
