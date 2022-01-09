@@ -1,25 +1,25 @@
-# Finde Kurspaare zur (späteren) Analyse von Raumarbitrage.
-# 
-# Grundablauf: Immer paarweiser Vergleich zweier Börsen mit "Moving Window",
-# ähnlich zum Verfahren des `mergesort`-Algorithmus. Lese neue Daten sequentiell
-# und lösche verarbeitete Daten regelmäßig, um den Bedarf an Arbeitsspeicher
-# verhältnismäßig gering zu halten und somit eine gute Parallelisierbarkeit
-# zu ermöglichen.
-#
-# - Erste x Daten beider Börsen laden = "Betrachtungsfenster" initialisieren:
-#   [t = 0, ..., t = 1h], mindestens jedoch je 10.000 Datenpunkte.
-# - Filtere beide Datensätze auf gemeinsamen Zeitraum.
-# - Liste beider Kurse in eine einzelne Liste vereinen, nach Datum sortieren
-#   und filtern (siehe unten).
-# - Solange Daten für beide Börsen vorhanden sind:
-#   - Nächsten Datensatz vergleichen und Ergebnis speichern
-#   - Prüfen, ob noch genug Daten beider Börsen für Vergleich vorhanden sind, sonst:
-#       - neues Datenfenster laden: [t = 1h, ..., t = 2h]
-#       - Speicher freigeben: Daten des ersten Betrachtungsfensters entfernen (0...1h)
-#       - Letzte paar Datenpunkte des vorherigen Betrachtungsfensters behalten, um
-#         korrekt filtern/vergleichen zu können
-# - Alle fünf Millionen Datenpunkte: Teilergebnisse in einer eigenen Datei speichern,
-#   um Arbeitsspeicher freizugeben.
+#' Finde Kurspaare zur (späteren) Analyse von Raumarbitrage.
+#' 
+#' Grundablauf: Immer paarweiser Vergleich zweier Börsen mit "Moving Window",
+#' ähnlich zum Verfahren des `mergesort`-Algorithmus. Lese neue Daten sequentiell
+#' und lösche verarbeitete Daten regelmäßig, um den Bedarf an Arbeitsspeicher
+#' verhältnismäßig gering zu halten und somit eine gute Parallelisierbarkeit
+#' zu ermöglichen.
+#'
+#' - Erste x Daten beider Börsen laden = "Betrachtungsfenster" initialisieren:
+#'   [t = 0, ..., t = 1h], mindestens jedoch je 10.000 Datenpunkte.
+#' - Filtere beide Datensätze auf gemeinsamen Zeitraum.
+#' - Liste beider Kurse in eine einzelne Liste vereinen, nach Datum sortieren
+#'   und filtern (siehe unten).
+#' - Solange Daten für beide Börsen vorhanden sind:
+#'   - Nächsten Datensatz vergleichen und Ergebnis speichern
+#'   - Prüfen, ob noch genug Daten beider Börsen für Vergleich vorhanden sind, sonst:
+#'       - neues Datenfenster laden: [t = 1h, ..., t = 2h]
+#'       - Speicher freigeben: Daten des ersten Betrachtungsfensters entfernen (0...1h)
+#'       - Letzte paar Datenpunkte des vorherigen Betrachtungsfensters behalten, um
+#'         korrekt filtern/vergleichen zu können
+#' - Alle fünf Millionen Datenpunkte: Teilergebnisse in einer eigenen Datei speichern,
+#'   um Arbeitsspeicher freizugeben.
 
 
 # Bibliotheken und externe Hilfsfunktionen laden ==============================

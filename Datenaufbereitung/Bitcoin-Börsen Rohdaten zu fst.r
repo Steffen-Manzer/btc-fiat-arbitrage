@@ -1,16 +1,19 @@
-# Lese und aggregiere Rohdaten der Bitcoin-Börsen zu
-# Tickdaten, 1s-/5s-/60s/1d, 1mo-OHLC
+#' Lese und aggregiere Rohdaten der Bitcoin-Börsen zu
+#' Tickdaten, 1s-/5s-/60s/1d, 1mo-OHLC
 
+
+# Bibliotheken und externe Hilfsfunktionen laden ==============================
 source("Funktionen/ReadMonthlyDividedDataset.r")
-
-# Bibliotheken laden
 library("data.table") # fread
 library("fasttime")
 library("lubridate") # floor_date
 
-# Hilfsfunktion: Daten eines Zeitabschnittes aggregieren
-# Die Art und Weise, wie Daten zu 1s/5s/60s/1d aggregiert werden, ist
-# für alle Bitcoin-Börsen identisch.
+
+# Hilfsfunktionen =============================================================
+
+#' Daten eines Zeitabschnittes aggregieren
+#' Die Art und Weise, wie Daten zu 1s/5s/60s/1d aggregiert werden, ist
+#' für alle Bitcoin-Börsen identisch.
 bitcoinSummariseCallback <- function() {
     return(expression(.(
         Amount = sum(abs(Amount)),
@@ -25,6 +28,8 @@ bitcoinSummariseCallback <- function() {
 }
 
 
+# Daten einlesen ==============================================================
+
 # Bitfinex
 cat("\n========= Verarbeite Bitfinex =========\n")
 readMonthlyDividedDataset(
@@ -38,7 +43,7 @@ readMonthlyDividedDataset(
     parseSourceFileCallback = function(srcFile) {
         # Daten der angegebenen Quelldatei einlesen
         #                            ID         Time         Amount    Price
-        sourceFileColumnClasses = c("numeric", "character", "double", "double")
+        sourceFileColumnClasses <- c("numeric", "character", "double", "double")
         thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
         thisDataset$Time <- fastPOSIXct(thisDataset$Time, tz="UTC")
         return(thisDataset)
@@ -64,7 +69,7 @@ readMonthlyDividedDataset(
     parseSourceFile = function(srcFile) {
         # Daten der angegebenen Quelldatei einlesen
         #                            Time         Price     Amount
-        sourceFileColumnClasses = c("character", "double", "double")
+        sourceFileColumnClasses <- c("character", "double", "double")
         thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
         thisDataset$Time <- fastPOSIXct(thisDataset$Time, tz="UTC")
         return(thisDataset)
@@ -92,7 +97,7 @@ readMonthlyDividedDataset(
     parseSourceFile = function(srcFile) {
         # Daten der angegebenen Quelldatei einlesen
         #                            ID         Time         Amount    Price     Type
-        sourceFileColumnClasses = c("numeric", "character", "double", "double", "numeric")
+        sourceFileColumnClasses <- c("numeric", "character", "double", "double", "numeric")
         thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
         thisDataset$Time <- fastPOSIXct(thisDataset$Time, tz="UTC")
         return(thisDataset)
@@ -140,7 +145,7 @@ readMonthlyDividedDataset(
     parseSourceFile = function(srcFile) {
         # Daten der angegebenen Quelldatei einlesen
         #                            Time         Amount    Price     Type         Limit
-        sourceFileColumnClasses = c("character", "double", "double", "character", "character")
+        sourceFileColumnClasses <- c("character", "double", "double", "character", "character")
         thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
         thisDataset$Time <- fastPOSIXct(thisDataset$Time, tz="UTC")
         return(thisDataset)
