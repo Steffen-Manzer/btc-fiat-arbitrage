@@ -1,0 +1,136 @@
+[
+  {
+    "name": "bitfinex",
+    "pairs": [
+      {
+        "name": "btcusd",
+        "startDate": "2013-01-14 16:47:23",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": []
+      },
+      {
+        "name": "btceur",
+        "startDate": "2017-05-19 08:16:21",
+        "notes": "Keine auffälligen Zeitabschnitte.",
+        "suspiciousPeriods": []
+      },
+      {
+        "name": "btcgbp",
+        "startDate": "2018-03-29 14:40:57",
+        "notes": "Keine auffälligen Zeitabschnitte.",
+        "suspiciousPeriods": []
+      },
+      {
+        "name": "btcjpy",
+        "startDate": "2018-03-29 15:55:31",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": []
+      }
+    ]
+  },
+  {
+    "name": "bitstamp",
+    "pairs": [
+      {
+        "name": "btcusd",
+        "startDate": "2011-09-13 13:53:36",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": []
+      },
+      {
+        "name": "btceur",
+        "startDate": "2017-12-05 11:43:49",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": []
+      },
+      {
+        "name": "btcgbp",
+        "startDate": "2021-12-14 14:48:35",
+        "notes": "Keine auffälligen Zeitabschnitte.",
+        "suspiciousPeriods": []
+      }
+    ]
+  },
+  {
+    "name": "coinbase",
+    "pairs": [
+      {
+        "name": "btcusd",
+        "startDate": "2014-12-01 05:33:56.761198",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": []
+      },
+      {
+        "name": "btceur",
+        "startDate": "2015-04-23 01:42:34.182104",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": []
+      },
+      {
+        "name": "btcgbp",
+        "startDate": "2015-04-21 22:22:41.29405",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": []
+      }
+    ]
+  },
+  {
+    "name": "kraken",
+    "pairs": [
+      {
+        "name": "btcusd",
+        "startDate": "2013-10-06 21:34:15.5513",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": [
+          {
+            "startDate": "2021-02-22 14:16:00",
+            "endDate": "2021-02-22 14:30:00",
+            "notes": "Mehrfache Kurssprünge"
+          }
+        ]
+      },
+      {
+        "name": "btceur",
+        "startDate": "2013-09-10 23:47:11.546",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": []
+      },
+      {
+        "name": "btcgbp",
+        "startDate": "2014-11-06 16:13:43.4495",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": [
+          {
+            "startDate": "2018-01-08 00:00:00",
+            "endDate": "2018-01-15 00:00:00",
+            "notes": "Abweichung vom an anderen Börsen beobachteten Kurs von rund 10.000 GBP auf 5 (!) bis 100.000 GBP. Begründet vermutlich durch Wartungsarbeiten und Softwareupdates."
+          }
+        ]
+      },
+      {
+        "name": "btcjpy",
+        "startDate": "2014-11-05 22:21:30.8875",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": []
+      },
+      {
+        "name": "btccad",
+        "startDate": "2015-06-29 03:27:41.3169",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": []
+      },
+      {
+        "name": "btcchf",
+        "startDate": "2019-12-06 16:33:17.1575",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": []
+      },
+      {
+        "name": "btcaud",
+        "startDate": "2020-06-16 22:30:13.2771",
+        "notes": "t.b.d.",
+        "suspiciousPeriods": []
+      }
+    ]
+  }
+]
