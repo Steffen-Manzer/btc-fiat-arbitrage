@@ -118,7 +118,7 @@ analyseAnomaly <- function(
             columns=c("Time", "Price"),
             as.data.table=TRUE
         )
-        dataset_exchange <- rbindlist(list(dataset_reference, dataset_reference_next_month))
+        dataset_reference <- rbindlist(list(dataset_reference, dataset_reference_next_month))
         rm(dataset_reference_next_month)
     }
     
