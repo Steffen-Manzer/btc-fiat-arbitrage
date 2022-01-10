@@ -6,7 +6,98 @@
         "name": "btcusd",
         "startDate": "2013-01-14 16:47:23",
         "notes": "t.b.d.",
-        "suspiciousPeriods": []
+        "suspiciousPeriods": [
+          {
+            "startDate": "2013-03-07 01:39:37",
+            "endDate": "2013-03-07 01:39:39",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-03-19 16:25:07",
+            "endDate": "2013-03-19 16:25:09",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-04-10 17:36:58",
+            "endDate": "2013-04-10 17:37:02",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-04-10 23:01:59",
+            "endDate": "2013-04-10 23:02:05",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-04-10 23:14:38",
+            "endDate": "2013-04-10 23:14:50",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-04-11 12:34:28",
+            "endDate": "2013-04-11 12:34:33",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-04-11 18:11:59",
+            "endDate": "2013-04-11 18:12:01",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-04-12 02:54:59",
+            "endDate": "2013-04-12 02:55:01",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-04-12 12:44:13",
+            "endDate": "2013-04-12 12:44:16",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-04-14 02:44:13",
+            "endDate": "2013-04-14 02:44:22",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-04-16 04:38:09",
+            "endDate": "2013-04-16 04:38:11",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-04-26 08:21:49",
+            "endDate": "2013-04-26 08:21:51",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-07-01 18:01:14",
+            "endDate": "2013-07-01 18:01:16",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2014-02-10 10:58:00",
+            "endDate": "2014-02-10 12:07:35",
+            "notes": "TODO Entscheidung? - Fallender Kurs, dann Lücke bis Korrektur",
+            "filter": true
+          },
+          {
+            "startDate": "2021-05-19 12:56:00",
+            "endDate": "2021-05-19 12:56:15",
+            "notes": "TODO Entscheidung? - Kurssprünge",
+            "filter": true
+          }
+        ]
       },
       {
         "name": "btceur",
@@ -24,7 +115,26 @@
         "name": "btcjpy",
         "startDate": "2018-03-29 15:55:31",
         "notes": "t.b.d.",
-        "suspiciousPeriods": []
+        "suspiciousPeriods": [
+          {
+            "startDate": "2021-05-19 12:56:00",
+            "endDate": "2021-05-19 12:57:00",
+            "notes": "TODO Entscheidung? - Mehrfache Kurssprünge um ca. 150.000 JPY.",
+            "filter": false
+          },
+          {
+            "startDate": "2021-10-13 18:41:00",
+            "endDate": "2021-10-13 18:42:00",
+            "notes": "Datenlücke, daher Kurssprung. Keine Anomalie.",
+            "filter": false
+          },
+          {
+            "startDate": "2021-10-28 18:39:00",
+            "endDate": "2021-10-28 18:40:00",
+            "notes": "Zuvor Datenlücke, daher Kurssprung. Keine Anomalie.",
+            "filter": false
+          }
+        ]
       }
     ]
   },
@@ -41,7 +151,38 @@
         "name": "btceur",
         "startDate": "2017-12-05 11:43:49",
         "notes": "t.b.d.",
-        "suspiciousPeriods": []
+        "suspiciousPeriods": [
+          {
+            "startDate": "2020-11-22 10:44:00",
+            "endDate": "2020-11-22 10:44:45",
+            "notes": "TODO Entscheidung - Kurssprünge.",
+            "filter": false
+          },
+          {
+            "startDate": "2021-01-29 10:18:00",
+            "endDate": "2021-01-29 10:18:05",
+            "notes": "TODO Entscheidung - Kurssprünge.",
+            "filter": false
+          },
+          {
+            "startDate": "2021-11-10 18:46:16",
+            "endDate": "2021-11-10 18:46:19",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-11-10 18:52:22",
+            "endDate": "2021-11-10 18:52:24",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-11-10 19:02:37",
+            "endDate": "2021-11-10 19:02:39",
+            "notes": "Ausreißer",
+            "filter": true
+          }
+        ]
       },
       {
         "name": "btcgbp",
@@ -85,7 +226,8 @@
           {
             "startDate": "2021-02-22 14:16:00",
             "endDate": "2021-02-22 14:30:00",
-            "notes": "Mehrfache Kurssprünge"
+            "notes": "TODO Entscheidung? - Mehrfache Kurssprünge um mehrere tausend US-Dollar.",
+            "filter": false
           }
         ]
       },
@@ -103,7 +245,8 @@
           {
             "startDate": "2018-01-08 00:00:00",
             "endDate": "2018-01-15 00:00:00",
-            "notes": "Abweichung vom an anderen Börsen beobachteten Kurs von rund 10.000 GBP auf 5 (!) bis 100.000 GBP. Begründet vermutlich durch Wartungsarbeiten und Softwareupdates."
+            "notes": "Ticks im Bereich von 5 bis 100.000 GBP, während der Gleichgewichtskurs an anderen Börsen konstant bei rund 10.000 GBP liegt.",
+            "filter": true
           }
         ]
       },

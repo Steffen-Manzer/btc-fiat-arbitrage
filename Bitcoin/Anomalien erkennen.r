@@ -14,6 +14,8 @@ source("Funktionen/ReadAndAppendNewTickData.r")
 source("Funktionen/printf.r")
 library("fst")
 library("data.table")
+library("ggplot2")
+library("ggthemes")
 library("zoo") # rollapply
 
 
@@ -21,6 +23,165 @@ library("zoo") # rollapply
 relativeThreshold <- 0.3
 absoluteThreshold <- 2000
 absoluteThresholdJPY <- 200000
+
+
+# Hilfsfunktionen
+
+#' Zeitraum einer Börse betrachten und mit anderen Börsen vergleichen
+#'
+#' Lädt Daten um den angegebenen Zeitpunkt herum und stellt diese
+#' grafisch dar.
+#' 
+#' @param exchange Name der Börse
+#' @param referenceExchange Name einer Vergleichsbörse
+#' @param currencyPair Kurspaar (z.B. btcusd)
+#' @param appearanceDate Datum/Zeitpunkt der Anomalie
+#' @param interval Betrachtungsintervall. Standard: Eine Minute
+analyseAnomaly <- function(
+    exchange,
+    referenceExchange,
+    currencyPair,
+    appearanceDate,
+    interval = 60L
+) {
+    
+    # Parameter validieren
+    stopifnot(
+        is.character(exchange), length(exchange) == 1L,
+        is.character(referenceExchange), length(referenceExchange) == 1L,
+        is.character(currencyPair), length(currencyPair) == 1L,
+        is.POSIXct(appearanceDate), length(appearanceDate) == 1L,
+        is.numeric(interval), length(interval) == 1L
+    )
+    
+    # Daten laden
+    loadFrom <- appearanceDate - interval
+    loadTo <- appearanceDate + interval + 60
+    
+    
+    # Untersuchte Börse
+    sourceFile <- sprintf(
+        "Cache/%s/%s/tick/%1$s-%2$s-tick-%d-%02d.fst",
+        exchange, tolower(currencyPair), year(loadFrom), month(loadFrom)
+    )
+    printf("Lade %s\n", sourceFile)
+    dataset_exchange <- read_fst(
+        sourceFile,
+        columns=c("Time", "Price"),
+        as.data.table=TRUE
+    )
+    
+    # Nächsten Monat auch noch laden
+    if (month(loadTo) != month(loadFrom)) {
+        sourceFile <- sprintf(
+            "Cache/%s/%s/tick/%1$s-%2$s-tick-%d-%02d.fst",
+            exchange, tolower(currencyPair), year(loadTo), month(loadTo)
+        )
+        printf("Lade %s\n", sourceFile)
+        dataset_exchange_next_month <- read_fst(
+            sourceFile,
+            columns=c("Time", "Price"),
+            as.data.table=TRUE
+        )
+        dataset_exchange <- rbindlist(list(dataset_exchange, dataset_exchange_next_month))
+        rm(dataset_exchange_next_month)
+    }
+    
+    # Filtern
+    dataset_exchange <- dataset_exchange[Time %between% c(loadFrom, loadTo)]
+    
+    # Börse hinterlegen
+    dataset_exchange[, Exchange:=exchange]
+    
+    
+    # Vergleichsbörse
+    sourceFile <- sprintf(
+        "Cache/%s/%s/tick/%1$s-%2$s-tick-%d-%02d.fst",
+        referenceExchange, tolower(currencyPair), year(loadFrom), month(loadFrom)
+    )
+    printf("Lade %s\n", sourceFile)
+    dataset_reference <- read_fst(
+        sourceFile,
+        columns=c("Time", "Price"),
+        as.data.table=TRUE
+    )
+    
+    # Nächsten Monat auch noch laden
+    if (month(loadTo) != month(loadFrom)) {
+        sourceFile <- sprintf(
+            "Cache/%s/%s/tick/%1$s-%2$s-tick-%d-%02d.fst",
+            referenceExchange, tolower(currencyPair), year(loadTo), month(loadTo)
+        )
+        printf("Lade %s\n", sourceFile)
+        dataset_reference_next_month <- read_fst(
+            sourceFile,
+            columns=c("Time", "Price"),
+            as.data.table=TRUE
+        )
+        dataset_exchange <- rbindlist(list(dataset_reference, dataset_reference_next_month))
+        rm(dataset_reference_next_month)
+    }
+    
+    # Filtern
+    dataset_reference <- dataset_reference[Time %between% c(loadFrom, loadTo)]
+    
+    # Börse hinterlegen
+    dataset_reference[, Exchange:=referenceExchange]
+    
+    
+    # Zu einem gemeinsamen Datensatz verbinden
+    dataset <- rbindlist(list(dataset_exchange, dataset_reference))
+    rm(dataset_reference)
+    gc()
+    
+    # Sortieren
+    setorder(dataset, Time)
+    dataset[, Exchange:=factor(Exchange, levels=c(exchange, referenceExchange))]
+    
+    # Grafik zeichnen
+    print(
+        ggplot(dataset, aes(x=Time, y=Price)) +
+            # Referenzlinie 1
+            geom_vline(
+                xintercept=appearanceDate, 
+                color="red", 
+                alpha=.3,
+                linetype="dashed",
+                size=.5
+            ) +
+            # Referenzlinie 2, da auf Minutenbasis gerundet
+            geom_vline(
+                xintercept=appearanceDate + 60, 
+                color="red", 
+                alpha=.3,
+                linetype="dashed",
+                size=.5
+            ) +
+            geom_line(aes(colour=Exchange, linetype=Exchange)) +
+            theme_minimal() +
+            scale_x_datetime(
+                #date_breaks="10 min",
+                #date_minor_breaks="1 minute",
+                date_labels="%H%:%M",
+                expand = expansion(mult = c(.01, .03))
+            ) +
+            scale_y_continuous(
+                labels = function(x) format.money(x, digits=0)
+            ) +
+            scale_color_ptol() +
+            labs(
+                title=sprintf("%s %s zwischen %s und %s",
+                              exchange,
+                              format.currencyPair(currencyPair),
+                              format(appearanceDate, "%d.%m.%Y %H:%M:%S"),
+                              format(appearanceDate+60, "%d.%m.%Y %H:%M:%S")),
+                x="Zeit",
+                y="Preis"
+            )
+    )
+    
+    return(dataset_exchange)
+}
 
 
 # Hauptfunktion ===============================================================
