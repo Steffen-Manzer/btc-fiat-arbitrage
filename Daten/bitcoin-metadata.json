@@ -345,8 +345,39 @@
       {
         "name": "btcgbp",
         "startDate": "2015-04-21 22:22:41.29405",
-        "notes": "t.b.d.",
-        "suspiciousPeriods": []
+        "notes": "Einige Ausreißer.",
+        "suspiciousPeriods": [
+          {
+            "startDate": "2015-11-05 05:54:45",
+            "endDate": "2015-11-05 05:54:47",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2017-03-10 21:03:40",
+            "endDate": "2017-03-10 21:03:42",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2017-05-15 16:58:00",
+            "endDate": "2017-05-15 16:59:59",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2017-12-20 00:43:00",
+            "endDate": "2017-12-20 00:44:00",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-05-19 13:04:05",
+            "endDate": "2021-05-19 13:04:07",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+        ]
       }
     ]
   },
