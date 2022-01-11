@@ -387,12 +387,96 @@
       {
         "name": "btcusd",
         "startDate": "2013-10-06 21:34:15.5513",
-        "notes": "t.b.d.",
+        "notes": "Einige Ausreißer und Kurssprünge.",
         "suspiciousPeriods": [
+          {
+            "startDate": "2013-11-12 06:25:00",
+            "endDate": "2013-11-12 06:30:00",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2014-04-11 07:00:00",
+            "endDate": "2014-04-11 07:05:00",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2014-09-22 15:25:00",
+            "endDate": "2014-09-22 15:30",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2018-01-13 11:23:02",
+            "endDate": "2018-01-13 11:23:03",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2019-09-13 20:38:00",
+            "endDate": "2019-09-13 20:38:10",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2020-11-30 15:33:00",
+            "endDate": "2020-11-30 15:33:35",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-02-22 14:24:23",
+            "endDate": "2021-02-22 14:24:37",
+            "notes": "Ausreißer",
+            "filter": true
+          },
           {
             "startDate": "2021-02-22 14:16:00",
             "endDate": "2021-02-22 14:30:00",
-            "notes": "TODO Entscheidung? - Mehrfache Kurssprünge um mehrere tausend US-Dollar.",
+            "notes": "Mehrfache Kurssprünge.",
+            "filter": false
+          },
+          {
+            "startDate": "2021-03-16 12:12:15",
+            "endDate": "2021-03-16 12:12:30",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-03-17 15:43:04",
+            "endDate": "2021-03-17 15:43:05",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-04-18 03:37:00",
+            "endDate": "2021-04-18 03:38:00",
+            "notes": "Mehrfache Kurssprünge.",
+            "filter": false
+          },
+          {
+            "startDate": "2021-05-13 00:02:20",
+            "endDate": "2021-05-13 00:02:30",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-05-19 12:56:00",
+            "endDate": "2021-05-19 13:00:00",
+            "notes": "Mehrfache Kurssprünge.",
+            "filter": false
+          },
+          {
+            "startDate": "2021-10-21 11:34:00",
+            "endDate": "2021-10-21 11:35:30",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-12-04 05:25:00",
+            "endDate": "2021-12-04 05:30:00",
+            "notes": "Sprünge, aber der normalen Kursentwicklung folgend.",
             "filter": false
           }
         ]
@@ -411,7 +495,7 @@
           {
             "startDate": "2018-01-08 00:00:00",
             "endDate": "2018-01-15 00:00:00",
-            "notes": "Ticks im Bereich von 5 bis 100.000 GBP, während der Gleichgewichtskurs an anderen Börsen konstant bei rund 10.000 GBP liegt.",
+            "notes": "Mehrere Ausreißer.",
             "filter": true
           }
         ]
