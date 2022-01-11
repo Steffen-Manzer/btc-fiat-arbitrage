@@ -3,6 +3,7 @@ source("Funktionen/AddOneMonth.r")
 source("Funktionen/ReadDataFileChunked.r")
 library("data.table")
 library("lubridate") # is.POSIXct
+library("rjson")
 
 #' Lade Tickdaten für das gesamte angegebene Intervall, ggf. über
 #' mehrere Quelldateien hinweg
@@ -14,20 +15,23 @@ library("lubridate") # is.POSIXct
 #' @param dataset Eine Instanz der Klasse `Dataset`
 #' @param currentTime Zeitpunkt des aktuellen (zuletzt verwendeten) Ticks
 #' @param endDate Zieldatum, bis zu dem mindestens gelesen werden soll
+#' @param filterSuspiciousPeriods Auffällige Datensätze herausfiltern
 #' @param ... Weitere Parameter, die an `readDataFileChunked` übergeben werden
 #' @return `NULL` (Verändert den angegebenen Datensatz per Referenz.)
 readAndAppendNewTickData <- function(
     dataset,
     currentTime,
     endDate,
+    filterSuspiciousPeriods = TRUE,
     ...
 ) {
     
     # Parameter validieren
     stopifnot(
         inherits(dataset, "Dataset"),
-        is.POSIXct(currentTime),
-        is.POSIXct(endDate)
+        is.POSIXct(currentTime), length(currentTime) == 1L,
+        is.POSIXct(endDate), length(endDate) == 1L,
+        is.logical(filterSuspiciousPeriods), length(filterSuspiciousPeriods) == 1L
     )
     
     numNewRows <- 0L
@@ -57,6 +61,26 @@ readAndAppendNewTickData <- function(
         
     }
     
+    # Anomalien aus diesem Datensatz filtern
+    if (filterSuspiciousPeriods == TRUE) {
+        allExchangeMetadata <- fromJSON(file="Daten/bitcoin-metadata.json")
+        exchangeMetadata <- allExchangeMetadata[[dataset$Exchange]]
+        stopifnot(!is.null(exchangeMetadata))
+        pairMetadata <- exchangeMetadata[[dataset$CurrencyPair]]
+        stopifnot(!is.null(pairMetadata))
+        suspiciousPeriods <- data.table()
+        for (i in seq_along(pairMetadata$suspiciousPeriods)) {
+            period <- pairMetadata$suspiciousPeriods[[i]]
+            if (isFALSE(period$filter)) {
+                next
+            }
+            suspiciousPeriods <- rbind(suspiciousPeriods, data.table(
+                startDate = as.POSIXct(period$startDate, tz="UTC"),
+                endDate = as.POSIXct(period$endDate, tz="UTC")
+            ))
+        }
+    }
+    
     while (TRUE) {
         
         # Beginne immer bei aktuellem Monat
@@ -70,6 +94,20 @@ readAndAppendNewTickData <- function(
         
         printf.debug("Lese %s ab Zeile %s bis ", basename(dataFile), startRow |> format.number())
         newData <- readDataFileChunked(dataFile, startRow, endDate, ...)
+        
+        # Filtern
+        if (nrow(newData) > 0 && filterSuspiciousPeriods == TRUE) {
+            for (i in seq_len(nrow(suspiciousPeriods))) {
+                filtered <- newData[
+                    Time %between% c(suspiciousPeriods$startDate[i], suspiciousPeriods$endDate[i]),
+                    which=TRUE
+                ]
+                if (length(filtered) > 0) {
+                    newData <- newData[!filtered]
+                }
+            }
+        }
+        
         numNewRows <- numNewRows + nrow(newData)
         
         # Letzte Zeile nur für Debug-Zwecke speichern

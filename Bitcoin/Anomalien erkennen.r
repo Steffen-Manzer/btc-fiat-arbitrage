@@ -269,7 +269,8 @@ findPriceAnomalies <- function(
             printf.debug("Datenende erreicht, Stop nach aktuellem Monat.\n")
         }
         
-        readAndAppendNewTickData(dataset, startDate, loadUntil, numDatasetsPerRead = 20000L)
+        readAndAppendNewTickData(dataset, startDate, loadUntil, 
+                                 filterSuspiciousPeriods = FALSE, numDatasetsPerRead = 20000L)
         runtime <- as.integer(proc.time()["elapsed"] - now)
         #           Runtime nInput  Time    nResult Speed  
         printf("\r  % 13s   % 11s   % 26s   % 10s   % 6s T/s",
