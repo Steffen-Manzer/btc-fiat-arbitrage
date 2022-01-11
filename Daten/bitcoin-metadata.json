@@ -119,7 +119,7 @@
           {
             "startDate": "2021-05-19 12:56:00",
             "endDate": "2021-05-19 12:57:00",
-            "notes": "TODO Entscheidung? - Mehrfache Kurssprünge um ca. 150.000 JPY.",
+            "notes": "Mehrfache Kurssprünge.",
             "filter": false
           },
           {
@@ -484,8 +484,21 @@
       {
         "name": "btceur",
         "startDate": "2013-09-10 23:47:11.546",
-        "notes": "t.b.d.",
-        "suspiciousPeriods": []
+        "notes": "Einige Ausreißer und Datenlücken.",
+        "suspiciousPeriods": [
+          {
+            "startDate": "2018-01-13 11:22:30",
+            "endDate": "2018-01-13 11:22:50",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2018-01-14 11:17:17",
+            "endDate": "2018-01-14 11:17:19",
+            "notes": "Ausreißer",
+            "filter": true
+          }
+        ]
       },
       {
         "name": "btcgbp",
