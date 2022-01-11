@@ -25,7 +25,7 @@ texFile_b <- sprintf(
 )
 
 
-# BTC/GBP an der Börse Kraken zwischen dem 08. und 15.01.2018 =================
+# BTC/GBP an Kraken zwischen dem 08. und 15.01.2018 ===========================
 a_kraken <- read_fst(
     "Cache/kraken/btcgbp/tick/kraken-btcgbp-tick-2018-01.fst",
     columns=c("Time","Price"),
@@ -58,7 +58,7 @@ if (plotAsLaTeX) {
     
     # Bibliotheken/Konfiguration laden
     source("Konfiguration/TikZ.r")
-    printf.debug("Ausgabe als LaTeX in Datei %s\n", texFile)
+    printf.debug("Ausgabe als LaTeX in Datei %s\n", texFile_a)
     tikz(
         file = texFile_a,
         width = documentPageWidth,
@@ -108,7 +108,7 @@ if (plotAsLaTeX) {
 }
 
 
-# BTC/USD an der Börse Kraken am 22.02.2021 zwischen 14:16 und 14:30 UTC ======
+# BTC/USD an Kraken, 22.02.2021 zwischen 14:16 und 14:30 UTC ==================
 b_kraken <- read_fst(
     "Cache/kraken/btcusd/tick/kraken-btcusd-tick-2021-02.fst",
     columns=c("Time","Price"),
@@ -138,7 +138,7 @@ if (plotAsLaTeX) {
     plotTitle <- NULL
     plotXLab <- "\\footnotesize Uhrzeit"
     plotYLab <- "\\footnotesize Preis in USD"
-    printf.debug("Ausgabe als LaTeX in Datei %s\n", texFile)
+    printf.debug("Ausgabe als LaTeX in Datei %s\n", texFile_b)
     tikz(
         file = texFile_b,
         width = documentPageWidth,

@@ -5,7 +5,7 @@
       {
         "name": "btcusd",
         "startDate": "2013-01-14 16:47:23",
-        "notes": "t.b.d.",
+        "notes": "Einige Ausreißer und Kurssprünge.",
         "suspiciousPeriods": [
           {
             "startDate": "2013-03-07 01:39:37",
@@ -114,7 +114,7 @@
       {
         "name": "btcjpy",
         "startDate": "2018-03-29 15:55:31",
-        "notes": "t.b.d.",
+        "notes": "Einige Kurssprünge",
         "suspiciousPeriods": [
           {
             "startDate": "2021-05-19 12:56:00",
@@ -125,13 +125,13 @@
           {
             "startDate": "2021-10-13 18:41:00",
             "endDate": "2021-10-13 18:42:00",
-            "notes": "Datenlücke, daher Kurssprung. Keine Anomalie.",
+            "notes": "Lücke, daher Kurssprung. Keine Anomalie.",
             "filter": false
           },
           {
             "startDate": "2021-10-28 18:39:00",
             "endDate": "2021-10-28 18:40:00",
-            "notes": "Zuvor Datenlücke, daher Kurssprung. Keine Anomalie.",
+            "notes": "Lücke, daher Kurssprung. Keine Anomalie.",
             "filter": false
           }
         ]
@@ -144,8 +144,87 @@
       {
         "name": "btcusd",
         "startDate": "2011-09-13 13:53:36",
-        "notes": "t.b.d.",
-        "suspiciousPeriods": []
+        "notes": "Einige Ausreißer, Datenlücken und Kursabweichungen mit anschließender Korrektur.",
+        "suspiciousPeriods": [
+          {
+            "startDate": "2013-04-05 10:54:18",
+            "endDate": "2013-04-05 10:54:20",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-04-10 17:30:00",
+            "endDate": "2013-04-10 20:30:00",
+            "notes": "Kursabweichung mit anschließender Korrektur. Keine Anomalie.",
+            "filter": false
+          },
+          {
+            "startDate": "2013-04-10 22:27:00",
+            "endDate": "2013-04-10 22:28:00",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2013-04-11 10:57:00",
+            "endDate": "2013-04-11 10:58:00",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2016-06-23 12:36:53",
+            "endDate": "2016-06-23 12:36:55",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-04-14 10:00:05",
+            "endDate": "2021-04-14 10:01:06",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-04-18 03:36:00",
+            "endDate": "2021-04-18 03:37:00",
+            "notes": "Kleinere Kurssprünge. Keine Anomalie.",
+            "filter": false
+          },
+          {
+            "startDate": "2021-04-18 04:30:08",
+            "endDate": "2021-04-18 04:30:11",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-08-19 05:35:00",
+            "endDate": "2021-08-19 05:35:00",
+            "notes": "Datenlücke. Keine Anomalie.",
+            "filter": false
+          },
+          {
+            "startDate": "2021-09-01 00:00:00",
+            "endDate": "2021-09-01 00:00:00",
+            "notes": "Datenlücke. Keine Anomalie.",
+            "filter": false
+          },
+          {
+            "startDate": "2021-10-10 20:35:29",
+            "endDate": "2021-10-10 20:35:34",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-10-18 15:58:55",
+            "endDate": "2021-10-18 15:58:58",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-10-28 18:38:00",
+            "endDate": "2021-10-28 18:40:00",
+            "notes": "Kurssprung auch an anderen Börsen. Keine Anomalie.",
+            "filter": false
+          },
+        ]
       },
       {
         "name": "btceur",
