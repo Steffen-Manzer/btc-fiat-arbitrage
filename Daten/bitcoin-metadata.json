@@ -503,12 +503,18 @@
       {
         "name": "btcgbp",
         "startDate": "2014-11-06 16:13:43.4495",
-        "notes": "t.b.d.",
+        "notes": "Mehrere Ausreißer, Kurssprünge und große Lücken, geringe Liquidität, Analyse daher schwierig. Einige besonders auffällige Zeitpunkte exemplarisch herausgepickt.",
         "suspiciousPeriods": [
           {
             "startDate": "2018-01-08 00:00:00",
             "endDate": "2018-01-15 00:00:00",
-            "notes": "Mehrere Ausreißer.",
+            "notes": "Mehrere extreme Ausreißer.",
+            "filter": true
+          },
+          {
+            "startDate": "2021-02-22 14:17:00",
+            "endDate": "2021-02-22 14:19:00",
+            "notes": "Mehrere Kurssprünge.",
             "filter": true
           }
         ]
@@ -516,25 +522,44 @@
       {
         "name": "btcjpy",
         "startDate": "2014-11-05 22:21:30.8875",
-        "notes": "t.b.d.",
-        "suspiciousPeriods": []
+        "notes": "Mehrere Ausreißer, Kurssprünge und große Lücken, geringe Liquidität, Analyse daher schwierig. Einige besonders auffällige Zeitpunkte exemplarisch herausgepickt.",
+        "suspiciousPeriods": [
+          {
+            "startDate": "2018-09-19 10:00:56",
+            "endDate": "2018-09-19 10:00:58",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2018-09-20 14:11:34",
+            "endDate": "2018-09-20 14:11:36",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2019-05-03 09:18:31",
+            "endDate": "2019-05-03 09:18:33",
+            "notes": "Ausreißer",
+            "filter": true
+          }
+        ]
       },
       {
         "name": "btccad",
         "startDate": "2015-06-29 03:27:41.3169",
-        "notes": "t.b.d.",
+        "notes": "Einzige betrachtete Börse mit BTC/CAD, daher keine weitere Analyse.",
         "suspiciousPeriods": []
       },
       {
         "name": "btcchf",
         "startDate": "2019-12-06 16:33:17.1575",
-        "notes": "t.b.d.",
+        "notes": "Einzige betrachtete Börse mit BTC/CHF, daher keine weitere Analyse.",
         "suspiciousPeriods": []
       },
       {
         "name": "btcaud",
         "startDate": "2020-06-16 22:30:13.2771",
-        "notes": "t.b.d.",
+        "notes": "Einzige betrachtete Börse mit BTC/AUD, daher keine weitere Analyse.",
         "suspiciousPeriods": []
       }
     ]
