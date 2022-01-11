@@ -66,8 +66,7 @@ if (plotAsLaTeX) {
     tikz(
         file = texFile_a,
         width = documentPageWidth,
-        #height = 6 / 2.54, # cm -> Zoll
-        height = 7 / 2.54, # cm -> Zoll
+        height = 5 / 2.54, # cm -> Zoll
         sanitize = TRUE
     )
     
@@ -83,7 +82,7 @@ print(
         theme_minimal() +
         theme(
             #legend.position = "none",
-            legend.position = c(0.2, 0.85),
+            legend.position = c(0.5, 0.3),
             legend.background = element_rect(fill = "white", size = 0.2, linetype = "solid"),
             legend.margin = margin(0, 12, 5, 5),
             legend.title = element_blank(), #element_text(size=9),
@@ -96,7 +95,7 @@ print(
             date_labels="%d.%m.",
             expand = expansion(mult = c(.03, .03))
         ) +
-        scale_y_continuous(
+        scale_y_log10(
             labels = function(x) format.money(x, digits=0)
         ) +
         scale_color_ptol() +
@@ -146,8 +145,7 @@ if (plotAsLaTeX) {
     tikz(
         file = texFile_b,
         width = documentPageWidth,
-        #height = 6 / 2.54, # cm -> Zoll
-        height = 7 / 2.54, # cm -> Zoll
+        height = 5 / 2.54, # cm -> Zoll
         sanitize = TRUE
     )
     
@@ -164,7 +162,7 @@ print(
         geom_line(aes(color=Exchange, linetype=Exchange)) + 
         theme_minimal() +
         theme(
-            legend.position = c(0.85, 0.2),
+            legend.position = c(0.85, 0.3),
             legend.background = element_rect(fill = "white", size = 0.2, linetype = "solid"),
             legend.margin = margin(0, 12, 5, 5),
             legend.title = element_blank(), #element_text(size=9),
@@ -227,8 +225,7 @@ if (plotAsLaTeX) {
     tikz(
         file = texFile_c,
         width = documentPageWidth,
-        #height = 6 / 2.54, # cm -> Zoll
-        height = 7 / 2.54, # cm -> Zoll
+        height = 5 / 2.54, # cm -> Zoll
         sanitize = TRUE
     )
     
@@ -245,7 +242,7 @@ print(
         geom_line(aes(color=Exchange, linetype=Exchange)) + 
         theme_minimal() +
         theme(
-            legend.position = c(0.85, 0.2),
+            legend.position = c(0.85, 0.3),
             legend.background = element_rect(fill = "white", size = 0.2, linetype = "solid"),
             legend.margin = margin(0, 12, 5, 5),
             legend.title = element_blank(), #element_text(size=9),
