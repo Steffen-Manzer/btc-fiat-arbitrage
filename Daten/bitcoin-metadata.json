@@ -302,20 +302,44 @@
             "endDate": "2021-05-19 13:12:00",
             "notes": "Kurssprünge, die jedoch langfristig anhalten.",
             "filter": false
-          },
+          }
         ]
       },
       {
         "name": "btceur",
         "startDate": "2015-04-23 01:42:34.182104",
-        "notes": "t.b.d.",
+        "notes": "Einige Ausreißer, Kurssprünge und Datenlücken.",
         "suspiciousPeriods": [
           {
-            "startDate": "xxxxxx",
-            "endDate": "xxxxxx",
+            "startDate": "2015-04-27 17:45:00",
+            "endDate": "2015-04-27 17:46:00",
+            "notes": "Datenlücken.",
+            "filter": false
+          },
+          {
+            "startDate": "2017-08-10 22:54:34",
+            "endDate": "2017-08-10 22:54:36",
             "notes": "Ausreißer",
             "filter": true
           },
+          {
+            "startDate": "2021-01-11 07:02:00",
+            "endDate": "2021-01-11 07:03:00",
+            "notes": "Kurssprünge, die jedoch eine Rückkehr zum normalen Kursniveau darstellen.",
+            "filter": false
+          },
+          {
+            "startDate": "2021-05-13 00:33:51",
+            "endDate": "2021-05-13 00:33:53",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+          {
+            "startDate": "2021-09-07 15:42:09",
+            "endDate": "2021-09-07 15:42:11",
+            "notes": "Ausreißer",
+            "filter": true
+          }
         ]
       },
       {
