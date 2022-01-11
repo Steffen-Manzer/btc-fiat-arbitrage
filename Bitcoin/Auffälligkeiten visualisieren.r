@@ -23,6 +23,10 @@ texFile_b <- sprintf(
     "%s/Abbildungen/Bitcoin_Preischarakteristik_KrakenUSDAusreisser.tex",
     latexOutPath
 )
+texFile_c <- sprintf(
+    "%s/Abbildungen/Bitcoin_Preischarakteristik_CoinbaseProUSDAusreisser.tex",
+    latexOutPath
+)
 
 
 # BTC/GBP an Kraken zwischen dem 08. und 15.01.2018 ===========================
@@ -187,3 +191,85 @@ print(
 if (plotAsLaTeX) {
     dev.off()
 }
+
+
+# BTC/USD an Coinbase Pro, 14.01.2015 zwischen 06:00 und 18:00 UTC ============
+c_coinbase <- read_fst(
+    "Cache/coinbase/btcusd/tick/coinbase-btcusd-tick-2015-01.fst",
+    columns=c("Time","Price"),
+    as.data.table=T
+)
+c_coinbase <- c_coinbase[Time %between% c("2015-01-14 06:00:00", "2015-01-14 18:00:00")]
+c_coinbase[,Exchange:="Coinbase Pro"]
+
+# Zum Vergleich wird die Börse Bitstamp auf 1s-Basis dargestellt.
+c_bitstamp <- read_fst(
+    "Cache/bitstamp/btcusd/1s/bitstamp-btcusd-1s-2015-01.fst",
+    columns=c("Time","Close"),
+    as.data.table=T
+)
+c_bitstamp <- c_bitstamp[Time %between% c("2015-01-14 06:00:00", "2015-01-14 18:00:00")]
+c_bitstamp[,Exchange:="Bitstamp"]
+setnames(c_bitstamp, "Close", "Price")
+
+# Datensatz kombinieren
+c_combined <- rbindlist(list(c_coinbase, c_bitstamp))
+
+# Sortieren und Kraken zuerst anzeigen
+setorder(c_combined, Time)
+c_combined[,Exchange:=factor(Exchange, levels=c("Coinbase Pro", "Bitstamp"))]
+
+if (plotAsLaTeX) {
+    plotTitle <- NULL
+    plotXLab <- "\\footnotesize Uhrzeit"
+    plotYLab <- "\\footnotesize Preis in USD"
+    printf.debug("Ausgabe als LaTeX in Datei %s\n", texFile_c)
+    tikz(
+        file = texFile_c,
+        width = documentPageWidth,
+        #height = 6 / 2.54, # cm -> Zoll
+        height = 7 / 2.54, # cm -> Zoll
+        sanitize = TRUE
+    )
+    
+} else {
+    plotTitle <- "BTC/USD am 14.01.2015 zwischen 06:00 und 18:00 (UTC)"
+    plotXLab <- "Uhrzeit"
+    plotYLab <- "Preis in USD"
+}
+
+print(
+    ggplot(c_combined, aes(x=Time, y=Price)) +
+        # `size` unverändert lassen, andernfalls sind die feinen Linien
+        # dieses Ausschnittes nur schwer erkennbar
+        geom_line(aes(color=Exchange, linetype=Exchange)) + 
+        theme_minimal() +
+        theme(
+            legend.position = c(0.85, 0.2),
+            legend.background = element_rect(fill = "white", size = 0.2, linetype = "solid"),
+            legend.margin = margin(0, 12, 5, 5),
+            legend.title = element_blank(), #element_text(size=9),
+            axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
+            axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
+        ) +
+        scale_x_datetime(
+            #date_breaks="2 mins",
+            #date_minor_breaks="1 minute",
+            date_labels="%H:%M",
+            expand = expansion(mult = c(.01, .03))
+        ) +
+        scale_y_continuous(
+            labels = function(x) format.money(x, digits=0)
+        ) +
+        scale_color_ptol() +
+        labs(
+            title=plotTitle,
+            x=plotXLab,
+            y=plotYLab
+        )
+)
+
+if (plotAsLaTeX) {
+    dev.off()
+}
+

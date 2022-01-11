@@ -229,7 +229,7 @@
       {
         "name": "btceur",
         "startDate": "2017-12-05 11:43:49",
-        "notes": "t.b.d.",
+        "notes": "Einige Kurssprünge und Ausreißer.",
         "suspiciousPeriods": [
           {
             "startDate": "2020-11-22 10:44:00",
@@ -277,14 +277,46 @@
       {
         "name": "btcusd",
         "startDate": "2014-12-01 05:33:56.761198",
-        "notes": "t.b.d.",
-        "suspiciousPeriods": []
+        "notes": "Häufige Kurssprünge.",
+        "suspiciousPeriods": [
+          {
+            "startDate": "2015-01-14 06:00:00",
+            "endDate": "2015-01-14 18:00:00",
+            "notes": "Kurzzeitig extreme Kurssprünge.",
+            "filter": true
+          },
+          {
+            "startDate": "2017-04-15 23:02:20",
+            "endDate": "2017-04-15 23:02:22",
+            "notes": "Ausreißer mit vorheriger Datenlücke.",
+            "filter": true
+          },
+          {
+            "startDate": "2021-05-13 00:30:00",
+            "endDate": "2021-05-13 00:45:00",
+            "notes": "Kurssprünge, die jedoch langfristig anhalten.",
+            "filter": false
+          },
+          {
+            "startDate": "2021-05-19 13:10:00",
+            "endDate": "2021-05-19 13:12:00",
+            "notes": "Kurssprünge, die jedoch langfristig anhalten.",
+            "filter": false
+          },
+        ]
       },
       {
         "name": "btceur",
         "startDate": "2015-04-23 01:42:34.182104",
         "notes": "t.b.d.",
-        "suspiciousPeriods": []
+        "suspiciousPeriods": [
+          {
+            "startDate": "xxxxxx",
+            "endDate": "xxxxxx",
+            "notes": "Ausreißer",
+            "filter": true
+          },
+        ]
       },
       {
         "name": "btcgbp",
