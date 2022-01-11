@@ -223,7 +223,7 @@
             "endDate": "2021-10-28 18:40:00",
             "notes": "Kurssprung auch an anderen Börsen. Keine Anomalie.",
             "filter": false
-          },
+          }
         ]
       },
       {
@@ -376,7 +376,7 @@
             "endDate": "2021-05-19 13:04:07",
             "notes": "Ausreißer",
             "filter": true
-          },
+          }
         ]
       }
     ]
