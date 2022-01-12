@@ -342,7 +342,7 @@ compareTwoExchanges <- function(
             printf("\r  % 13s   % 11s   % 26s   % 10s   % 8s   % 6s T/s   % 3d",
                    format.duration(runtime),
                    format.number(processedDatasets),
-                   format(dataset_ab[currentRow,Time], "%d.%m.%Y %H:%M:%OS"),
+                   format(dataset_ab$Time[currentRow], "%d.%m.%Y %H:%M:%OS"),
                    format.number(nrowDT(result)),
                    format(object.size(result), units="auto", standard="SI"),
                    format.number(round(processedDatasets/runtime, 0)),
