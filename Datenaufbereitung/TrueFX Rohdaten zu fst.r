@@ -46,14 +46,14 @@ summariseTrueFXTickData <- function() {
         CloseBid = last(Bid),
         CloseAsk = last(Ask),
         CloseMittel = last(Mittel),
-        numDatasets = .N,
+        numDatasets = .N
     )))
 }
 
 # Daten einlesen und aggregieren
 readMonthlyDividedDataset(
     "TrueFX",
-    currencyPairs = c("EURUSD", "GBPUSD", "USDJPY"),
+    currencyPairs = c("EURUSD"),
     getSourceFileCallback = function(pair, year, month) {
         return(sprintf("Daten/truefx/%s/%1$s-%2$d-%3$02d.zip",
                        pair, year, month))
