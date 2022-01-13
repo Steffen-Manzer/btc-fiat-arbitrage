@@ -1,8 +1,8 @@
 <?php
 
 // Abrufzeitraum (jeweils inklusive)
-$dateFrom = new \DateTime('first day of 6 months ago');
-$dateTo = new \DateTime('first day of last month');
+$dateFrom = new \DateTime('first day of 6 months ago 00:00:00');
+$dateTo = new \DateTime('first day of last month 00:00:00');
 
 // Speicherort
 $outPath = realpath('../../Daten/truefx/') . "/";

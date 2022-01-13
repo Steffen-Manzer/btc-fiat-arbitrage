@@ -35,7 +35,9 @@ foreach ($forexFilter as $pair) {
     $cmdOut .= 'mkdir -p ' . escapeshellarg($outPath . $pair . "/") . PHP_EOL;
 }
 
+echo PHP_EOL . 'Lade Dateiübersicht... ';
 $baseHTML = file_get_contents('https://www.truefx.com/truefx-historical-downloads/', false, $context);
+echo strlen($baseHTML) . ' bytes geladen.' . PHP_EOL;
 
 if (preg_match('~Please.+log in.+or.+register~', $baseHTML)) {
     dieWithError("Anmeldetoken ist abgelaufen.");
@@ -150,10 +152,7 @@ while ($currentDate < $dateTo) {
 
 $cmdOut .= 'rm -i $0' . PHP_EOL;
 
-file_put_contents(
-    'truefx.sh',
-    $cmdOut
-);
+file_put_contents('truefx.sh', $cmdOut);
 
-echo "truefx.sh erstellt.";
-echo "${bold}sh truefx.sh${normal} ausführen, um neue Daten via cURL zu laden.";
+echo PHP_EOL . "truefx.sh erstellt." . PHP_EOL;
+echo "${bold}sh truefx.sh${normal} ausführen, um neue Daten via cURL zu laden." . PHP_EOL;
