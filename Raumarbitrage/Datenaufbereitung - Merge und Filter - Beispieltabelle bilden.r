@@ -44,8 +44,8 @@ triplets <- c(
 
 
 # Als LaTeX-Tabelle ausgeben
-tabIndentFirst <- "        " # rep() funktioniert mit sprintf nicht korrekt
-tabIndent <- "            " 
+tabIndentFirst <- strrep(" ", 8)
+tabIndent <- strrep(" ", 12)
 for (i in seq_len(nrow(ab))) {
     tick <- ab[i,]
     printf("%s%s &\n", tabIndentFirst, format(tick$Time, "%d.%m.%Y, %H:%M:%OS"))

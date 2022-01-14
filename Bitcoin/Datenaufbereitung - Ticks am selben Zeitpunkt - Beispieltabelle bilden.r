@@ -44,8 +44,8 @@ joined[7,`:=`(PriceLow=NA,PriceHigh=NA,n=NA)]
 # 9: 2021-12-05 19:35:02.936297 48571.10 48571.10  48571.10  1
 
 # Als LaTeX-Tabelle ausgeben
-tabIndentFirst <- "        " # rep() funktioniert mit sprintf nicht korrekt
-tabIndent <- "            " 
+tabIndentFirst <- strrep(" ", 8)
+tabIndent <- strrep(" ", 12)
 for (i in seq_len(nrow(joined))) {
     tick <- joined[i,]
     printf("%s%s &\n", tabIndentFirst, format(tick$Time, "%d.%m.%Y, %H:%M:%OS"))
