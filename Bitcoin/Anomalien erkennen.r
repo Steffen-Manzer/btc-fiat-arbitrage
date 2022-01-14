@@ -4,7 +4,7 @@
 #'   `Auffälligkeiten visualisieren.r`.
 
 
-# Bibliotheken und Funktionen laden ===========================================
+# Bibliotheken und Funktionen laden -------------------------------------------
 source("Klassen/Dataset.r")
 source("Funktionen/AppendToDataTable.r")
 source("Funktionen/FormatCurrencyPair.r")
@@ -19,7 +19,7 @@ library("ggthemes")
 library("zoo") # rollapply
 
 
-# Konfiguration  ==============================================================
+# Konfiguration  --------------------------------------------------------------
 relativeThreshold <- 0.3
 absoluteThreshold <- 2000
 absoluteThresholdJPY <- 200000
@@ -184,7 +184,7 @@ analyseAnomaly <- function(
 }
 
 
-# Hauptfunktion ===============================================================
+# Hauptfunktion ---------------------------------------------------------------
 
 #' Anomalien an einer Börse finden
 #' 
@@ -347,7 +347,7 @@ findPriceAnomalies <- function(
 }
 
 
-# Anomalien finden und speichern ==============================================
+# Anomalien finden und speichern ----------------------------------------------
 
 # Bitfinex
 # BTC/USD: 171.633.442 Ticks, davon 54 auffällige Zeitpunkte

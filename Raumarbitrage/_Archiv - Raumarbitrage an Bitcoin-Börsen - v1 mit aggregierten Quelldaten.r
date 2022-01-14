@@ -101,7 +101,7 @@ for (pair in currencyPairs) {
     
     if (rebuildCache) {
         # Cache neu erstellen. Langsam beim ersten Mal.
-        printf("=== Aktualisiere Cache: %s-%s ===\n", format.currencyPair(pair), timeframe)
+        printf("--- Aktualisiere Cache: %s-%s ---\n", format.currencyPair(pair), timeframe)
         
         # Daten bis vor einem Monat einlesen
         endMonth <- month(Sys.Date())

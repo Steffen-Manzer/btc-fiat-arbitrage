@@ -92,7 +92,7 @@ readMonthlyDividedDataset <- function(
         
         pair <- tolower(pair)
         newDataFound <- FALSE
-        printf("===== %s %s =====\n", exchangeName, toupper(pair))
+        printf("----- %s %s -----\n", exchangeName, toupper(pair))
         
         # Cache-Basisverzeichnis
         cacheBase <- sprintf("Cache/%s/%s", targetBasename, pair)

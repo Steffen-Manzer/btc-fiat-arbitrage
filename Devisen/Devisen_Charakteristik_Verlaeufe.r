@@ -8,7 +8,7 @@
 #' Kapitel: Empirie - Wechselkurse - Eigenschaften und Aufbereitung
 #' Label: Grafik:Effizienz_Devisen_Charakteristik
 
-# Minimalpakete laden =========================================================
+# Minimalpakete laden ---------------------------------------------------------
 source("Funktionen/printf.r")
 source("Konfiguration/FilePaths.r")
 
@@ -21,7 +21,7 @@ if (!fromLaTeX) {
 }
 
 
-# Konfiguration ===============================================================
+# Konfiguration ---------------------------------------------------------------
 force <- F # Nur für Testzwecke: Datei auch erstellen, wenn noch kein Update nötig ist
 asTeX <- fromLaTeX # Ausgabe als TeX-Dokument oder in RStudio direkt
 texFile <- sprintf("%s/Abbildungen/Markteffizienz_Devisen_Charakteristik.tex",
@@ -30,7 +30,7 @@ outFileTimestamp <- sprintf("%s/Abbildungen/Markteffizienz_Devisen_Charakteristi
                             latexOutPath)
 
 
-# Nur einmal pro Monat neu laden ==============================================
+# Nur einmal pro Monat neu laden ----------------------------------------------
 if (
     !force && fromLaTeX && asTeX &&
     file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 28
@@ -40,7 +40,7 @@ if (
 }
 
 
-# Bibliotheken laden ==========================================================
+# Bibliotheken laden ----------------------------------------------------------
 library("fst")
 library("data.table")
 library("dplyr")
@@ -50,7 +50,7 @@ library("gridExtra")
 library("TTR") # Technical Trading Rules -> volatility
 
 
-# Daten aufbereiten ===========================================================
+# Daten aufbereiten -----------------------------------------------------------
 dataPathBase <- "Cache/dukascopy/" # Dateinamen: eurusd/dukascopy-eurusd-daily.fst
 currencyPairs <- c("AUDUSD", "EURUSD", "GBPUSD", "USDCAD", "USDCHF", "USDJPY")
 plotData <- data.table()
@@ -86,7 +86,7 @@ for (pair in currencyPairs) {
 }
 
 
-# Grafiken erstellen ==========================================================
+# Grafiken erstellen ----------------------------------------------------------
 if (asTeX) {
     source("Konfiguration/TikZ.r")
     cat("Ausgabe in Datei ", texFile, "\n")

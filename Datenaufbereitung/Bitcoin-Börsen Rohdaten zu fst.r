@@ -2,14 +2,14 @@
 #' Tickdaten, 1s-/5s-/60s/1d, 1mo-OHLC
 
 
-# Bibliotheken und externe Hilfsfunktionen laden ==============================
+# Bibliotheken und externe Hilfsfunktionen laden ------------------------------
 source("Funktionen/ReadMonthlyDividedDataset.r")
 library("data.table") # fread
 library("fasttime")
 library("lubridate") # floor_date
 
 
-# Hilfsfunktionen =============================================================
+# Hilfsfunktionen -------------------------------------------------------------
 
 #' Daten eines Zeitabschnittes aggregieren
 #' Die Art und Weise, wie Daten zu 1s/5s/60s/1d aggregiert werden, ist
@@ -28,10 +28,10 @@ bitcoinSummariseCallback <- function() {
 }
 
 
-# Daten einlesen ==============================================================
+# Daten einlesen --------------------------------------------------------------
 
 # Bitfinex
-cat("\n========= Verarbeite Bitfinex =========\n")
+cat("\n--------- Verarbeite Bitfinex ---------\n")
 readMonthlyDividedDataset(
     exchangeName = "Bitfinex",
     currencyPairs = c("btcusd", "btceur", "btcgbp", "btcjpy"),
@@ -55,7 +55,7 @@ readMonthlyDividedDataset(
 # Bitstamp via Bitcoincharts
 # Diesen Datensatz nur verwenden, wenn keine (detaillierteren) Originaldaten
 # vorliegen. Dies ist bis einschließlich August 2019 der Fall.
-cat("\n========= Verarbeite Bitstamp (via Bitcoincharts bis August 2019) =========\n")
+cat("\n--------- Verarbeite Bitstamp (via Bitcoincharts bis August 2019) ---------\n")
 readMonthlyDividedDataset(
     "Bitstamp via Bitcoincharts",
     currencyPairs = c("btcusd", "btceur"),
@@ -85,7 +85,7 @@ readMonthlyDividedDataset(
 
 
 # Bitstamp (Originaldaten) ab September 2019
-cat("\n========= Verarbeite Bitstamp (Originaldaten ab September 2019) =========\n")
+cat("\n--------- Verarbeite Bitstamp (Originaldaten ab September 2019) ---------\n")
 readMonthlyDividedDataset(
     "Bitstamp",
     currencyPairs = c("btcusd", "btceur", "btcgbp"),
@@ -107,7 +107,7 @@ readMonthlyDividedDataset(
 
 
 # Coinbase Pro
-cat("\n========= Verarbeite Coinbase Pro =========\n")
+cat("\n--------- Verarbeite Coinbase Pro ---------\n")
 readMonthlyDividedDataset(
     "Coinbase Pro",
     currencyPairs = c("btcusd", "btceur", "btcgbp"),
@@ -132,7 +132,7 @@ readMonthlyDividedDataset(
 
 
 # Kraken
-cat("\n========= Verarbeite Kraken =========\n")
+cat("\n--------- Verarbeite Kraken ---------\n")
 readMonthlyDividedDataset(
     "Kraken",
     currencyPairs = c("btcusd", "btceur", "btcgbp", "btcjpy",

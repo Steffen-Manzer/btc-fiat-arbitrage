@@ -22,7 +22,7 @@
 #'   um Arbeitsspeicher freizugeben.
 
 
-# Bibliotheken und externe Hilfsfunktionen laden ==============================
+# Bibliotheken und externe Hilfsfunktionen laden ------------------------------
 source("Klassen/Dataset.r")
 source("Funktionen/AddOneMonth.r")
 source("Funktionen/AppendToDataTable.r")
@@ -37,7 +37,7 @@ library("lubridate") # floor_date
 library("zoo") # rollapply für Filterfunktion
 
 
-# Hilfsfunktionen =============================================================
+# Hilfsfunktionen -------------------------------------------------------------
 
 #' Zwei Datensätze auf den gemeinsamen Zeitraum beschränken
 #' 
@@ -215,7 +215,7 @@ saveInterimResult <- function(result, index, exchange_a, exchange_b, currencyPai
 }
 
 
-# Haupt-Auswertungsfunktion ===================================================
+# Haupt-Auswertungsfunktion ---------------------------------------------------
 
 #' Preise zweier Börsen vergleichen
 #' 
@@ -522,7 +522,7 @@ compareTwoExchanges <- function(
 }
 
 
-# Berechnung starten ==========================================================
+# Berechnung starten ----------------------------------------------------------
 # Nur Testlauf
 #compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-01-14 00:00:00"))
 
@@ -561,7 +561,7 @@ if (FALSE) {
     #   BTCAUD enthält Daten von 16.06.2020, 22:30:13 (UTC) bis heute
     
     
-    # BTC/USD =================================================================
+    # BTC/USD -----------------------------------------------------------------
     
     # Bitfinex - Bitstamp: ~1h52min. 31.306.308 Datensätze in 1 GB (unkomprimiert).
     compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-01-14 16:47:23"))
@@ -582,7 +582,7 @@ if (FALSE) {
     compareTwoExchanges("coinbase", "kraken",   "btcusd", as.POSIXct("2014-12-01 05:33:56"))
     
     
-    # BTC/EUR =================================================================
+    # BTC/EUR -----------------------------------------------------------------
     
     # Bitfinex - Bitstamp: ~17min. 3.989.521 Datensätze in 127.7 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "bitstamp", "btceur", as.POSIXct("2019-09-01 00:00:00"))
@@ -603,7 +603,7 @@ if (FALSE) {
     compareTwoExchanges("coinbase", "kraken",   "btceur", as.POSIXct("2015-04-23 01:42:34"))
     
     
-    # BTC/GBP =================================================================
+    # BTC/GBP -----------------------------------------------------------------
     # Anmerkung: Daten für BTC/GBP an Bitstamp wurden erst ab 14.12.2021 erfasst und sind daher
     # für eine repräsentative Auswertung nicht geeignet.
     
@@ -626,17 +626,17 @@ if (FALSE) {
     compareTwoExchanges("coinbase", "kraken",   "btcgbp", as.POSIXct("2015-04-21 22:22:41"))
     
     
-    # BTC/JPY =================================================================
+    # BTC/JPY -----------------------------------------------------------------
     
     # Bitfinex - Kraken: ~2min. 116.057 Datensätze in 3.7 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "kraken",   "btcjpy", as.POSIXct("2018-03-29 15:55:31"))
     
     
-    # BTC/CHF =================================================================
+    # BTC/CHF -----------------------------------------------------------------
     # Nur bei Kraken handelbar
     
     
-    # BTC/CAD =================================================================
+    # BTC/CAD -----------------------------------------------------------------
     # Nur bei Kraken handelbar
 }
 

@@ -7,7 +7,7 @@
 #' - Dieses Skript ausführen (ggf. mit asTeX = FALSE prüfen)
 
 
-# Bibliotheken laden ==========================================================
+# Bibliotheken laden ----------------------------------------------------------
 source("Konfiguration/FilePaths.r")
 library("data.table")
 library("dplyr")
@@ -15,13 +15,13 @@ library("ggplot2")
 library("ggthemes")
 
 
-# Konfiguration ===============================================================
+# Konfiguration ---------------------------------------------------------------
 asTeX <- F
 texFile <- sprintf("%s/Abbildungen/Devisen_Umsatz_nach_Marktteilnehmer.tex",
                    latexOutPath)
 
 
-# Daten aufbereiten ===========================================================
+# Daten aufbereiten -----------------------------------------------------------
 counterparties <- fread(
     "Daten/Devisen Umsatz nach Marktteilnehmer/Umsatz_Marktteilnehmer.csv",
     colClasses = c("character", "character", "double", "integer")
@@ -33,7 +33,7 @@ counterparties[,Kategorie:=factor(Kategorie, levels=unique(Kategorie))]
 #counterparties$Kategorie <- factor(counterparties$Kategorie, levels=unique(counterparties$Kategorie))
 
 
-# Grafiken erstellen ==========================================================
+# Grafiken erstellen ----------------------------------------------------------
 if (asTeX) {
     source("Konfiguration/TikZ.r")
     cat("Ausgabe in Datei ", texFile, "\n")

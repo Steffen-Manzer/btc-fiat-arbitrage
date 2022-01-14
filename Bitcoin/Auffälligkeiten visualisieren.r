@@ -2,7 +2,7 @@
 #' in verschiedenen Bitcoin-Sets.
 
 
-# Bibliotheken und externe Hilfsfunktionen laden ==============================
+# Bibliotheken und externe Hilfsfunktionen laden ------------------------------
 library("fst")
 library("data.table") # %between%
 library("ggplot2")
@@ -13,7 +13,7 @@ source("Funktionen/FormatNumber.r")
 source("Funktionen/printf.r")
 
 
-# Konfiguration ===============================================================
+# Konfiguration ---------------------------------------------------------------
 plotAsLaTeX <- TRUE
 texFile_a <- sprintf(
     "%s/Abbildungen/Bitcoin_Preischarakteristik_KrakenGBPAusreisser.tex",
@@ -29,7 +29,7 @@ texFile_c <- sprintf(
 )
 
 
-# BTC/GBP an Kraken zwischen dem 08. und 15.01.2018 ===========================
+# BTC/GBP an Kraken zwischen dem 08. und 15.01.2018 ---------------------------
 a_kraken <- read_fst(
     "Cache/kraken/btcgbp/tick/kraken-btcgbp-tick-2018-01.fst",
     columns=c("Time","Price"),
@@ -111,7 +111,7 @@ if (plotAsLaTeX) {
 }
 
 
-# BTC/USD an Kraken, 22.02.2021 zwischen 14:16 und 14:30 UTC ==================
+# BTC/USD an Kraken, 22.02.2021 zwischen 14:16 und 14:30 UTC ------------------
 b_kraken <- read_fst(
     "Cache/kraken/btcusd/tick/kraken-btcusd-tick-2021-02.fst",
     columns=c("Time","Price"),
@@ -191,7 +191,7 @@ if (plotAsLaTeX) {
 }
 
 
-# BTC/USD an Coinbase Pro, 14.01.2015 zwischen 06:00 und 18:00 UTC ============
+# BTC/USD an Coinbase Pro, 14.01.2015 zwischen 06:00 und 18:00 UTC ------------
 c_coinbase <- read_fst(
     "Cache/coinbase/btcusd/tick/coinbase-btcusd-tick-2015-01.fst",
     columns=c("Time","Price"),
