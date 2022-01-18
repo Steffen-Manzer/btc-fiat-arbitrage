@@ -12,15 +12,22 @@ source("Konfiguration/FilePaths.r")
 
 
 # Konfiguration -----------------------------------------------------------
+
+#' Börsen und deren offizielle Bezeichnung
 exchangeNames <- list(
     "bitfinex"="Bitfinex",
     "bitstamp"="Bitstamp",
     "coinbase"="Coinbase Pro",
     "kraken"="Kraken"
 )
+
+#' Genutzte Kurspaare (Kleinbuchstaben)
 requiredPairs <- c("btcusd", "btceur")
 
+#' Tabellen-Template mit `{tableContent}` als Platzhalter
 templateFile <- sprintf("%s/Tabellen/Templates/Bitcoin_Empirie_Filter.tex", latexOutPath)
+
+#' Zieldatei
 outFile <- sprintf("%s/Tabellen/Bitcoin_Empirie_Filter.tex", latexOutPath)
 
 
@@ -50,7 +57,7 @@ for (i in seq_along(exchangeMetadata)) {
     
     for (j in seq_along(exchangeData)) {
         pairRaw <- names(exchangeData)[j]
-        if (pairRaw %nin% requiredPairs) {
+        if (tolower(pairRaw) %nin% requiredPairs) {
             next
         }
         pair <- format.currencyPair(pairRaw)

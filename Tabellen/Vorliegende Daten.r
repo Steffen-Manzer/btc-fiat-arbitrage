@@ -1,6 +1,7 @@
 #' LaTeX-Tabelle zu den vorliegenden (und genutzten) Datensätzen
 #' erzeugen. Enthält: Anzahl Ticks, Start- und Enddatum.
 
+
 # Bibliotheken und Hilfsfunktionen laden --------------------------------------
 library("fst")
 library("readr") # read_file
