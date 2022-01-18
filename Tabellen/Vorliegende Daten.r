@@ -1,15 +1,30 @@
-# TODO Automatisch aus LaTeX heraus aktualisieren?
+#' LaTeX-Tabelle zu den vorliegenden (und genutzten) Datensätzen
+#' erzeugen. Enthält: Anzahl Ticks, Start- und Enddatum.
+#' TODO Automatisch aus LaTeX heraus aktualisieren?
+
+# Bibliotheken und Hilfsfunktionen laden --------------------------------------
 library("fst")
 library("stringr")
 source("Funktionen/FormatCurrencyPair.r")
 source("Funktionen/FormatNumber.r")
 source("Funktionen/printf.r")
 
-sources <- c("Bitfinex", "Bitstamp", "Coinbase", "Kraken", "TrueFX", "Dukascopy")
 
+# Konfiguration ---------------------------------------------------------------
+sources <- c("Bitfinex", "Bitstamp", "Coinbase", "Kraken", "TrueFX", "Dukascopy")
+filterByPairs <- c("btcusd", "btceur", "eurusd")
+
+
+# Tabelle erzeugen ------------------------------------------------------------
+`%nin%` = Negate(`%in%`)
 for (source in sources) {
     pairs <- list.files(sprintf("Cache/%s", tolower(source)))
     for (pair in pairs) {
+        
+        if (pair %nin% filterByPairs) {
+            next
+        }
+        
         files <- list.files(
             sprintf("Cache/%s/%s/tick", source, pair),
             full.names=TRUE
