@@ -6,7 +6,6 @@
 library("rjson")
 library("readr") # read_file
 library("stringr") # str_replace
-source("Funktionen/printf.r")
 source("Funktionen/FormatCurrencyPair.r")
 source("Funktionen/FormatDuration.r")
 source("Konfiguration/FilePaths.r")

@@ -4,31 +4,53 @@
 
 # Bibliotheken und Hilfsfunktionen laden --------------------------------------
 library("fst")
-library("stringr")
+library("readr") # read_file
+library("stringr") # str_replace
 source("Funktionen/FormatCurrencyPair.r")
 source("Funktionen/FormatNumber.r")
-source("Funktionen/printf.r")
+source("Konfiguration/FilePaths.r")
 
 
 # Konfiguration ---------------------------------------------------------------
-sources <- c("Bitfinex", "Bitstamp", "Coinbase", "Kraken", "TrueFX", "Dukascopy")
+exchanges <- list(
+    "bitfinex"="Bitfinex",
+    "bitstamp"="Bitstamp",
+    "coinbase"="Coinbase Pro",
+    "kraken"="Kraken",
+    "dukascopy"="Dukascopy",
+    "truefx"="TrueFX"
+)
 filterByPairs <- c("btcusd", "btceur", "eurusd")
+
+templateFile <- sprintf("%s/Tabellen/Templates/Vorliegende_Datensaetze.tex", latexOutPath)
+outFile <- sprintf("%s/Tabellen/Vorliegende_Datensaetze.tex", latexOutPath)
+
+
+# Konfiguration prüfen ----------------------------------------------------
+stopifnot(file.exists(templateFile))
+if (file.exists(outFile)) {
+    Sys.chmod(outFile, mode="0644")
+}
 
 
 # Tabelle erzeugen ------------------------------------------------------------
+tableContent <- ""
 `%nin%` = Negate(`%in%`)
-for (source in sources) {
+
+for (i in seq_along(exchanges)) {
+    source <- names(exchanges)[i]
+    exchangeName <- exchanges[[i]]
+    
     pairs <- list.files(sprintf("Cache/%s", tolower(source)))
     for (pair in pairs) {
         
-        if (pair %nin% filterByPairs) {
+        # Nur gewählte Währungspaare in Tabelle aufnehmen
+        if (tolower(pair) %nin% filterByPairs) {
             next
         }
         
-        files <- list.files(
-            sprintf("Cache/%s/%s/tick", source, pair),
-            full.names=TRUE
-        )
+        # Vorhandene Dateien finden - alphabetisch sortiert
+        files <- list.files(sprintf("Cache/%s/%s/tick", source, pair), full.names=TRUE)
         
         numTicks <- 0L
         for (i in seq_along(files)) {
@@ -53,12 +75,24 @@ for (source in sources) {
             }
         }
         
-        source_formatted <- str_replace(source, "Coinbase", "Coinbase Pro")
-        printf("        %s &\n", source_formatted) # Börse / Datenquelle
-        printf("            %s &\n", format.currencyPair(pair)) # Kurspaar
-        printf("            %s &\n", format.number(numTicks)) # Anzahl Ticks
-        printf("            %s &\n", format(firstDataset, "%d.%m.%Y %H:%M:%S")) # Von
-        printf("            %s \\\\\n", format(lastDataset, "%d.%m.%Y %H:%M:%S")) # Bis
-        printf("\n")
+        tableContent <- paste0(
+            tableContent,
+            sprintf("        %s &\n", exchangeName), # Börse / Datenquelle
+            sprintf("            %s &\n", format.currencyPair(pair)), # Kurspaar
+            sprintf("            %s &\n", format.number(numTicks)), # Anzahl Ticks
+            sprintf("            %s &\n", format(firstDataset, "%d.%m.%Y %H:%M:%S")), # Von
+            sprintf("            %s \\\\\n", format(lastDataset, "%d.%m.%Y %H:%M:%S")), # Bis
+            "\n"
+        )
     }
 }
+
+
+# Tabelle schreiben -------------------------------------------------------
+templateFile |>
+    read_file() |>
+    str_replace(coll("{tableContent}"), tableContent) |>
+    write_file(outFile)
+
+# Vor versehentlichem Überschreiben schützen
+Sys.chmod(outFile, mode="0444")
