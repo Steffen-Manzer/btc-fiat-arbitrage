@@ -1,3 +1,7 @@
+#' Stelle alle Filter-Zeiträume aus `Daten/bitcoin-metadata.json` in einer
+#' Tabelle dar.
+
+
 # Bibliotheken und Hilfsfunktionen laden ----------------------------------
 library("rjson")
 library("readr") # read_file
@@ -59,26 +63,20 @@ for (i in seq_along(exchangeMetadata)) {
                 next
             }
             
-            periodDuration <- difftime(period$endDate, period$startDate, units="secs")
+            # Dauer berechnen
+            periodDuration <- difftime(period$endDate, period$startDate, units="secs") |>
+                format.duration() |>
+                # Leerzeichen zwischen Zahl und Einheit durch schmales Leerzeichen ersetzen
+                # 1 min, 2 s -> 1\,min, 2\,s
+                str_replace_all("([0-9]+) ", "\\1\\\\,")
             
             tableContent <- paste0(
                 tableContent,
                 sprintf("    \\qquad %s &\n", pair),
                 sprintf("        %s &\n", format(as.POSIXct(period$startDate), "%d.%m.%Y, %H:%M:%S")),
                 sprintf("        %s &\n", format(as.POSIXct(period$endDate), "%d.%m.%Y, %H:%M:%S")),
-                sprintf("        %s &\n", format.duration(periodDuration, "long")),
-                sprintf("        %s\n", period$notes)
-            )
-            
-            # if (k == length(pairData$suspiciousPeriods)) {
-            #     tableContent <- paste0(
-            #         tableContent,
-            #         "        \\global\\rownum=1\\relax % Zellfarbe zurücksetzen\n"
-            #     )
-            # }
-            
-            tableContent <- paste0(
-                tableContent,
+                sprintf("        %s &\n", periodDuration),
+                sprintf("        %s\n", period$notes),
                 "        \\\\\n\n"
             )
         }
