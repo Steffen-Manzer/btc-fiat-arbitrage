@@ -12,8 +12,9 @@
     library("ggthemes")
     
     # Konfiguration -----------------------------------------------------------
-    asTeX <- T
-    texFile <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Abbildungen/Krypto_Rechnerische_Anzahl_Bitcoins_im_Umlauf.tex"
+    source("Konfiguration/FilePaths.r")
+    texFile <- sprintf("%s/Abbildungen/Krypto_Rechnerische_Anzahl_Bitcoins_im_Umlauf.tex", latexOutPath)
+    plotAsLaTeX <- TRUE
     
     # Ausgabe auf maximale Bitcoin-Länge (7 vor + 8 nach) einstellen
     #options(digits=15)
@@ -57,7 +58,7 @@
     
     
     # Grafiken erstellen ------------------------------------------------------
-    if (asTeX) {
+    if (plotAsLaTeX) {
         source("Konfiguration/TikZ.r")
         cat("Ausgabe in Datei", texFile, "\n")
         tikz(
@@ -112,7 +113,7 @@
         labs(x="Blockhöhe", y="Bitcoin-Menge")
     
     print(plot)
-    if (asTeX) {
+    if (plotAsLaTeX) {
         dev.off()
     }
     

@@ -15,12 +15,13 @@
     fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
     # Konfiguration -----------------------------------------------------------
-    asTeX <- fromLaTeX || F
-    texFile <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Abbildungen/Krypto_Bitcoin_Preis_BPI.tex"
-    outFileTimestamp <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Abbildungen/Krypto_Bitcoin_Preis_BPI_Stand.tex"
+    source("Konfiguration/FilePaths.r")
+    texFile <- sprintf("%s/Abbildungen/Krypto_Bitcoin_Preis_BPI.tex", latexOutPath)
+    outFileTimestamp <- sprintf("%s/Abbildungen/Krypto_Bitcoin_Preis_BPI_Stand.tex", latexOutPath)
+    plotAsLaTeX <- fromLaTeX || FALSE
     
     # Nur einmal pro Monat neu laden
-    if (fromLaTeX && asTeX && file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 28) {
+    if (fromLaTeX && plotAsLaTeX && file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 28) {
         cat("Grafik BTCUSD noch aktuell, keine Aktualisierung.\n")
         return()
     }
@@ -36,7 +37,7 @@
     # Quelldaten einlesen
     btcusd <- read_fst("Cache/coindesk/bpi-daily-btcusd.fst", as.data.table = TRUE)
     
-    if (asTeX) {
+    if (plotAsLaTeX) {
         source("Konfiguration/TikZ.r")
         cat("Ausgabe in Datei ", texFile, "\n")
         tikz(
@@ -72,7 +73,7 @@
         labs(x="Datum", y="Bitcoin-Preis [USD]")
     
     print(plot)
-    if (asTeX) {
+    if (plotAsLaTeX) {
         dev.off()
     }
     

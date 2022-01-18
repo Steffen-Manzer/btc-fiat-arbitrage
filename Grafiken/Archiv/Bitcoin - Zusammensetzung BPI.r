@@ -1,12 +1,11 @@
 (function() {
     
-    #
     # Derzeit nicht genutzt.
-    #
+    stop("Derzeit nicht genutzt.")
     
     # Konfiguration -----------------------------------------------------------
     asTeX = FALSE
-    texFile = "/Users/fox/Documents/Studium - Promotion/TeX/Grafiken/Bitcoin_Datensatz_Zusammensetzung_BPI.tex"
+    #texFile = ".../Bitcoin_Datensatz_Zusammensetzung_BPI.tex"
     
     
     # Lese Daten --------------------------------------------------------------

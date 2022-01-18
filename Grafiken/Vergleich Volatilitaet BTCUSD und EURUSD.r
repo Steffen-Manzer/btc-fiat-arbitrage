@@ -19,24 +19,34 @@
         cat("Aufruf in RStudio erkannt.\n")
     }
     
+    
     # Konfiguration -----------------------------------------------------------
-    asTeX <- fromLaTeX || T # Nur für Testzwecke in RStudio auf F setzen, da sonst keine automatische Aktualisierung
-    texFile <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Abbildungen/Krypto_Volatilitaet_BPI.tex"
-    outFileVolaRangeBTCUSD <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Daten/Volatilitaet_BTCUSD_Bereich.tex"
-    outFileVolaRangeEURUSD <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Daten/Volatilitaet_EURUSD_Bereich.tex"
-    outFileTimestamp <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Abbildungen/Krypto_Volatilitaet_BPI_Stand.tex"
+    source("Konfiguration/FilePaths.r")
+    texFile <- sprintf("%s/Abbildungen/Krypto_Volatilitaet_BPI.tex", latexOutPath)
+    outFileVolaRangeBTCUSD <- sprintf("%s/Daten/Volatilitaet_BTCUSD_Bereich.tex", latexOutPath)
+    outFileVolaRangeEURUSD <- sprintf("%s/Daten/Volatilitaet_EURUSD_Bereich.tex", latexOutPath)
+    outFileTimestamp <- sprintf("%s/Abbildungen/Krypto_Volatilitaet_BPI_Stand.tex", latexOutPath)
+    
+    # Nur für Testzwecke in RStudio auf F setzen, da sonst keine automatische Aktualisierung
+    plotAsLaTeX <- fromLaTeX || TRUE
     
     # Nur einmal pro Monat neu laden
-    if (fromLaTeX && asTeX && file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 28) {
+    if (
+        fromLaTeX && plotAsLaTeX &&
+        file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 28
+    ) {
         cat("Grafik Volatilitaetsvergleich noch aktuell, keine Aktualisierung.\n")
         return(invisible())
     }
     
+    
+    # Bibliotheken laden ------------------------------------------------------
     library("data.table")
     library("dplyr")
     library("ggplot2")
     library("ggthemes")
     library("scales") # breaks_log
+    
     
     # Berechnungen durchführen. Ausgelagert in eigene Datei, um in LaTeX eingebunden zu werden.
     # Anmerkungen:
@@ -82,7 +92,7 @@
     
     
     # Grafiken erstellen ------------------------------------------------------
-    if (asTeX) {
+    if (plotAsLaTeX) {
         source("Konfiguration/TikZ.r")
         cat("Ausgabe in Datei ", texFile, "\n")
         tikz(
@@ -126,7 +136,7 @@
         labs(x="Datum", y="Annualisierte Volatilität")
     print(plotAbsVola)
     
-    if (asTeX) {
+    if (plotAsLaTeX) {
         dev.off()
     }
     

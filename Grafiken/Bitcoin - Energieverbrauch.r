@@ -5,13 +5,17 @@
 
 (function() {
     
+    stop("Derzeit nicht genutzt.")
+    
     # Aufruf durch LaTeX, sonst direkt aus RStudio
     fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
     # Konfiguration -----------------------------------------------------------
-    asTeX <- fromLaTeX || F
-    texFile <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Abbildungen/Bitcoin_Energieverbrauch.tex"
-    outFileTimestamp <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Abbildungen/Bitcoin_Energieverbrauch_Stand.tex"
+    source("Konfiguration/FilePaths.r")
+    texFile <- sprintf("%s/Abbildungen/Bitcoin_Energieverbrauch.tex", latexOutPath)
+    outFileTimestamp <- sprintf("%s/Abbildungen/Bitcoin_Energieverbrauch_Stand.tex", latexOutPath)
+    asTeX <- fromLaTeX || FALSE
+    
     
     # Berechnungen ------------------------------------------------------------
     # Jahresenergiebedarf Bitcoin
@@ -32,6 +36,9 @@
         return()
     }
     
+    
+    # Bibliotheken und Hilfsfunktionen laden ----------------------------------
+    source("Funktionen/R_in_LaTeX_Warning.r")
     library("data.table")
     #library("rjson") # Für Destatis
     #library("stringr") # Destatis-Datum einlesen

@@ -5,8 +5,6 @@
 
 (function() {
     
-    # Aufruf durch LaTeX, sonst direkt aus RStudio
-    fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     latexWarning <- function(x) {
         context <- ""
         if (sys.nframe() > 0) {
@@ -17,13 +15,17 @@
     }
     
     # Konfiguration -----------------------------------------------------------
-    outFile <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Daten/Bitcoin_Blockchain_Groesse.tex"
-    outFileTimestamp <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Daten/Bitcoin_Blockchain_Groesse_Stand.tex"
+    source("Konfiguration/FilePaths.r")
+    outFile <- sprintf("%s/Daten/Bitcoin_Blockchain_Groesse.tex", latexOutPath)
+    outFileTimestamp <- sprintf("%s/Daten/Bitcoin_Blockchain_Groesse_Stand.tex", latexOutPath)
     
     # Mögliche Daten:
     # https://www.blockchain.com/api/q
     # https://www.blockchain.com/api/charts_api
     sourceURL <- "https://api.blockchain.info/charts/blocks-size?timespan=1week&format=csv"
+    
+    # Aufruf durch LaTeX, sonst direkt aus RStudio
+    fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
     # Nur einmal pro Woche neu laden
     if (fromLaTeX && file.exists(outFile) && difftime(Sys.time(), file.mtime(outFile), units = "days") < 7) {

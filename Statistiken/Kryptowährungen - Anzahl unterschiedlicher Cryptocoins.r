@@ -1,9 +1,14 @@
 # Aufruf aus LaTeX heraus via \executeR{...}
 # Besonderheiten gegenüber normalen Skripten:
-# - setwd + source(.Rprofile)
 # - Caching, da 3x pro Kompilierung aufgerufen
 
 (function() {
+    
+    # Konfiguration -----------------------------------------------------------
+    source("Konfiguration/FilePaths.r")
+    outFile <- sprintf("%s/Daten/CryptoCoin_Anzahl.tex", latexOutPath)
+    outFileLarge <- sprintf("%s/Daten/CryptoCoin_Anzahl_GrosseWaehrungen.tex", latexOutPath)
+    outFileTimestamp <- sprintf("%s/Daten/CryptoCoin_Anzahl_Stand.tex", latexOutPath)
     
     # Aufruf durch LaTeX, sonst direkt aus RStudio
     fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
@@ -16,10 +21,6 @@
         paste0("\\textcolor{red}{\\HUGE\\textbf{!!! ", x, " !!!}}%")
     }
     
-    # Konfiguration -----------------------------------------------------------
-    outFile <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Daten/CryptoCoin_Anzahl.tex"
-    outFileLarge <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Daten/CryptoCoin_Anzahl_GrosseWaehrungen.tex"
-    outFileTimestamp <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Daten/CryptoCoin_Anzahl_Stand.tex"
     
     # Nur einmal pro Monat neu laden
     if (fromLaTeX && file.exists(outFile) && difftime(Sys.time(), file.mtime(outFile), units = "days") < 28) {

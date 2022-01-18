@@ -17,12 +17,14 @@
     fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
     # Konfiguration -----------------------------------------------------------
-    asTeX <- fromLaTeX || T
-    texFile <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Abbildungen/Markteffizienz_Bitcoin_HistorischeKurse.tex"
-    outFileTimestamp <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Abbildungen/Markteffizienz_Bitcoin_HistorischeKurse_Stand.tex"
+    source("Konfiguration/FilePaths.r")
+    texFile <- sprintf("%s/Abbildungen/Markteffizienz_Bitcoin_HistorischeKurse.tex", latexOutPath)
+    outFileTimestamp <- sprintf("%s/Abbildungen/Markteffizienz_Bitcoin_HistorischeKurse_Stand.tex",
+                                latexOutPath)
+    plotAsLaTeX <- fromLaTeX || TRUE
     
     # Nur einmal pro Monat neu laden
-    if (fromLaTeX && asTeX && file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 28) {
+    if (fromLaTeX && plotAsLaTeX && file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 28) {
         cat("Grafik BTCUSD noch aktuell, keine Aktualisierung.\n")
         return()
     }
@@ -45,7 +47,7 @@
         group_by(Time=as.Date(floor_date(Time, unit="week", week_start=1))) %>%
         summarise(Close=last(Close))
     
-    if (asTeX) {
+    if (plotAsLaTeX) {
         source("Konfiguration/TikZ.r")
         cat("Ausgabe in Datei ", texFile, "\n")
         tikz(
@@ -94,7 +96,7 @@
         ncol = 2
     )
     
-    if (asTeX) {
+    if (plotAsLaTeX) {
         dev.off()
     }
     

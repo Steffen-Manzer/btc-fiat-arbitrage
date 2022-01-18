@@ -5,8 +5,6 @@
 
 (function() {
     
-    # Aufruf durch LaTeX, sonst direkt aus RStudio
-    fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     latexWarning <- function(x) {
         context <- ""
         if (sys.nframe() > 0) {
@@ -17,9 +15,13 @@
     }
     
     # Konfiguration -----------------------------------------------------------
-    outFile <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Daten/Bitcoin_Schlafend.tex"
-    outFileTimestamp <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Daten/Bitcoin_Schlafend_Stand.tex"
+    source("Konfiguration/FilePaths.r")
+    outFile <- sprintf("%s/Daten/Bitcoin_Schlafend.tex", latexOutPath)
+    outFileTimestamp <- sprintf("%s/Daten/Bitcoin_Schlafend_Stand.tex", latexOutPath)
     sourceURL <- "https://bitinfocharts.com/top-100-dormant_1y-bitcoin-addresses.html"
+    
+    # Aufruf durch LaTeX, sonst direkt aus RStudio
+    fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
     # Nur einmal pro Monat neu laden
     if (fromLaTeX && file.exists(outFile) && difftime(Sys.time(), file.mtime(outFile), units = "days") < 28) {

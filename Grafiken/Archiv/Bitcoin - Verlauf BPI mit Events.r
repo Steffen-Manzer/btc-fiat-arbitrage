@@ -1,8 +1,7 @@
 (function() {
     
     # Derzeit nicht genutzt und nicht fertiggestellt.
-    warning("TODO Events einlesen")
-    return()
+    stop("TODO Events einlesen")
     
     
     ####
@@ -16,7 +15,7 @@
     
     # Konfiguration -----------------------------------------------------------
     asTeX = FALSE
-    texFile = "/Users/fox/Documents/Studium - Promotion/TeX/Grafiken/BPI_Log_Historisch_mit_Events.tex"
+    #texFile = ".../BPI_Log_Historisch_mit_Events.tex"
     doPlot = TRUE # Ansonsten nur Daten in den globalen Variablenraum einlesen
     bpiSource = "Cache/coindesk/bpi-daily-btcusd.fst"
     

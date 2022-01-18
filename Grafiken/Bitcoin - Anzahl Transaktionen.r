@@ -9,16 +9,18 @@
     fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
     # Konfiguration -----------------------------------------------------------
-    asTeX <- fromLaTeX || F
-    texFile <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Abbildungen/Krypto_Anzahl_BTC_Transaktionen.tex"
-    outFileTimestamp <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Abbildungen/Krypto_Anzahl_BTC_Transaktionen_Stand.tex"
+    source("Konfiguration/FilePaths.r")
+    texFile <- sprintf("%s/Abbildungen/Krypto_Anzahl_BTC_Transaktionen.tex", latexOutPath)
+    outFileTimestamp <- sprintf("%s/Abbildungen/Krypto_Anzahl_BTC_Transaktionen_Stand.tex", latexOutPath)
     apiSourceFile <- "https://api.blockchain.info/charts/n-transactions?timespan=all&sampled=false&format=csv"
+    plotAsLaTeX <- fromLaTeX || FALSE
     
     # Nur einmal pro Woche neu laden
-    if (fromLaTeX && asTeX && file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 8) {
+    if (fromLaTeX && plotAsLaTeX && file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 8) {
         cat("Grafik Bitcoin-Transaktionen noch aktuell, keine Aktualisierung.\n")
         return()
     }
+    
     
     # Bibliotheken laden ------------------------------------------------------
     library("data.table")
@@ -27,6 +29,7 @@
     library("dplyr")
     library("ggplot2")
     library("ggthemes")
+    
     
     # Berechnungen ------------------------------------------------------------
     # Daten einlesen
@@ -53,7 +56,7 @@
     weeklyData <- weeklyData[1:nrow(weeklyData)-1,]
     
     # Grafiken erstellen
-    if (asTeX) {
+    if (plotAsLaTeX) {
         source("Konfiguration/TikZ.r")
         cat("Ausgabe in Datei", texFile, "\n")
         tikz(
@@ -92,7 +95,7 @@
         labs(x="Datum", y="Transaktionen je Woche")
     
     print(plot)
-    if (asTeX) {
+    if (plotAsLaTeX) {
         dev.off()
     }
     

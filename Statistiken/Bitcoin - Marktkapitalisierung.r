@@ -5,8 +5,6 @@
 
 (function() {
     
-    # Aufruf durch LaTeX, sonst direkt aus RStudio
-    fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     latexWarning <- function(x) {
         context <- ""
         if (sys.nframe() > 0) {
@@ -17,14 +15,18 @@
     }
     
     # Konfiguration -----------------------------------------------------------
-    outFile <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Daten/Bitcoin_Marktkapitalisierung.tex"
-    outFileTimestamp <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Daten/Bitcoin_Marktkapitalisierung_Stand.tex"
+    source("Konfiguration/FilePaths.r")
+    outFile <- sprintf("%s/Daten/Bitcoin_Marktkapitalisierung.tex", latexOutPath)
+    outFileTimestamp <- sprintf("%s/Daten/Bitcoin_Marktkapitalisierung_Stand.tex", latexOutPath)
     
     # Marktkapitalisierung
     # API-Doku:
     # https://coinmarketcap.com/api/documentation/v1/#operation/getV1CryptocurrencyQuotesLatest
     sourceURL <- "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
     sourceParams <- "slug=bitcoin&aux=cmc_rank"
+    
+    # Aufruf durch LaTeX, sonst direkt aus RStudio
+    fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
     # Nur einmal pro Monat neu laden
     if (fromLaTeX && file.exists(outFile) && difftime(Sys.time(), file.mtime(outFile), units = "days") < 28) {

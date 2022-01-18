@@ -1,36 +1,44 @@
-
 # Aufruf durch LaTeX, sonst direkt aus RStudio
 fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
 
-# Nicht aus R heraus aufrufen, da Daten zwischenzeitlich ohnehin nur manuell aktualisiert werden
+# Nicht aus LaTeX heraus aufrufen, da Daten zwischenzeitlich ohnehin
+# nur manuell aktualisiert werden
 if (fromLaTeX) {
     stop("Aktualisierung aus LaTeX heraus nicht aktiviert.")
 }
 
-# Ausgabedateien
+
+# Konfiguration -----------------------------------------------------------
+source("Konfiguration/FilePaths.r")
+
 # Grafik (texFile) derzeit nicht genutzt
-texFile <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Abbildungen/Krypto_Jahresumsatz_nach_Boerse_und_Waehrungspaar.tex"
+texFile <- sprintf("%s/Abbildungen/Krypto_Jahresumsatz_nach_Boerse_und_Waehrungspaar.tex",
+                   latexOutPath)
 asTeX <- FALSE
+
+# Tabellen
 templateFiles <- list(
     c(
-        "/Users/fox/Documents/Studium - Promotion/TeX/R/Tabellen/Templates/Bitcoin_Umsatz_nach_Waehrungspaar_und_Boerse.tex",
-        "/Users/fox/Documents/Studium - Promotion/TeX/R/Tabellen/Bitcoin_Umsatz_nach_Waehrungspaar_und_Boerse.tex"
+        sprintf("%s/Tabellen/Templates/Bitcoin_Umsatz_nach_Waehrungspaar_und_Boerse.tex", latexOutPath),
+        sprintf("%s/Tabellen/Bitcoin_Umsatz_nach_Waehrungspaar_und_Boerse.tex", latexOutPath)
     ),
     c(
-        "/Users/fox/Documents/Studium - Promotion/TeX/R/Tabellen/Templates/Bitcoin_Umsatz_nach_Waehrungspaar.tex",
-        "/Users/fox/Documents/Studium - Promotion/TeX/R/Tabellen/Bitcoin_Umsatz_nach_Waehrungspaar.tex"
+        sprintf("%s/Tabellen/Templates/Bitcoin_Umsatz_nach_Waehrungspaar.tex", latexOutPath),
+        sprintf("%s/Tabellen/Bitcoin_Umsatz_nach_Waehrungspaar.tex", latexOutPath)
     ),
     c(
-        "/Users/fox/Documents/Studium - Promotion/TeX/R/Tabellen/Templates/Bitcoin_Boersen_Uebersicht.tex",
-        "/Users/fox/Documents/Studium - Promotion/TeX/R/Tabellen/Bitcoin_Boersen_Uebersicht.tex"
+        sprintf("%s/Tabellen/Templates/Bitcoin_Boersen_Uebersicht.tex", latexOutPath),
+        sprintf("%s/Tabellen/Bitcoin_Boersen_Uebersicht.tex", latexOutPath)
     )
 )
+
+# Zeitraum
 dateFrom <- "2018-07-01 00:00:00" # Inklusive. Frühestens 01.01.2018
 dateTo <- "2021-07-01 00:00:00" # Exklusive
 
 # Beispielkurse
-sampleExchangeRate_a = 20000
-sampleExchangeRate_b = 50000
+sampleExchangeRate_a = 20000 # 20.000 USD
+sampleExchangeRate_b = 50000 # 50.000 USD
 
 
 # Bibliotheken laden ----------------------------------------------------------
@@ -84,11 +92,10 @@ for (i in seq_len(nrow(srcsets))) {
         next()
     }
     
-    dataset <- read_fst(srcset$SrcFile, as.data.table = TRUE)
+    dataset <- read_fst(srcset$SrcFile, as.data.table=TRUE)
     
     # Nach Datum filtern
-    dataset <- dataset[dataset$Time >= dateFrom,]
-    dataset <- dataset[dataset$Time < dateTo,]
+    dataset <- dataset[dataset$Time >= dateFrom & dataset$Time < dateTo,]
     
     # Handelsvolumen berechnen
     volume <- sum(abs(dataset$Amount))

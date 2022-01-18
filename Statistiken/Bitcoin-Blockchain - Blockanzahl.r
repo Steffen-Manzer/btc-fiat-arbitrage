@@ -5,10 +5,6 @@
 
 (function() {
     
-    # Derzeit nicht verwendet.
-    
-    # Aufruf durch LaTeX, sonst direkt aus RStudio
-    fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     latexWarning <- function(x) {
         context <- ""
         if (sys.nframe() > 0) {
@@ -17,11 +13,16 @@
         cat(paste0(context, Sys.time(), ": ", x, "\n"), file="R_in_LaTeX_Errors.log", append=TRUE)
         paste0("\\textcolor{red}{\\HUGE\\textbf{!!! ", x, " !!!}}%")
     }
+    stop("Derzeit nicht verwendet.")
     
     # Konfiguration -----------------------------------------------------------
-    outFile <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Daten/Bitcoin_Blockchain_Blockcount.tex"
-    outFileTimestamp <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Daten/Bitcoin_Blockchain_Blockcount_Stand.tex"
+    source("Konfiguration/FilePaths.r")
+    outFile <- sprintf("%s/Daten/Bitcoin_Blockchain_Blockcount.tex", latexOutPath)
+    outFileTimestamp <- sprintf("%s/Daten/Bitcoin_Blockchain_Blockcount_Stand.tex", latexOutPath)
     sourceURL <- "https://blockchain.info/q/getblockcount"
+    
+    # Aufruf durch LaTeX, sonst direkt aus RStudio
+    fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
     # Nur einmal pro Woche neu laden
     if (fromLaTeX && file.exists(outFile) && difftime(Sys.time(), file.mtime(outFile), units = "days") < 7) {

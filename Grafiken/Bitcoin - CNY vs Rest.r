@@ -9,9 +9,10 @@ library("ggthemes")
 (function() {
     
     # Konfiguration -----------------------------------------------------------
-    asTeX <- F
-    texFile <- "/Users/fox/Documents/Studium - Promotion/TeX/R/Abbildungen/Krypto_Handelsvolumen_BTCCNY_vs_Rest.tex"
+    source("Konfiguration/FilePaths.r")
+    texFile <- sprintf("%s/Abbildungen/Krypto_Handelsvolumen_BTCCNY_vs_Rest.tex", latexOutPath)
     dataSource <- "http://data.bitcoinity.org/export_data.csv?c=c&data_type=volume&t=b&timespan=all"
+    plotAsLaTeX <- FALSE
     
     # Daten aufbereiten
     btcVolume <- fread(dataSource)
@@ -39,6 +40,7 @@ library("ggthemes")
     # are attached, e.g. melt.list, you can prepend the namespace like reshape2::melt(.).
     # In the next version, this warning will become an error.
     
+    # TODO Ggf. mittels data.table neu schreiben
     btcVolume <- btcVolume %>%
         group_by(Time) %>%
         reshape2::melt(id.vars = "Time", variable.name="Currency", value.name="Volume")
@@ -48,7 +50,7 @@ library("ggthemes")
     btcVolume <- btcVolume[btcVolume$Time >= "2014-01-01" & btcVolume$Time <= "2018-01-01",]
     
     # Grafiken erstellen
-    if (asTeX) {
+    if (plotAsLaTeX) {
         source("Konfiguration/TikZ.r")
         cat("Ausgabe in Datei", texFile, "\n")
         tikz(
@@ -83,7 +85,7 @@ library("ggthemes")
         ) +
         labs(x="Datum", y="Monatsumsatz [Mio. BTC]")
     print(plot)
-    if (asTeX) {
+    if (plotAsLaTeX) {
         dev.off()
     }
     
