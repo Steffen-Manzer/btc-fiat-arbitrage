@@ -5,15 +5,6 @@
 
 (function() {
     
-    latexWarning <- function(x) {
-        context <- ""
-        if (sys.nframe() > 0) {
-            context <- paste0(sys.frame(1)$ofile, " ")
-        }
-        cat(paste0(context, Sys.time(), ": ", x, "\n"), file="R_in_LaTeX_Errors.log", append=TRUE)
-        paste0("\\textcolor{red}{\\HUGE\\textbf{!!! ", x, " !!!}}%")
-    }
-    
     # Konfiguration -----------------------------------------------------------
     source("Konfiguration/FilePaths.r")
     outFile <- sprintf("%s/Daten/Bitcoin_Schlafend.tex", latexOutPath)
@@ -29,13 +20,15 @@
         return()
     }
     
-    # Arbeitsverzeichnis und Pakete
+    
+    # Bibliotheken und Hilfsfunktionen laden ----------------------------------
+    source("Funktionen/R_in_LaTeX_Warning.r")
     library("curl")
     library("stringr")
     library("data.table")
     
-    # Anzahl schlafender Bitcoins
     
+    # Anzahl schlafender Bitcoins abrufen -------------------------------------
     failed <- FALSE
     tryCatch(
         {
@@ -79,6 +72,8 @@
         return()
     }
     
+    
+    # Daten aufbereiten und Ergebnis speichern --------------------------------
     monthOneYearBack <- format(as.Date(Sys.time()) - 365, "%Y-%m-01")
     
     numDormant <- dataset$NumDormant[dataset$Time == monthOneYearBack]

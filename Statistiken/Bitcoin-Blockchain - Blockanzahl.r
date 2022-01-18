@@ -5,14 +5,6 @@
 
 (function() {
     
-    latexWarning <- function(x) {
-        context <- ""
-        if (sys.nframe() > 0) {
-            context <- paste0(sys.frame(1)$ofile, " ")
-        }
-        cat(paste0(context, Sys.time(), ": ", x, "\n"), file="R_in_LaTeX_Errors.log", append=TRUE)
-        paste0("\\textcolor{red}{\\HUGE\\textbf{!!! ", x, " !!!}}%")
-    }
     stop("Derzeit nicht verwendet.")
     
     # Konfiguration -----------------------------------------------------------
@@ -31,6 +23,7 @@
     }
     
     # Arbeitsverzeichnis und Pakete
+    source("Funktionen/R_in_LaTeX_Warning.r")
     library("data.table")
     
     # Mögliche Daten:
