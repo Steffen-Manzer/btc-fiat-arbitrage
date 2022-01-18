@@ -5,6 +5,8 @@
 
 (function() {
     
+    # Derzeit nicht genutzt.
+    
     # Aufruf durch LaTeX, sonst direkt aus RStudio
     fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     

@@ -3,6 +3,8 @@
 # - setwd + source(.Rprofile)
 # - Caching, da 3x pro Kompilierung aufgerufen
 
+# Derzeit nur händisch aktualisiert
+
 (function() {
     
     ####

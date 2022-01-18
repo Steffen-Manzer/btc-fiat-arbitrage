@@ -1,5 +1,9 @@
 (function() {
     
+    #
+    # Derzeit nicht genutzt.
+    #
+    
     # Konfiguration -----------------------------------------------------------
     asTeX = FALSE
     texFile = "/Users/fox/Documents/Studium - Promotion/TeX/Grafiken/Bitcoin_Datensatz_Zusammensetzung_BPI.tex"

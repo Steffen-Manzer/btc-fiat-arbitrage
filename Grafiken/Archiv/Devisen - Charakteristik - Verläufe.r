@@ -8,6 +8,8 @@
 #' Kapitel: Empirie - Wechselkurse - Eigenschaften und Aufbereitung
 #' Label: Grafik:Effizienz_Devisen_Charakteristik
 
+# Derzeit nicht verwendet.
+
 # Minimalpakete laden ---------------------------------------------------------
 source("Funktionen/printf.r")
 source("Konfiguration/FilePaths.r")
