@@ -1,6 +1,5 @@
 #' LaTeX-Tabelle zu den vorliegenden (und genutzten) Datensätzen
 #' erzeugen. Enthält: Anzahl Ticks, Start- und Enddatum.
-#' TODO Automatisch aus LaTeX heraus aktualisieren?
 
 # Bibliotheken und Hilfsfunktionen laden --------------------------------------
 library("fst")
@@ -12,6 +11,8 @@ source("Konfiguration/FilePaths.r")
 
 
 # Konfiguration ---------------------------------------------------------------
+
+#' Börsen und deren offizielle Bezeichnung
 exchanges <- list(
     "bitfinex"="Bitfinex",
     "bitstamp"="Bitstamp",
@@ -20,9 +21,14 @@ exchanges <- list(
     "dukascopy"="Dukascopy",
     "truefx"="TrueFX"
 )
+
+#' Genutzte Kurspaare (Kleinbuchstaben)
 filterByPairs <- c("btcusd", "btceur", "eurusd")
 
+#' Tabellen-Template mit `{tableContent}` als Platzhalter
 templateFile <- sprintf("%s/Tabellen/Templates/Vorliegende_Datensaetze.tex", latexOutPath)
+
+#' Zieldatei
 outFile <- sprintf("%s/Tabellen/Vorliegende_Datensaetze.tex", latexOutPath)
 
 
