@@ -10,7 +10,7 @@ source("Funktionen/AppendToDataTable.r")
 source("Funktionen/FormatCurrencyPair.r")
 source("Funktionen/FormatDuration.r")
 source("Funktionen/FormatNumber.r")
-source("Funktionen/ReadAndAppendNewTickData.r")
+source("Funktionen/ReadTickDataAsMovingWindow.r")
 source("Funktionen/printf.r")
 library("fst")
 library("data.table")
@@ -269,7 +269,7 @@ findPriceAnomalies <- function(
             printf.debug("Datenende erreicht, Stop nach aktuellem Monat.\n")
         }
         
-        readAndAppendNewTickData(dataset, startDate, loadUntil, 
+        readTickDataAsMovingWindow(dataset, startDate, loadUntil, 
                                  filterSuspiciousPeriods = FALSE, numDatasetsPerRead = 20000L)
         runtime <- as.integer(proc.time()["elapsed"] - now)
         #           Runtime nInput  Time    nResult Speed  

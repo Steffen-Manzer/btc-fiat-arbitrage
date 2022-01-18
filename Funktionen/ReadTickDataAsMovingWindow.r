@@ -5,20 +5,20 @@ library("data.table")
 library("lubridate") # is.POSIXct
 library("rjson")
 
-#' Lade Tickdaten für das gesamte angegebene Intervall, ggf. über
-#' mehrere Quelldateien hinweg
+
+#' Lade Tickdaten für Auswertungen, die ein gleitendes Fenster verwenden.
 #' 
-#' Das gewählte Intervall darf dabei einen ganzen Monat (28-31 Tage) 
-#' nicht überschreiten. Daten bis zwei Minuten vor `currentTime` werden
-#' entfernt, um Speicher freizugeben.
+#' Daten werden bis `endDate` in `dataset` gelesen und dort vorhandene Daten
+#' bis zwei Minuten vor `currentTime` entfernt, um nicht benötigten
+#' Speicher freizugeben.
 #' 
-#' @param dataset Eine Instanz der Klasse `Dataset`
+#' @param dataset Eine Instanz der Klasse `Dataset` (als Referenz)
 #' @param currentTime Zeitpunkt des aktuellen (zuletzt verwendeten) Ticks
 #' @param endDate Zieldatum, bis zu dem mindestens gelesen werden soll
 #' @param filterSuspiciousPeriods Auffällige Datensätze herausfiltern
 #' @param ... Weitere Parameter, die an `readDataFileChunked` übergeben werden
 #' @return `NULL` (Verändert den angegebenen Datensatz per Referenz.)
-readAndAppendNewTickData <- function(
+readTickDataAsMovingWindow <- function(
     dataset,
     currentTime,
     endDate,

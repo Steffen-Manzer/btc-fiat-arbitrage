@@ -2,6 +2,7 @@
 library("fst")
 library("data.table")
 
+
 #' Liest eine einzelne angegebene .fst-Datei bis zum Dateiende oder 
 #' bis endDate, je nachdem was früher eintritt
 #' 

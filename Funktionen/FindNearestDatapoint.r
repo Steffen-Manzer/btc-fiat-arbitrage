@@ -3,6 +3,9 @@
 #' Findet den zeitlich am nächsten liegenden Datenpunkt innerhalb der
 #' vorgegebenen Zeitspanne (+/-) im angegebenen Datensatz.
 #' 
+#' Die Funktion ist nicht auf Geschwindigkeit optimiert und daher nicht für die
+#' Anwendung innerhalb einer Schleife für große Datensätze geeignet.
+#' 
 #' @author Steffen Manzer
 #' @param datetime Gesuchter Zeitpunkt.
 #' @param dataset Datensatz als data.table/data.frame.

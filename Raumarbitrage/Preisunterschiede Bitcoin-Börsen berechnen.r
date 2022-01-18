@@ -29,7 +29,7 @@ source("Funktionen/AppendToDataTable.r")
 source("Funktionen/FormatCurrencyPair.r")
 source("Funktionen/FormatDuration.r")
 source("Funktionen/FormatNumber.r")
-source("Funktionen/ReadAndAppendNewTickData.r")
+source("Funktionen/ReadTickDataAsMovingWindow.r")
 source("Funktionen/printf.r")
 library("fst")
 library("data.table")
@@ -275,8 +275,8 @@ compareTwoExchanges <- function(
     
     # Daten für die ersten 60 Minuten beider Börsen laden
     loadUntil <- startDate + 60 * 60
-    readAndAppendNewTickData(dataset_a, startDate, loadUntil)
-    readAndAppendNewTickData(dataset_b, startDate, loadUntil)
+    readTickDataAsMovingWindow(dataset_a, startDate, loadUntil)
+    readTickDataAsMovingWindow(dataset_b, startDate, loadUntil)
     printf.debug("A: %d Tickdaten von %s bis %s\n",
                  nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
     printf.debug("B: %d Tickdaten von %s bis %s\n",
@@ -385,8 +385,8 @@ compareTwoExchanges <- function(
                 printf.debug("Datenende erreicht, Stop nach aktuellem Monat.\n")
             }
             
-            readAndAppendNewTickData(dataset_a, baseDate, loadUntil)
-            readAndAppendNewTickData(dataset_b, baseDate, loadUntil)
+            readTickDataAsMovingWindow(dataset_a, baseDate, loadUntil)
+            readTickDataAsMovingWindow(dataset_b, baseDate, loadUntil)
             
             printf.debug("A: %d Tickdaten von %s bis %s\n",
                          nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
@@ -416,8 +416,8 @@ compareTwoExchanges <- function(
                     printf.debug("Datenende erreicht, Stop nach aktuellem Monat.\n")
                 }
                 
-                readAndAppendNewTickData(dataset_b, baseDate, loadUntil)
-                readAndAppendNewTickData(dataset_a, baseDate, loadUntil)
+                readTickDataAsMovingWindow(dataset_b, baseDate, loadUntil)
+                readTickDataAsMovingWindow(dataset_a, baseDate, loadUntil)
                 
                 # Begrenze auf gemeinsamen Zeitraum
                 filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)

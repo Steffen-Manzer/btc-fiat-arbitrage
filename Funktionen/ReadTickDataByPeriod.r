@@ -5,6 +5,7 @@ library("data.table")
 library("lubridate") # is.POSIXct
 library("rjson")
 
+
 #' Lade Tickdaten für das gesamte angegebene Intervall, ggf. über
 #' mehrere Quelldateien hinweg
 #' 

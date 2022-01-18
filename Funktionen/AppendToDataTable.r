@@ -1,7 +1,14 @@
-# Mittels reserviertem Speicher + `set` sehr viel schneller 
-# Daten an eine data.table anfügen als mit := oder rbindlist
-#
-# In Anlehnung an https://stackoverflow.com/a/38052208
+#' Mittels reserviertem Speicher + `set` sehr viel schneller einzelne
+#' Daten an eine data.table anfügen als mit := oder rbindlist
+#'
+#' In Anlehnung an https://stackoverflow.com/a/38052208
+
+
+#' Echte Länge einer `data.table` berechnen, für die Speicher mittels
+#' `appendDT` reserviert wurde
+#' 
+#' @param dt Eine `data.table`
+#' @return `numeric` Anzahl der Datensätze in `dt`
 nrowDT <- function(dt) {
     n <- attr(dt, 'rowCount', exact=TRUE)
     if (is.null(n)) {
@@ -11,6 +18,17 @@ nrowDT <- function(dt) {
     return(n)
 }
 
+
+#' Eine Zeile an eine `data.table` anhängen
+#' 
+#' Reserviert vorab dynamisch Speicher für weitere Elemente und
+#' weist dem so reservierten Platz das neue Element zu.
+#' Dieses Verfahren ist bei wiederholter Anwendung weit schneller als
+#' eine wiederholte Anwendung von `rbind` oder `rbindlist`.
+#' 
+#' @param dt Eine `data.table`
+#' @param elems Eine Liste der neuen Zeile
+#' @return `data.table` `dt`, um eine weitere Zeile mit `elems` ergänzt
 appendDT <- function(dt, elems) {
     n <- nrowDT(dt)
     
@@ -39,10 +57,15 @@ appendDT <- function(dt, elems) {
     return(dt)
 }
 
-# Reservierte, nicht genutzte Zeilen (`NAs`) wieder freigeben
-cleanupDT <- function(dt, elems) {
+
+#' Reservierte, nicht genutzte Zeilen (`NAs`) wieder freigeben
+#' 
+#' @param dt `data.table`, in der mittels `appendDT` Speicher reserviert wurde
+#' @return `data.table` `dt`, um den reservierten Speicher bereinigt
+cleanupDT <- function(dt) {
     n <- attr(dt, 'rowCount', exact=TRUE)
     
+    # Keine 
     if (is.null(n)) {
         return(dt)
     }
