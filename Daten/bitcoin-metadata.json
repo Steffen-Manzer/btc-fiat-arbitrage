@@ -2,7 +2,7 @@
   "bitfinex": {
     "btcusd": {
       "startDate": "2013-01-14 16:47:23",
-      "notes": "Einige Ausreißer und Kurssprünge.",
+      "notes": "Einige Ausreißer und Kurssprünge",
       "suspiciousPeriods": [
         {
           "startDate": "2013-03-07 01:39:37",
@@ -85,25 +85,25 @@
         {
           "startDate": "2014-02-10 10:58:00",
           "endDate": "2014-02-10 12:07:35",
-          "notes": "TODO Entscheidung? - Fallender Kurs, dann Lücke bis Korrektur",
+          "notes": "Ausreißer, Datenlücke",
           "filter": true
         },
         {
           "startDate": "2021-05-19 12:56:00",
           "endDate": "2021-05-19 12:56:15",
-          "notes": "TODO Entscheidung? - Kurssprünge",
-          "filter": true
+          "notes": "Kurssprünge - Keine Anomalie (?)",
+          "filter": false
         }
       ]
     },
     "btceur": {
       "startDate": "2017-05-19 08:16:21",
-      "notes": "Keine auffälligen Zeitabschnitte.",
+      "notes": "Keine auffälligen Zeitabschnitte",
       "suspiciousPeriods": []
     },
     "btcgbp": {
       "startDate": "2018-03-29 14:40:57",
-      "notes": "Keine auffälligen Zeitabschnitte.",
+      "notes": "Keine auffälligen Zeitabschnitte",
       "suspiciousPeriods": []
     },
     "btcjpy": {
@@ -113,19 +113,19 @@
         {
           "startDate": "2021-05-19 12:56:00",
           "endDate": "2021-05-19 12:57:00",
-          "notes": "Mehrfache Kurssprünge.",
+          "notes": "Mehrfache Kurssprünge",
           "filter": false
         },
         {
           "startDate": "2021-10-13 18:41:00",
           "endDate": "2021-10-13 18:42:00",
-          "notes": "Lücke, daher Kurssprung. Keine Anomalie.",
+          "notes": "Lücke, daher Kurssprung. Keine Anomalie",
           "filter": false
         },
         {
           "startDate": "2021-10-28 18:39:00",
           "endDate": "2021-10-28 18:40:00",
-          "notes": "Lücke, daher Kurssprung. Keine Anomalie.",
+          "notes": "Lücke, daher Kurssprung. Keine Anomalie",
           "filter": false
         }
       ]
@@ -134,7 +134,7 @@
   "bitstamp": {
     "btcusd": {
       "startDate": "2011-09-13 13:53:36",
-      "notes": "Einige Ausreißer, Datenlücken und Kursabweichungen mit anschließender Korrektur.",
+      "notes": "Einige Ausreißer, Datenlücken und Kursabweichungen mit anschließender Korrektur",
       "suspiciousPeriods": [
         {
           "startDate": "2013-04-05 10:54:18",
@@ -145,7 +145,7 @@
         {
           "startDate": "2013-04-10 17:30:00",
           "endDate": "2013-04-10 20:30:00",
-          "notes": "Kursabweichung mit anschließender Korrektur. Keine Anomalie.",
+          "notes": "Kursabweichung mit anschließender Korrektur. Keine Anomalie",
           "filter": false
         },
         {
@@ -175,7 +175,7 @@
         {
           "startDate": "2021-04-18 03:36:00",
           "endDate": "2021-04-18 03:37:00",
-          "notes": "Kleinere Kurssprünge. Keine Anomalie.",
+          "notes": "Kleinere Kurssprünge. Keine Anomalie",
           "filter": false
         },
         {
@@ -187,13 +187,13 @@
         {
           "startDate": "2021-08-19 05:35:00",
           "endDate": "2021-08-19 05:35:00",
-          "notes": "Datenlücke. Keine Anomalie.",
+          "notes": "Datenlücke. Keine Anomalie",
           "filter": false
         },
         {
           "startDate": "2021-09-01 00:00:00",
           "endDate": "2021-09-01 00:00:00",
-          "notes": "Datenlücke. Keine Anomalie.",
+          "notes": "Datenlücke. Keine Anomalie",
           "filter": false
         },
         {
@@ -211,25 +211,25 @@
         {
           "startDate": "2021-10-28 18:38:00",
           "endDate": "2021-10-28 18:40:00",
-          "notes": "Kurssprung auch an anderen Börsen. Keine Anomalie.",
+          "notes": "Kurssprung auch an anderen Börsen. Keine Anomalie",
           "filter": false
         }
       ]
     },
     "btceur": {
       "startDate": "2017-12-05 11:43:49",
-      "notes": "Einige Kurssprünge und Ausreißer.",
+      "notes": "Einige Kurssprünge und Ausreißer",
       "suspiciousPeriods": [
         {
           "startDate": "2020-11-22 10:44:00",
           "endDate": "2020-11-22 10:44:45",
-          "notes": "TODO Entscheidung - Kurssprünge.",
+          "notes": "TODO Entscheidung - Kurssprünge",
           "filter": false
         },
         {
           "startDate": "2021-01-29 10:18:00",
           "endDate": "2021-01-29 10:18:05",
-          "notes": "TODO Entscheidung - Kurssprünge.",
+          "notes": "TODO Entscheidung - Kurssprünge",
           "filter": false
         },
         {
@@ -254,49 +254,49 @@
     },
     "btcgbp": {
       "startDate": "2021-12-14 14:48:35",
-      "notes": "Keine auffälligen Zeitabschnitte.",
+      "notes": "Keine auffälligen Zeitabschnitte",
       "suspiciousPeriods": []
     }
   },
   "coinbase": {
     "btcusd": {
       "startDate": "2014-12-01 05:33:56.761198",
-      "notes": "Häufige Kurssprünge.",
+      "notes": "Häufige Kurssprünge",
       "suspiciousPeriods": [
         {
           "startDate": "2015-01-14 06:00:00",
           "endDate": "2015-01-14 18:00:00",
-          "notes": "Kurzzeitig extreme Kurssprünge.",
+          "notes": "Kurssprünge",
           "filter": true
         },
         {
           "startDate": "2017-04-15 23:02:20",
           "endDate": "2017-04-15 23:02:30",
-          "notes": "Ausreißer mit vorheriger Datenlücke.",
+          "notes": "Ausreißer",
           "filter": true
         },
         {
           "startDate": "2021-05-13 00:30:00",
           "endDate": "2021-05-13 00:45:00",
-          "notes": "Kurssprünge, die jedoch langfristig anhalten.",
+          "notes": "Kurssprünge, die jedoch langfristig anhalten",
           "filter": false
         },
         {
           "startDate": "2021-05-19 13:10:00",
           "endDate": "2021-05-19 13:12:00",
-          "notes": "Kurssprünge, die jedoch langfristig anhalten.",
+          "notes": "Kurssprünge, die jedoch langfristig anhalten",
           "filter": false
         }
       ]
     },
     "btceur": {
       "startDate": "2015-04-23 01:42:34.182104",
-      "notes": "Einige Ausreißer, Kurssprünge und Datenlücken.",
+      "notes": "Einige Ausreißer, Kurssprünge und Datenlücken",
       "suspiciousPeriods": [
         {
           "startDate": "2015-04-27 17:45:00",
           "endDate": "2015-04-27 17:46:00",
-          "notes": "Datenlücken.",
+          "notes": "Datenlücken",
           "filter": false
         },
         {
@@ -308,7 +308,7 @@
         {
           "startDate": "2021-01-11 07:02:00",
           "endDate": "2021-01-11 07:03:00",
-          "notes": "Kurssprünge, die jedoch eine Rückkehr zum normalen Kursniveau darstellen.",
+          "notes": "Kurssprünge, die jedoch eine Rückkehr zum normalen Kursniveau darstellen",
           "filter": false
         },
         {
@@ -327,7 +327,7 @@
     },
     "btcgbp": {
       "startDate": "2015-04-21 22:22:41.29405",
-      "notes": "Einige Ausreißer.",
+      "notes": "Einige Ausreißer",
       "suspiciousPeriods": [
         {
           "startDate": "2015-11-05 05:54:45",
@@ -365,7 +365,7 @@
   "kraken": {
     "btcusd": {
       "startDate": "2013-10-06 21:34:15.5513",
-      "notes": "Einige Ausreißer und Kurssprünge.",
+      "notes": "Einige Ausreißer und Kurssprünge",
       "suspiciousPeriods": [
         {
           "startDate": "2013-11-12 06:25:00",
@@ -412,7 +412,7 @@
         {
           "startDate": "2021-02-22 14:16:00",
           "endDate": "2021-02-22 14:30:00",
-          "notes": "Mehrfache Kurssprünge.",
+          "notes": "Mehrfache Kurssprünge",
           "filter": false
         },
         {
@@ -430,7 +430,7 @@
         {
           "startDate": "2021-04-18 03:37:00",
           "endDate": "2021-04-18 03:38:00",
-          "notes": "Mehrfache Kurssprünge.",
+          "notes": "Mehrfache Kurssprünge",
           "filter": false
         },
         {
@@ -442,7 +442,7 @@
         {
           "startDate": "2021-05-19 12:56:00",
           "endDate": "2021-05-19 13:00:00",
-          "notes": "Mehrfache Kurssprünge.",
+          "notes": "Mehrfache Kurssprünge",
           "filter": false
         },
         {
@@ -454,14 +454,14 @@
         {
           "startDate": "2021-12-04 05:25:00",
           "endDate": "2021-12-04 05:30:00",
-          "notes": "Sprünge, aber der normalen Kursentwicklung folgend.",
+          "notes": "Sprünge, aber der normalen Kursentwicklung folgend",
           "filter": false
         }
       ]
     },
     "btceur": {
       "startDate": "2013-09-10 23:47:11.546",
-      "notes": "Einige Ausreißer und Datenlücken.",
+      "notes": "Einige Ausreißer und Datenlücken",
       "suspiciousPeriods": [
         {
           "startDate": "2018-01-13 11:22:30",
@@ -479,31 +479,31 @@
     },
     "btcgbp": {
       "startDate": "2014-11-06 16:13:43.4495",
-      "notes": "Mehrere Ausreißer, Kurssprünge und große Lücken, geringe Liquidität, Analyse daher schwierig. Einige besonders auffällige Zeitpunkte exemplarisch herausgepickt.",
+      "notes": "Mehrere Ausreißer, Kurssprünge und große Lücken, geringe Liquidität, Analyse daher schwierig. Einige besonders auffällige Zeitpunkte exemplarisch herausgepickt",
       "suspiciousPeriods": [
         {
           "startDate": "2018-01-08 00:00:00",
           "endDate": "2018-01-15 00:00:00",
-          "notes": "Mehrere extreme Ausreißer.",
+          "notes": "Mehrere extreme Ausreißer",
           "filter": true
         },
         {
           "startDate": "2018-02-02 11:45:00",
           "endDate": "2018-02-02 11:46:30",
-          "notes": "Ausreißer.",
+          "notes": "Ausreißer",
           "filter": true
         },
         {
           "startDate": "2021-02-22 14:17:00",
           "endDate": "2021-02-22 14:19:00",
-          "notes": "Mehrere Kurssprünge.",
+          "notes": "Mehrere Kurssprünge",
           "filter": true
         }
       ]
     },
     "btcjpy": {
       "startDate": "2014-11-05 22:21:30.8875",
-      "notes": "Mehrere Ausreißer, Kurssprünge und große Lücken, geringe Liquidität, Analyse daher schwierig. Einige besonders auffällige Zeitpunkte exemplarisch herausgepickt.",
+      "notes": "Mehrere Ausreißer, Kurssprünge und große Lücken, geringe Liquidität, Analyse daher schwierig. Einige besonders auffällige Zeitpunkte exemplarisch herausgepickt",
       "suspiciousPeriods": [
         {
           "startDate": "2018-09-19 10:00:56",
@@ -527,17 +527,17 @@
     },
     "btccad": {
       "startDate": "2015-06-29 03:27:41.3169",
-      "notes": "Einzige betrachtete Börse mit BTC/CAD, daher keine weitere Analyse.",
+      "notes": "Einzige betrachtete Börse mit BTC/CAD, daher keine weitere Analyse",
       "suspiciousPeriods": []
     },
     "btcchf": {
       "startDate": "2019-12-06 16:33:17.1575",
-      "notes": "Einzige betrachtete Börse mit BTC/CHF, daher keine weitere Analyse.",
+      "notes": "Einzige betrachtete Börse mit BTC/CHF, daher keine weitere Analyse",
       "suspiciousPeriods": []
     },
     "btcaud": {
       "startDate": "2020-06-16 22:30:13.2771",
-      "notes": "Einzige betrachtete Börse mit BTC/AUD, daher keine weitere Analyse.",
+      "notes": "Einzige betrachtete Börse mit BTC/AUD, daher keine weitere Analyse",
       "suspiciousPeriods": []
     }
   }
