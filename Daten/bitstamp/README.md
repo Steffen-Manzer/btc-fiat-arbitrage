@@ -31,9 +31,9 @@ Die Dateien ohne Monatsangabe enthalten alle Daten bis zur Umstellung auf monats
 
 ## Dateistruktur
 - Vorgangs-ID
-- Datum ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit))
+- Datum/Uhrzeit ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit)) mit einer Genauigkeit von 1 s
 - Gehandelte Menge in BTC
-- Preis in USD bzw. EUR
+- Preis in USD/EUR/GBP
 - Art (Kauf = 0 / Verkauf = 1)
 
 ---

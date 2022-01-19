@@ -31,9 +31,9 @@ Die Dateien ohne Monatsangabe enthalten alle Daten bis zur Umstellung auf monats
 - BTCAUD enthält Daten von 16.06.2020, 22:30:13 (UTC) bis heute
 
 ## Dateistruktur
-- Datum ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit))
+- Datum/Uhrzeit ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit)) mit einer Genauigkeit von 100 µs
 - Gehandelte Menge in BTC
-- Preis in USD/EUR/GBP/JPY/CAD/CHF
+- Preis in USD/EUR/GBP/JPY/CAD/CHF/AUD
 - Art (Kauf = b / Verkauf = s)
 - Limit (l = Limitiert, m = Market = Unlimitiert)
 

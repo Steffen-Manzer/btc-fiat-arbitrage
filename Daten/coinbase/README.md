@@ -23,7 +23,7 @@ Abfrage folgender URLs:
 
 ## Dateistruktur
 - Vorgangs-ID
-- Datum/Uhrzeit ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit)) mit einer Genauigkeit von 1ms
+- Datum/Uhrzeit ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit)) mit einer Genauigkeit von 1 ms
 - Gehandelte Menge in BTC
 - Preis in USD/EUR/GBP
 - Art (Kauf = 0 / Verkauf = 1)
@@ -34,5 +34,5 @@ Anmerkung: Die Daten sind nicht strikt chronologisch sortiert, Abweichungen auf 
     ID,Time,Amount,Price,Type
     31503403,2017-12-31T23:59:03.515000Z,0.00337300,13922.51000000,0
     31503404,2017-12-31T23:59:03.515000Z,0.00337300,13922.51000000,0
-    ...
+    [...]
 ---

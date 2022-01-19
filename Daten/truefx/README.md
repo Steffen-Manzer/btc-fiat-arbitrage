@@ -16,7 +16,7 @@ Alle Datensätze enthalten Daten von 01.01.2010, 00:00:00.000 (UTC) bis heute.
 
 ## Dateistruktur
 - Aktuelles Währungspaar
-- Datum/Uhrzeit mit Millisekunden (10<sup>-3</sup>, letzte drei Stellen)
+- Datum/Uhrzeit ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit)) mit einer Genauigkeit von 1 ms
 - Geld- und Briefkurs
 - Beispiel EUR/USD:
 

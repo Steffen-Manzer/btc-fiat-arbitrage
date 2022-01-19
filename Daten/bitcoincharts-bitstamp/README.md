@@ -19,20 +19,20 @@ Die Schnittstelle für BTCEUR wurde im Februar 2020 eingestellt.
 
 ## Enthaltener Zeitraum
 
-- BTCUSD enthält Daten von 13.09.2011, 13:53:36 (UTC) bis 01.02.2020, 10:51:42
+- BTCUSD enthält Daten von 13.09.2011, 13:53:36 (UTC) bis heute
 - BTCEUR enthält Daten von 05.12.2017, 11:43:49 (UTC) bis heute
+- BTCEUR weist eine **Lücke** zwischen 01.02.2020 und 14.03.2020 auf
 
 ## Dateistruktur
 
-- Datum ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit))
-- Preis in USD bzw. EUR
+- Datum/Uhrzeit ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit)) mit einer Genauigkeit von 1 s
+- Preis in USD/EUR
 - Menge in BTC
+- Beispiel:
 
 ---
     Time,Price,Amount
     2017-12-05T11:43:49.000000+00:00,9803.92,0.137166
     2017-12-05T11:44:01.000000+00:00,9842.66,0.13538904
     [...]
-    2019-10-29T14:15:34.000000+00:00,8413.770000000000,0.000006100000
-    2019-10-29T14:15:36.000000+00:00,8406.150000000000,0.012340930000
 ---

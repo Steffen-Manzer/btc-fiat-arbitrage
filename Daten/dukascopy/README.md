@@ -25,7 +25,7 @@ dabei ist
 Alle Datensätze enthalten Daten von 01.01.2010, 00:00:00.000 (UTC) bis heute.
 
 ## Dateistruktur
-- Datum/Uhrzeit ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit))
+- Datum/Uhrzeit ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit)) mit einer Genauigkeit von 1 ms
 - Geld- und Briefkurs
 - Angebots- und Nachfragemenge in Einheiten der Basiswährung
 - Beispiel EUR/USD: 

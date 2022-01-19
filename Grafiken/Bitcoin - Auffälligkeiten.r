@@ -31,35 +31,27 @@ texFile_c <- sprintf(
 
 # BTC/USD an Bitstamp, 10.10.2021 zwischen 20:35 und 20:36 UTC ----------
 a_datalimits <- c("2021-10-10 20:35:20", "2021-10-10 20:35:45")
-a_viewport <- as.POSIXct(c("2021-10-10 20:35:25", "2021-10-10 20:35:40"))
+a_viewport <- as.POSIXct(c("2021-10-10 20:35:23", "2021-10-10 20:35:41"))
 a_bitstamp <- read_fst(
     "Cache/bitstamp/btcusd/tick/bitstamp-btcusd-tick-2021-10.fst",
     columns=c("Time","Price"),
     as.data.table=T
 )
 a_bitstamp <- a_bitstamp[Time %between% a_datalimits]
-a_bitstamp[,Exchange:="Bitstamp"]
-setorder(a_bitstamp, Time, Price) # Nach Preis muss sortiert werden, da die Punkte überlappen
-a_bitstamp[,Exchange:=factor(Exchange, levels=c("Bitstamp", "Coinbase Pro"))]
+a_bitstamp[,Exchange:=factor("Bitstamp", levels=c("Bitstamp", "Coinbase Pro"))]
+
+# Bei Wahl einer Liniengrafik müsste Bitstamp nach Zeit UND Preis sortiert werden,
+# da mehrere Ticks in einer Sekunde auftreten.
+#setorder(a_bitstamp, Time, Price)
 
 # Zum Vergleich wird die Börse Coinbase Pro dargestellt.
 a_coinbase <- read_fst(
     "Cache/coinbase/btcusd/tick/coinbase-btcusd-tick-2021-10.fst",
-    #columns=c("Time","Close"),
     columns=c("Time","Price"),
     as.data.table=T
 )
 a_coinbase <- a_coinbase[Time %between% a_datalimits]
-a_coinbase[,Exchange:="Coinbase Pro"]
-#setnames(a_coinbase, "Close", "Price")
-a_coinbase[,Exchange:=factor(Exchange, levels=c("Bitstamp", "Coinbase Pro"))]
-
-# Datensatz kombinieren
-# a_combined <- rbindlist(list(a_bitstamp, a_coinbase))
-# 
-# # Sortieren und Bitstamp zuerst anzeigen
-# setorder(a_combined, Time)
-# a_combined[,Exchange:=factor(Exchange, levels=c("Bitstamp", "Coinbase Pro"))]
+a_coinbase[,Exchange:=factor("Coinbase Pro", levels=c("Bitstamp", "Coinbase Pro"))]
 
 if (plotAsLaTeX) {
     plotTitle <- NULL
@@ -126,7 +118,7 @@ print(
             labels = function(x) format.money(x, digits=0)
         ) +
         # Sichtbaren Bereich begrenzen, ohne dass Daten abgeschnitten werden
-        #coord_cartesian(xlim=a_viewport) +
+        coord_cartesian(xlim=a_viewport) +
         scale_color_ptol() +
         guides(
             
