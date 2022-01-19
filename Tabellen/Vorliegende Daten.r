@@ -48,6 +48,13 @@ for (i in seq_along(exchanges)) {
     source <- names(exchanges)[i]
     exchangeName <- exchanges[[i]]
     
+    tableContent <- paste0(
+        tableContent,
+        "        \\rowcolor{white}\n",
+        sprintf("        \\multicolumn{4}{@{}l@{}}{\\textbf{%s}}\n", exchangeName),
+        "        \\global\\rownum=1\\relax\\\\\n\n"
+    )
+    
     pairs <- list.files(sprintf("Cache/%s", tolower(source)))
     for (pair in pairs) {
         
@@ -84,8 +91,7 @@ for (i in seq_along(exchanges)) {
         
         tableContent <- paste0(
             tableContent,
-            sprintf("        %s &\n", exchangeName), # Börse / Datenquelle
-            sprintf("            %s &\n", format.currencyPair(pair)), # Kurspaar
+            sprintf("        \\qquad %s &\n", format.currencyPair(pair)), # Kurspaar
             sprintf("            %s &\n", format.number(numTicks)), # Anzahl Ticks
             sprintf("            %s &\n", format(firstDataset, "%d.%m.%Y %H:%M:%S")), # Von
             sprintf("            %s \\\\\n", format(lastDataset, "%d.%m.%Y %H:%M:%S")), # Bis
