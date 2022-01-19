@@ -8,13 +8,12 @@
 
 Diese Schnittstelle wird für länger zurückliegende Tickdaten genutzt. Sie bietet im Unterschied zur offiziellen API
 keine Unterscheidung von Kauf- und Verkaufsgeschäften.
-Die Schnittstelle für BTCEUR wurde im Februar 2020 eingestellt.
 
 
 ## API
 - Nutzung folgender Adressen:
     - http://api.bitcoincharts.com/v1/trades.csv?symbol=bitstampUSD
-    - ~~http://api.bitcoincharts.com/v1/trades.csv?symbol=bitstampEUR~~
+    - http://api.bitcoincharts.com/v1/trades.csv?symbol=bitstampEUR
 - Aktualisierung erfolgt einmal pro Stunde
 
 ## Enthaltener Zeitraum
