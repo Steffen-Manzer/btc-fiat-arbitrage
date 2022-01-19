@@ -9,16 +9,14 @@
 >@ https://www.coindesk.com/price/bitcoin-price-index
 
 ## API
-- Abfrage folgender URL: https://api.coindesk.com/charts/data?data=close&exchanges=bpi&index=USD&dev=1
-- Aktualisierung erfolgt täglich um 08:02
-- Aufgrund der Nutzung einer internen API können bei kurzfristigen Änderungen vorübergehend Lücken entstehen.
+- Abfrage folgender URL: `https://production.api.coindesk.com/v2/price/values/BTC?start_date=2020-11-27T11:00&end_date=2020-11-27T13:13&ohlc=false`
 
 ## Enthaltener Zeitraum
 
 - BTCUSD enthält Daten von 18.07.2010, 00:00:00 (UTC) bis heute
 
 ## Dateistruktur
-- Datum ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit))
+- Datum/Uhrzeit ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit)) mit einer Genauigkeit von 1 min
 - Aktueller Wert des BPI in USD
 
 ---

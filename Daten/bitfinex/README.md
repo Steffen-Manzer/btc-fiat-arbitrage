@@ -10,12 +10,11 @@ Die Dateien ohne Monatsangabe enthalten alle Daten bis zur Umstellung auf monats
 
 ## API
 
-- Abfrage folgender URLs:
-    - https://api-pub.bitfinex.com/v2/trades/tBTCUSD/hist
-    - https://api-pub.bitfinex.com/v2/trades/tBTCEUR/hist
-    - https://api-pub.bitfinex.com/v2/trades/tBTCGBP/hist
-    - https://api-pub.bitfinex.com/v2/trades/tBTCJPY/hist
-- Aktualisierung erfolgt stündlich bzw. halbstündlich (BTCUSD)
+Abfrage folgender URLs:
+- https://api-pub.bitfinex.com/v2/trades/tBTCUSD/hist
+- https://api-pub.bitfinex.com/v2/trades/tBTCEUR/hist
+- https://api-pub.bitfinex.com/v2/trades/tBTCGBP/hist
+- https://api-pub.bitfinex.com/v2/trades/tBTCJPY/hist
 
 ## Enthaltener Zeitraum
 

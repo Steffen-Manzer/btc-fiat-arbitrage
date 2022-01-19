@@ -6,19 +6,15 @@
 > Result: array of pair name and recent trade data
 >@ https://www.kraken.com/features/api#get-recent-trades
 
-Die Dateien ohne Monatsangabe enthalten alle Daten bis zur Umstellung auf monatsbasierte CSV-Dateien.
-
 ## API
 
-- Abfrage folgender URLs:
-    - https://api.kraken.com/0/public/Trades?pair=xbtusd
-    - https://api.kraken.com/0/public/Trades?pair=xbteur
-    - https://api.kraken.com/0/public/Trades?pair=xbtgbp
-    - https://api.kraken.com/0/public/Trades?pair=xbtjpy
-    - https://api.kraken.com/0/public/Trades?pair=xbtcad
-    - https://api.kraken.com/0/public/Trades?pair=xbtchf
-- EUR wird alle 20 Minuten aktualisiert
-- Alle anderen Handelspaare werden alle 30 Minuten aktualisiert
+Abfrage folgender URLs:
+- https://api.kraken.com/0/public/Trades?pair=xbtusd
+- https://api.kraken.com/0/public/Trades?pair=xbteur
+- https://api.kraken.com/0/public/Trades?pair=xbtgbp
+- https://api.kraken.com/0/public/Trades?pair=xbtjpy
+- https://api.kraken.com/0/public/Trades?pair=xbtcad
+- https://api.kraken.com/0/public/Trades?pair=xbtchf
 
 ## Enthaltener Zeitraum
 

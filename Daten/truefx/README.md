@@ -8,14 +8,14 @@
 
 ## API
 
-Download fertiger .zip-Dateien von der Webseite.
+Abruf von monatlich aufbereiteten .zip-Dateien von der Webseite.
 
 ## Enthaltener Zeitraum
 
 Alle Datensätze enthalten Daten von 01.01.2010, 00:00:00.000 (UTC) bis heute.
 
 ## Dateistruktur
-- Aktuelles Währungspaar
+- Währungspaar
 - Datum/Uhrzeit ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit)) mit einer Genauigkeit von 1 ms
 - Geld- und Briefkurs
 - Beispiel EUR/USD:

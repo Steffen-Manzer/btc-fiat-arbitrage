@@ -13,15 +13,12 @@
 >
 >@ https://www.bitstamp.net/api/#transactions
 
-Die Dateien ohne Monatsangabe enthalten alle Daten bis zur Umstellung auf monatsbasierte CSV-Dateien.
-
 ## API
 
-- Abfrage folgender URLs:
-    - https://www.bitstamp.net/api/v2/transactions/btcusd/?time=day
-    - https://www.bitstamp.net/api/v2/transactions/btceur/?time=day
-    - https://www.bitstamp.net/api/v2/transactions/btcgbp/?time=day
-- Aktualisierung erfolgt alle 7 Stunden.
+Abfrage folgender URLs:
+- https://www.bitstamp.net/api/v2/transactions/btcusd/?time=day
+- https://www.bitstamp.net/api/v2/transactions/btceur/?time=day
+- https://www.bitstamp.net/api/v2/transactions/btcgbp/?time=day
 
 ## Enthaltener Zeitraum
 
