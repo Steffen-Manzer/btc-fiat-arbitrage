@@ -39,6 +39,7 @@ a_bitstamp <- read_fst(
 )
 a_bitstamp <- a_bitstamp[Time %between% a_datalimits]
 a_bitstamp[,Exchange:=factor("Bitstamp", levels=c("Bitstamp", "Coinbase Pro"))]
+a_bitstamp_count <- a_bitstamp[j=.N, by=Time]
 
 # Bei Wahl einer Liniengrafik müsste Bitstamp nach Zeit UND Preis sortiert werden,
 # da mehrere Ticks in einer Sekunde auftreten.
@@ -64,7 +65,7 @@ if (plotAsLaTeX) {
     tikz(
         file = texFile_a,
         width = documentPageWidth,
-        height = 5 / 2.54, # cm -> Zoll
+        height = 6 / 2.54, # cm -> Zoll
         sanitize = TRUE
     )
     
@@ -98,6 +99,13 @@ print(
             # Boxplot nicht in der Legende kennzeichen
             show.legend=FALSE
         ) +
+        geom_text(
+            aes(x=Time, y=max(a_bitstamp$Price, a_coinbase$Price)+400, label=paste0("n\\,=\\,", N)),
+            data=a_bitstamp_count,
+            size=2.5,
+            angle=90,
+            hjust=0
+        ) + 
         theme_minimal() +
         theme(
             #legend.position = "none",
@@ -115,14 +123,12 @@ print(
             expand = expansion(mult = c(.03, .03))
         ) +
         scale_y_continuous(
-            labels = function(x) format.money(x, digits=0)
+            labels = function(x) format.money(x, digits=0),
+            breaks = seq(from=51000, to=56000, by=1000)
         ) +
         # Sichtbaren Bereich begrenzen, ohne dass Daten abgeschnitten werden
-        coord_cartesian(xlim=a_viewport) +
+        coord_cartesian(xlim=a_viewport, ylim=c(51000,57250)) +
         scale_color_ptol() +
-        guides(
-            
-        ) +
         labs(
             title=plotTitle,
             x=plotXLab,
