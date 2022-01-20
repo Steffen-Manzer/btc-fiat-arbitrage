@@ -64,14 +64,10 @@ while (currentDate < endDate) {
     # Zieldateien festlegen
     targetFileTick <- sprintf("Cache/forex-combined/eurusd/tick/forex-combined-eurusd-tick-%d-%02d.fst",
                               year(currentDate), month(currentDate))
-    targetFile1s <- sprintf("Cache/forex-combined/eurusd/1s/forex-combined-eurusd-1s-%d-%02d.fst",
-                            year(currentDate), month(currentDate))
-    targetFile5s <- sprintf("Cache/forex-combined/eurusd/5s/forex-combined-eurusd-5s-%d-%02d.fst",
-                            year(currentDate), month(currentDate))
     targetFile60s <- sprintf("Cache/forex-combined/eurusd/60s/forex-combined-eurusd-60s-%d-%02d.fst",
                              year(currentDate), month(currentDate))
     
-    for (targetPath in c(targetFileTick, targetFile1s, targetFile5s, targetFile60s)) {
+    for (targetPath in c(targetFileTick, targetFile60s)) {
         if (!file.exists(dirname(targetPath))) {
             dir.create(dirname(targetPath), recursive = TRUE)
         }
@@ -94,35 +90,6 @@ while (currentDate < endDate) {
     
     # Speichern
     write_fst(combined, targetFileTick, compress=100)
-    
-    
-    # Auf 1s aggregieren
-    if (!file.exists(targetFile1s)) {
-        printf("1s")
-        thisDataset_1s <- combined[
-            j=eval(summariseTickData()),
-            by=floor_date(Time, unit = "second")
-        ]
-        setnames(thisDataset_1s, 1, "Time")
-        write_fst(thisDataset_1s, targetFile1s, compress=100)
-        
-        # Speicher freigeben
-        rm(thisDataset_1s)
-    }
-    
-    # Auf 5s aggregieren
-    if (!file.exists(targetFile5s)) {
-        printf(", 5s")
-        thisDataset_5s <- combined[
-            j=eval(summariseTickData()),
-            by=floor_date(Time, unit = "5 seconds")
-        ]
-        setnames(thisDataset_5s, 1, "Time")
-        write_fst(thisDataset_5s, targetFile5s, compress=100)
-        
-        # Speicher freigeben
-        rm(thisDataset_5s)
-    }
     
     # Auf 60s aggregieren
     if (!file.exists(targetFile60s)) {

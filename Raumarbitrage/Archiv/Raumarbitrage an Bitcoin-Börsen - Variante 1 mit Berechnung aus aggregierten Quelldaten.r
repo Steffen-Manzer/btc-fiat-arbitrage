@@ -40,8 +40,8 @@ outFileTimestamp <- sprintf("%s/Abbildungen/Krypto_Preisunterschiede_Stand.tex",
 exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
 currencyPairs <- c("btcusd")
 
-# Aggregationslevel: 1s, 5s, 60s?
-timeframe <- "5s"
+# Vorheriges Aggregationslevel
+timeframe <- "60s"
 
 # Frühester Zeitpunkt, bei dem für mehr als eine Börse Kurse bekannt sind
 startDate <- as.POSIXct("2013-01-14 16:47:23")

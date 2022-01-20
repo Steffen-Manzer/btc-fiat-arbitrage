@@ -5,6 +5,7 @@
 # Bibliotheken und externe Hilfsfunktionen laden ------------------------------
 library("fst")
 library("data.table") # %between%
+library("lubridate") # floor_date
 library("ggplot2")
 library("ggthemes")
 source("Konfiguration/FilePaths.r")
@@ -35,7 +36,7 @@ a_viewport <- as.POSIXct(c("2021-10-10 20:35:23", "2021-10-10 20:35:41"))
 a_bitstamp <- read_fst(
     "Cache/bitstamp/btcusd/tick/bitstamp-btcusd-tick-2021-10.fst",
     columns=c("Time","Price"),
-    as.data.table=T
+    as.data.table=TRUE
 )
 a_bitstamp <- a_bitstamp[Time %between% a_datalimits]
 a_bitstamp[,Exchange:=factor("Bitstamp", levels=c("Bitstamp", "Coinbase Pro"))]
@@ -49,7 +50,7 @@ a_bitstamp_count <- a_bitstamp[j=.N, by=Time]
 a_coinbase <- read_fst(
     "Cache/coinbase/btcusd/tick/coinbase-btcusd-tick-2021-10.fst",
     columns=c("Time","Price"),
-    as.data.table=T
+    as.data.table=TRUE
 )
 a_coinbase <- a_coinbase[Time %between% a_datalimits]
 a_coinbase[,Exchange:=factor("Coinbase Pro", levels=c("Bitstamp", "Coinbase Pro"))]
@@ -147,20 +148,21 @@ if (plotAsLaTeX) {
 b_kraken <- read_fst(
     "Cache/kraken/btcusd/tick/kraken-btcusd-tick-2021-02.fst",
     columns=c("Time","Price"),
-    as.data.table=T
+    as.data.table=TRUE
 )
 b_kraken <- b_kraken[Time %between% c("2021-02-22 14:16:00", "2021-02-22 14:30:00")]
 b_kraken[,Exchange:="Kraken"]
 
 # Zum Vergleich wird die Börse Coinbase Pro auf 5s-Basis dargestellt.
 b_coinbase <- read_fst(
-    "Cache/coinbase/btcusd/5s/coinbase-btcusd-5s-2021-02.fst",
-    columns=c("Time","Close"),
-    as.data.table=T
+    "Cache/coinbase/btcusd/tick/coinbase-btcusd-tick-2021-02.fst",
+    columns=c("Time","Price"),
+    as.data.table=TRUE
 )
 b_coinbase <- b_coinbase[Time %between% c("2021-02-22 14:16:00", "2021-02-22 14:30:00")]
+b_coinbase <- b_coinbase[j=.(Price=last(Price)), by=floor_date(Time, unit="5 seconds")]
 b_coinbase[,Exchange:="Coinbase Pro"]
-setnames(b_coinbase, "Close", "Price")
+setnames(b_coinbase, 1, "Time")
 
 # Datensatz kombinieren
 b_combined <- rbindlist(list(b_kraken, b_coinbase))
@@ -229,7 +231,7 @@ c_viewport <- as.POSIXct(c("2015-01-14 06:00:00", "2015-01-14 18:00:00"))
 c_coinbase <- read_fst(
     "Cache/coinbase/btcusd/tick/coinbase-btcusd-tick-2015-01.fst",
     columns=c("Time","Price"),
-    as.data.table=T
+    as.data.table=TRUE
 )
 c_coinbase <- c_coinbase[Time %between% c_datalimits]
 c_coinbase[,Exchange:="Coinbase Pro"]
@@ -238,7 +240,7 @@ c_coinbase[,Exchange:="Coinbase Pro"]
 c_bitstamp <- read_fst(
     "Cache/bitstamp/btcusd/60s/bitstamp-btcusd-60s-2015-01.fst",
     columns=c("Time","Close"),
-    as.data.table=T
+    as.data.table=TRUE
 )
 c_bitstamp <- c_bitstamp[Time %between% c_datalimits]
 c_bitstamp[,Exchange:="Bitstamp"]

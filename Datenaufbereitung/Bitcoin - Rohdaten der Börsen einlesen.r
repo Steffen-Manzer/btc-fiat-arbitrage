@@ -1,5 +1,5 @@
 #' Lese und aggregiere Rohdaten der Bitcoin-Börsen zu
-#' Tickdaten, 1s-/5s-/60s/1d, 1mo-OHLC
+#' Tickdaten, 60s/1d/1mo-OHLC
 
 
 # Bibliotheken und externe Hilfsfunktionen laden ------------------------------
@@ -12,7 +12,7 @@ library("lubridate") # floor_date
 # Hilfsfunktionen -------------------------------------------------------------
 
 #' Daten eines Zeitabschnittes aggregieren
-#' Die Art und Weise, wie Daten zu 1s/5s/60s/1d aggregiert werden, ist
+#' Die Art und Weise, wie Daten zu 60s/1d/1mon aggregiert werden, ist
 #' für alle Bitcoin-Börsen identisch.
 bitcoinSummariseCallback <- function() {
     return(expression(.(

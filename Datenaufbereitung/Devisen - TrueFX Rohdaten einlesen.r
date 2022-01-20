@@ -1,6 +1,6 @@
 # Lese und aggregiere TrueFX-Rohdaten zu
 # - Tickdaten (vollständig)
-# - 1s-/5s-/60s/1d: Schlusskurse für Bid-, Ask- und Mittelkurs
+# - 60s/1d/1mon: Schlusskurse für Bid-, Ask- und Mittelkurs
 # Diese Auswahl erfolgt, um die Dateigröße zu gering wie möglich zu halten.
 
 source("Funktionen/ReadMonthlyDividedDataset.r")

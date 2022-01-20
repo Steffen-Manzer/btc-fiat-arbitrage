@@ -1,7 +1,7 @@
 #' Monatlich getrennte Daten einlesen
 #' 
 #' Einen Datensatz aus monatlich getrennten CSV-Dateien einlesen und auf
-#' bestimmte Zeithorizonte aggregieren (1s, 5s, 60s, 1d, 1mo).
+#' bestimmte Zeithorizonte aggregieren (60s, 1d, 1mo).
 #' Funktioniert für Bitcoin-Börsen und Wechselkursdaten.
 #' 
 #' @author Steffen Manzer
@@ -98,7 +98,7 @@ readMonthlyDividedDataset <- function(
         cacheBase <- sprintf("Cache/%s/%s", targetBasename, pair)
         
         # Cache-Verzeichnisse anlegen
-        for (aggregationLevel in c("tick", "1s", "5s", "60s")) {
+        for (aggregationLevel in c("tick", "60s")) {
             if (!dir.exists(sprintf("%s/%s", cacheBase, aggregationLevel))) {
                 dir.create(sprintf("%s/%s", cacheBase, aggregationLevel), recursive = TRUE)
             }
@@ -108,8 +108,6 @@ readMonthlyDividedDataset <- function(
         # Genauere Aggregationsstufen werden nach Monaten getrennt
         # Beispiel-Schema: Cache/bitstamp/btcusd/tick/bitstamp-btcusd-tick-2019-09.fst
         cacheBaseTick <- sprintf("%s/tick/%s-%s-tick", cacheBase, targetBasename, pair)
-        cacheBase1s <- sprintf("%s/1s/%s-%s-1s", cacheBase, targetBasename, pair)
-        cacheBase5s <- sprintf("%s/5s/%s-%s-5s", cacheBase, targetBasename, pair)
         cacheBase60s <- sprintf("%s/60s/%s-%s-60s", cacheBase, targetBasename, pair)
         
         # Tages- und Monatsdaten werden nicht nach Monaten getrennt,
@@ -200,8 +198,6 @@ readMonthlyDividedDataset <- function(
                 # Quell- und Zieldateien für diesen Monat bestimmen
                 srcFile <- getSourceFileCallback(pair, year, month)
                 targetFileTick <- sprintf("%s-%d-%02d.fst", cacheBaseTick, year, month)
-                targetFile1s <- sprintf("%s-%d-%02d.fst", cacheBase1s, year, month)
-                targetFile5s <- sprintf("%s-%d-%02d.fst", cacheBase5s, year, month)
                 targetFile60s <- sprintf("%s-%d-%02d.fst", cacheBase60s, year, month)
                 
                 # Quell-Datensatz existiert nicht
@@ -245,34 +241,6 @@ readMonthlyDividedDataset <- function(
                     format(first(thisDataset$Time), format="%d.%m.%Y %H:%M:%OS"),
                     format(last(thisDataset$Time), format="%d.%m.%Y %H:%M:%OS")
                 )
-                
-                # Auf 1s aggregieren
-                if (!file.exists(targetFile1s)) {
-                    printf(" - 1s")
-                    thisDataset_1s <- thisDataset[
-                        j=eval(summariseDataCallback()),
-                        by=floor_date(Time, unit = "second")
-                    ]
-                    setnames(thisDataset_1s, 1, "Time")
-                    write_fst(thisDataset_1s, targetFile1s, compress=100)
-                    
-                    # Speicher freigeben
-                    rm(thisDataset_1s)
-                }
-                
-                # Auf 5s aggregieren
-                if (!file.exists(targetFile5s)) {
-                    printf(", 5s")
-                    thisDataset_5s <- thisDataset[
-                        j=eval(summariseDataCallback()),
-                        by=floor_date(Time, unit = "5 seconds")
-                    ]
-                    setnames(thisDataset_5s, 1, "Time")
-                    write_fst(thisDataset_5s, targetFile5s, compress=100)
-                    
-                    # Speicher freigeben
-                    rm(thisDataset_5s)
-                }
                 
                 # Auf 60s aggregieren
                 if (!file.exists(targetFile60s)) {
