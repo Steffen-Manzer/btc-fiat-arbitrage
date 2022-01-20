@@ -6,7 +6,7 @@
 #'
 #' ACHTUNG:
 #' Es handelt sich bei diesem Verfahren um die experimentelle erste Herangehensweise.
-#' Als Datenquelle werden auf 1s aggregierte Daten der Börsen herangezogen, was die
+#' Als Datenquelle werden auf 60s aggregierte Daten der Börsen herangezogen, was die
 #' realen Tauschmöglichkeiten nicht zwangsläufig korrekt abbildet.
 #'
 #' Das neue Verfahren verwendet für die Bestimmung von Tauschmöglichkeiten Tickdaten.

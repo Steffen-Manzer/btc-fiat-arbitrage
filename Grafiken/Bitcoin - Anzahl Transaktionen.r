@@ -25,7 +25,7 @@
     # Bibliotheken laden ------------------------------------------------------
     library("data.table")
     library("lubridate") # floor_date
-    library("fasttime")
+    library("fasttime") # fastPOSIXct
     library("dplyr")
     library("ggplot2")
     library("ggthemes")

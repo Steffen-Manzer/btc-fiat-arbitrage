@@ -19,7 +19,10 @@
     plotAsLaTeX <- FALSE
     
     # Nur einmal pro Monat neu laden
-    if (fromLaTeX && plotAsLaTeX && file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 28) {
+    if (
+        fromLaTeX && plotAsLaTeX && 
+        file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 28
+    ) {
         cat("Grafik BTC-Handelsvolumen noch aktuell, keine Aktualisierung.\n")
         return()
     }
@@ -27,7 +30,7 @@
     
     # Bibliotheken laden ------------------------------------------------------
     library("data.table")
-    library("fasttime")
+    library("fasttime") # fastPOSIXct
     library("dplyr")
     library("ggplot2")
     library("ggthemes")

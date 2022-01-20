@@ -145,12 +145,15 @@ if (plotAsLaTeX) {
 
 
 # BTC/USD an Kraken, 22.02.2021 zwischen 14:16 und 14:30 UTC ------------------
+b_datalimits <- c("2021-02-22 14:16:00", "2021-02-22 14:30:00")
+#b_viewport <- as.POSIXct(c("2021-10-10 20:35:23", "2021-10-10 20:35:41"))
+
 b_kraken <- read_fst(
     "Cache/kraken/btcusd/tick/kraken-btcusd-tick-2021-02.fst",
     columns=c("Time","Price"),
     as.data.table=TRUE
 )
-b_kraken <- b_kraken[Time %between% c("2021-02-22 14:16:00", "2021-02-22 14:30:00")]
+b_kraken <- b_kraken[Time %between% b_datalimits]
 b_kraken[,Exchange:="Kraken"]
 
 # Zum Vergleich wird die Börse Coinbase Pro auf 5s-Basis dargestellt.
@@ -159,10 +162,11 @@ b_coinbase <- read_fst(
     columns=c("Time","Price"),
     as.data.table=TRUE
 )
-b_coinbase <- b_coinbase[Time %between% c("2021-02-22 14:16:00", "2021-02-22 14:30:00")]
-b_coinbase <- b_coinbase[j=.(Price=last(Price)), by=floor_date(Time, unit="5 seconds")]
-b_coinbase[,Exchange:="Coinbase Pro"]
-setnames(b_coinbase, 1, "Time")
+b_coinbase <- b_coinbase[
+    i=Time %between% b_datalimits, # Auf Betrachtungszeitraum beschränken
+    j=.(Price=last(Price), Exchange="Coinbase Pro"), # Schlusskurs berechnen
+    by=.(Time=floor_date(Time, unit="5 seconds")) # Auf 5s gruppieren
+]
 
 # Datensatz kombinieren
 b_combined <- rbindlist(list(b_kraken, b_coinbase))
@@ -228,6 +232,7 @@ if (plotAsLaTeX) {
 # BTC/USD an Coinbase Pro, 14.01.2015 zwischen 06:00 und 18:00 UTC ------------
 c_datalimits <- c("2015-01-14 03:00:00", "2015-01-14 22:00:00")
 c_viewport <- as.POSIXct(c("2015-01-14 06:00:00", "2015-01-14 18:00:00"))
+
 c_coinbase <- read_fst(
     "Cache/coinbase/btcusd/tick/coinbase-btcusd-tick-2015-01.fst",
     columns=c("Time","Price"),
@@ -286,8 +291,6 @@ print(
             axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
         ) +
         scale_x_datetime(
-            #date_breaks="2 mins",
-            #date_minor_breaks="1 minute",
             date_labels="%H:%M",
             expand = expansion(mult = c(.01, .03))
         ) +

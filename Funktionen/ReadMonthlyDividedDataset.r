@@ -54,10 +54,10 @@ readMonthlyDividedDataset <- function(
     # Bibliotheken und Hilfsfunktionen laden ----------------------------------
     library("fst")
     library("data.table")
-    library("fasttime")
     library("tictoc")
     library("lubridate") # floor_date
     source("Funktionen/printf.r")
+    
     
     # Parameter verarbeiten ---------------------------------------------------
     if (is.na(targetBasename)) {
@@ -85,6 +85,7 @@ readMonthlyDividedDataset <- function(
         }
         
     }
+    
     
     # Daten einlesen ----------------------------------------------------------
     # Jedes Wechselkurspaar dieser Börse durchgehen
