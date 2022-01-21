@@ -21,20 +21,20 @@ parseTrueFXTickData <- function(srcFile) {
         cmd=paste0("unzip -cq ", srcFile),
         showProgress = FALSE,
         header = FALSE,
-        col.names = c("Paar", "Time", "Bid", "Ask")
+        col.names = c("Pair", "Time", "Bid", "Ask")
     )
     
     # Entferne erste Spalte, enthält nur Namen des Datensatzes
-    thisDataset$Paar <- NULL
+    thisDataset$Pair <- NULL
     
     # Lese Datum
     # Originalformat: 20180101 22:01:01.051
     # Variante 1: parse_date_time(data$Time, "%Y%m%d %H:%M:%OS") (ca. 2,5-3s)
     # Variante 2: Bindestriche einfügen und fastPOSIXct: Langsamer
-    thisDataset$Time <- parse_date_time(thisDataset$Time, "%Y%m%d %H:%M:%OS")
+    thisDataset[,Time:=parse_date_time(Time, "%Y%m%d %H:%M:%OS")]
     
     # Mittelkurs aus Bid und Ask berechnen
-    thisDataset$Mittel <- rowMeans(thisDataset[,c("Bid","Ask")])
+    thisDataset[,Mittel:=rowMeans(thisDataset[,c("Bid","Ask")])]
     
     return(thisDataset)
     

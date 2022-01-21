@@ -45,7 +45,7 @@ readMonthlyDividedDataset(
         #                            ID         Time         Amount    Price
         sourceFileColumnClasses <- c("numeric", "character", "double", "double")
         thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
-        thisDataset$Time <- fastPOSIXct(thisDataset$Time, tz="UTC")
+        thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
         return(thisDataset)
     },
     summariseDataCallback = bitcoinSummariseCallback
@@ -71,7 +71,7 @@ readMonthlyDividedDataset(
         #                            Time         Price     Amount
         sourceFileColumnClasses <- c("character", "double", "double")
         thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
-        thisDataset$Time <- fastPOSIXct(thisDataset$Time, tz="UTC")
+        thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
         return(thisDataset)
     },
     summariseDataCallback = bitcoinSummariseCallback,
@@ -99,7 +99,7 @@ readMonthlyDividedDataset(
         #                            ID         Time         Amount    Price     Type
         sourceFileColumnClasses <- c("numeric", "character", "double", "double", "numeric")
         thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
-        thisDataset$Time <- fastPOSIXct(thisDataset$Time, tz="UTC")
+        thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
         return(thisDataset)
     },
     summariseDataCallback = bitcoinSummariseCallback
@@ -121,7 +121,7 @@ readMonthlyDividedDataset(
         #                             ID         Time         Amount    Price     Type
         sourceFileColumnClasses <- c("numeric", "character", "double", "double", "numeric")
         thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
-        thisDataset$Time <- fastPOSIXct(thisDataset$Time, tz="UTC")
+        thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
         return(thisDataset)
     },
     summariseDataCallback = bitcoinSummariseCallback,
@@ -147,7 +147,7 @@ readMonthlyDividedDataset(
         #                            Time         Amount    Price     Type         Limit
         sourceFileColumnClasses <- c("character", "double", "double", "character", "character")
         thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
-        thisDataset$Time <- fastPOSIXct(thisDataset$Time, tz="UTC")
+        thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
         return(thisDataset)
     },
     summariseDataCallback = bitcoinSummariseCallback

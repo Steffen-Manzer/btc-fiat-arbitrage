@@ -26,10 +26,10 @@ parseDukascopyTickData <- function(srcFile) {
     thisDataset$AskVolume <- NULL
     
     # Zeit einlesen
-    thisDataset$Time <- fastPOSIXct(thisDataset$Time, tz="UTC")
+    thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
     
     # Mittelkurs aus Bid und Ask berechnen
-    thisDataset$Mittel <- rowMeans(thisDataset[,c("Bid","Ask")])
+    thisDataset[,Mittel:=rowMeans(thisDataset[,c("Bid","Ask")])]
     
     return(thisDataset)
     
