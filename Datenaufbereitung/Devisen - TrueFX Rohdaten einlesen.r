@@ -21,11 +21,9 @@ parseTrueFXTickData <- function(srcFile) {
         cmd=paste0("unzip -cq ", srcFile),
         showProgress = FALSE,
         header = FALSE,
-        col.names = c("Pair", "Time", "Bid", "Ask")
+        col.names = c("Pair", "Time", "Bid", "Ask"),
+        drop = c("Pair")
     )
-    
-    # Entferne erste Spalte, enthält nur Namen des Datensatzes
-    thisDataset$Pair <- NULL
     
     # Lese Datum
     # Originalformat: 20180101 22:01:01.051

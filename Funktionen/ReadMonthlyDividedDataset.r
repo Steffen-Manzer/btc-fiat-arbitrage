@@ -56,6 +56,7 @@ readMonthlyDividedDataset <- function(
     library("data.table")
     library("tictoc")
     library("lubridate") # floor_date
+    source("Funktionen/FormatCurrencyPair.r")
     source("Funktionen/printf.r")
     
     
@@ -93,7 +94,7 @@ readMonthlyDividedDataset <- function(
         
         pair <- tolower(pair)
         newDataFound <- FALSE
-        printf("----- %s %s -----\n", exchangeName, toupper(pair))
+        printf("----- %s %s -----\n", exchangeName, format.currencyPair(pair))
         
         # Cache-Basisverzeichnis
         cacheBase <- sprintf("Cache/%s/%s", targetBasename, pair)
@@ -160,7 +161,7 @@ readMonthlyDividedDataset <- function(
             # Ab 2011 starten, manche Datensätze beginnen so früh.
             dataset_daily <- data.table()
             dataset_monthly <- data.table()
-            startYear = 2010
+            startYear = 2011
             startMonth = 1
             
         }
@@ -214,18 +215,20 @@ readMonthlyDividedDataset <- function(
                 # Neue Daten wurden gefunden
                 newDataFound <- TRUE
                 tic()
-                printf("%s %s %02d/%d: ", exchangeName, toupper(pair), month, year)
+                printf("%s %s %02d/%d: ", exchangeName, format.currencyPair(pair), month, year)
                 
                 # Tickdaten verarbeiten
                 if (file.exists(targetFileTick)) {
                     
                     # Vorhandene Tickdaten dieses Monats einlesen
                     thisDataset <- read_fst(targetFileTick, as.data.table = TRUE)
+                    printf("(.fst) ")
                     
                 } else {
                     
                     # Tickdaten aus CSV einlesen
                     thisDataset <- parseSourceFileCallback(srcFile)
+                    printf("(.csv) ")
                     
                     # Tickdaten nach Datum sortieren
                     # Nicht alle Datensätze sind exakt nach Zeit sortiert, beispielsweise
@@ -239,8 +242,8 @@ readMonthlyDividedDataset <- function(
                 # Statistiken ausgeben
                 printf(
                     "%s - %s",
-                    format(first(thisDataset$Time), format="%d.%m.%Y %H:%M:%OS"),
-                    format(last(thisDataset$Time), format="%d.%m.%Y %H:%M:%OS")
+                    format(first(thisDataset$Time), format="%d.%m.%Y %H:%M:%S"),
+                    format(last(thisDataset$Time), format="%d.%m.%Y %H:%M:%S")
                 )
                 
                 # Auf 60s aggregieren

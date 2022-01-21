@@ -3,10 +3,14 @@
 
 
 # Bibliotheken und externe Hilfsfunktionen laden ------------------------------
+source("Funktionen/AddOneMonth.r")
 source("Funktionen/ReadMonthlyDividedDataset.r")
+source("Funktionen/printf.r")
+source("Funktionen/FormatCurrencyPair.r")
 library("data.table") # fread
 library("fasttime")
 library("lubridate") # floor_date
+library("tictoc")
 
 
 # Hilfsfunktionen -------------------------------------------------------------
@@ -31,7 +35,7 @@ bitcoinSummariseCallback <- function() {
 # Daten einlesen --------------------------------------------------------------
 
 # Bitfinex
-cat("\n--------- Verarbeite Bitfinex ---------\n")
+printf("\n--------- Verarbeite Bitfinex ---------\n")
 readMonthlyDividedDataset(
     exchangeName = "Bitfinex",
     currencyPairs = c("btcusd", "btceur", "btcgbp", "btcjpy"),
@@ -52,40 +56,106 @@ readMonthlyDividedDataset(
 )
 
 
-# Bitstamp via Bitcoincharts
-# Diesen Datensatz nur verwenden, wenn keine (detaillierteren) Originaldaten
-# vorliegen. Dies ist bis einschließlich August 2019 der Fall.
-cat("\n--------- Verarbeite Bitstamp (via Bitcoincharts bis August 2019) ---------\n")
-readMonthlyDividedDataset(
-    "Bitstamp via Bitcoincharts",
-    currencyPairs = c("btcusd", "btceur"),
-    getSourceFileCallback = function(pair, year, month) {
-        # Dateinamen der Quelldatei erzeugen
-        return(sprintf(
-            "Daten/bitcoincharts-bitstamp/%s/bitcoincharts-bitstamp-tick-%1$s-%2$d-%3$02d.csv.gz",
-            pair, year, month
-        ))
-    },
-    parseSourceFile = function(srcFile) {
-        # Daten der angegebenen Quelldatei einlesen
-        #                            Time         Price     Amount
-        sourceFileColumnClasses <- c("character", "double", "double")
-        thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
-        thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
-        return(thisDataset)
-    },
-    summariseDataCallback = bitcoinSummariseCallback,
-    
-    # Unter gemeinsamem "bitstamp"-Datensatz speichern
-    targetBasename = "bitstamp",
-    
-    # Daten nur bis einschließlich August 2019 einlesen
-    readUntil = as.POSIXct("2019-08-01")
+# Bitstamp: Historische Tickdaten aus .csv extrahieren und für weitere
+# Verarbeitung als .fst speichern
+printf("\n--------- Verarbeite Bitstamp (historische Daten) ---------\n")
+bitstampHistoricalSets <- data.table(
+    pair     = c("btcusd",     "btceur",     "btcgbp"),
+    endDates = c("2019-09-01", "2019-09-01", "2022-01-01") # Letzter Monat (exkl.)
 )
+for (i in seq_len(nrow(bitstampHistoricalSets))) {
+    pair <- bitstampHistoricalSets$pair[i]
+    endDate <- as.POSIXct(bitstampHistoricalSets$endDates[i], tz="UTC")
+    
+    printf("----- Bitstamp %s -----\n", format.currencyPair(pair))
+    
+    # Datensatz vorhanden:
+    # Historische Daten nur einmalig zu Beginn importieren,
+    # nicht an bestehenden Datensatz anhängen
+    if (file.exists(sprintf("Cache/bitstamp/%s/bitstamp-%1$s-daily.fst", pair))) {
+        printf("Datensatz vorhanden, Überspringe historische Daten.\n")
+        next
+    }
+    
+    # Zielverzeichnis
+    targetDirTick <- sprintf("Cache/bitstamp/%s/tick", pair)
+    if (!dir.exists(targetDirTick)) {
+        dir.create(targetDirTick, recursive = TRUE)
+    }
+    
+    # Quelldatei
+    sourceFile <- sprintf(
+        "Daten/bitstamp/historical/%s_transactions.csv.gz",
+        toupper(pair)
+    )
+    if (!file.exists(sourceFile)) {
+        stop(sprintf("Quelldatei %s nicht gefunden!", sourceFile))
+    }
+    
+    # Datei einlesen
+    tic()
+    printf("Lese Quelldatei... ")
+    dataset <- fread(
+        file = sourceFile,
+        header = TRUE,
+        col.names = c("ID", "Time", "Amount", "Price"),
+        showProgress = FALSE
+    )
+    toc()
+    
+    # Sortieren
+    setorder(dataset, Time)
+    
+    # Zeit als POSIXct speichern
+    dataset[,Time:=as.POSIXct(Time, origin="1970-01-01", tz="UTC")]
+    
+    # Kein Auftragstyp verfügbar
+    dataset[,Type:=NA]
+    
+    # Nach Monat gruppieren
+    # Keine Aggregationen vornehmen, sondern nur Tickdaten als .fst speichern.
+    # Aggregation nimmt im weiteren Verlauf `readMonthlyDataset` vor.
+    currentDate <- first(dataset$Time)
+    while (currentDate < endDate) {
+        tic()
+        nextMonth <- addOneMonth(currentDate)
+        
+        printf("Bitstamp %s %02d/%d: ", 
+               format.currencyPair(pair), month(currentDate), year(currentDate))
+        
+        subset <- dataset[Time >= currentDate & Time < nextMonth, which=TRUE]
+        
+        # Monatsdaten separieren
+        monthlyData <- dataset[subset]
+        
+        # Statistiken ausgeben
+        printf(
+            "%s - %s",
+            format(first(monthlyData$Time), format="%d.%m.%Y %H:%M:%S"),
+            format(last(monthlyData$Time), format="%d.%m.%Y %H:%M:%S")
+        )
+        
+        # Tickdaten speichern
+        write_fst(
+            monthlyData, 
+            sprintf("%s/bitstamp-%2$s-tick-%3$d-%4$02d.fst",
+                    targetDirTick, pair, year(currentDate), month(currentDate)),
+            compress=100L
+        )
+        
+        # Aus Originaldaten entfernen
+        rm(monthlyData)
+        dataset <- dataset[!subset]
+        gc()
+        
+        printf(" - ")
+        toc()
+        currentDate <- nextMonth
+    }
+}
 
-
-# Bitstamp (Originaldaten) ab September 2019
-cat("\n--------- Verarbeite Bitstamp (Originaldaten ab September 2019) ---------\n")
+# Bitstamp: REST-API ab September 2019 / ab Januar 2022
+printf("\n--------- Verarbeite Bitstamp (REST-API) ---------\n")
 readMonthlyDividedDataset(
     "Bitstamp",
     currencyPairs = c("btcusd", "btceur", "btcgbp"),
@@ -107,7 +177,7 @@ readMonthlyDividedDataset(
 
 
 # Coinbase Pro
-cat("\n--------- Verarbeite Coinbase Pro ---------\n")
+printf("\n--------- Verarbeite Coinbase Pro ---------\n")
 readMonthlyDividedDataset(
     "Coinbase Pro",
     currencyPairs = c("btcusd", "btceur", "btcgbp"),
@@ -132,7 +202,7 @@ readMonthlyDividedDataset(
 
 
 # Kraken
-cat("\n--------- Verarbeite Kraken ---------\n")
+printf("\n--------- Verarbeite Kraken ---------\n")
 readMonthlyDividedDataset(
     "Kraken",
     currencyPairs = c("btcusd", "btceur", "btcgbp", "btcjpy",

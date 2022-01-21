@@ -19,11 +19,13 @@ parseDukascopyTickData <- function(srcFile) {
     # 2: 2010-01-01 00:00:05.996 1.43278 1.43290   1400000   4200000
     # Überspringe Leerzeilen (können aufgrund eines Bugs in
     # der Datenerfassung am Wochenende auftreten)
-    thisDataset <- fread(srcFile, showProgress = FALSE, blank.lines.skip = TRUE)
-    
-    # Handelsvolumen interessiert derzeit nicht
-    thisDataset$BidVolume <- NULL
-    thisDataset$AskVolume <- NULL
+    thisDataset <- fread(
+        srcFile,
+        showProgress = FALSE, 
+        blank.lines.skip = TRUE,
+        # Handelsvolumen interessiert derzeit nicht
+        drop = c("BidVolume", "AskVolume")
+    )
     
     # Zeit einlesen
     thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
