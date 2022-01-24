@@ -246,6 +246,14 @@ compareTwoExchanges <- function(
         is.integer(comparisonThreshold), length(comparisonThreshold) == 1L
     )
     
+    # Ergebnisdatei existiert bereits
+    firstOutputFile <- sprintf("Cache/Raumarbitrage/%s-%s-%s-1.fst",
+                            tolower(currencyPair), exchange_a, exchange_b)
+    if (file.exists(firstOutputFile)) {
+        printf("Zieldatei %s bereits vorhanden!\n", firstOutputFile)
+        return(invisible(NULL))
+    }
+    
     # Bis einschließlich vergangenen Monat vergleichen
     endDate <- as.POSIXct(format(Sys.time(), "%Y-%m-01 00:00:00")) - 1
     stopifnot(startDate < endDate)
@@ -542,9 +550,9 @@ if (FALSE) {
     #   BTCJPY enthält Daten von 29.03.2018, 15:55:31 (UTC) bis heute
     #
     # Bitstamp:
-    #   BTCUSD enthält Daten von 13.09.2011, 13:53:36 (UTC) bis heute
-    #   BTCEUR enthält Daten von 05.12.2017, 11:43:49 (UTC) bis heute
-    #   BTCGBP enthält Daten von 14.12.2021, 14:48:35 (UTC) bis heute
+    #   BTCUSD enthält Daten von 18.08.2011, 12:37:25 (UTC) bis heute
+    #   BTCEUR enthält Daten von 16.04.2016, 16:55:02 (UTC) bis heute
+    #   BTCGBP enthält Daten von 28.05.2020, 09:37:26 (UTC) bis heute
     #
     # Coinbase Pro:
     #   BTCUSD enthält Daten von 01.12.2014, 05:33:56.761199 (UTC) bis heute.
@@ -563,7 +571,7 @@ if (FALSE) {
     
     # BTC/USD -----------------------------------------------------------------
     
-    # Bitfinex - Bitstamp: ~1h52min. 31.306.308 Datensätze in 1 GB (unkomprimiert).
+    # Bitfinex - Bitstamp: ~2h10min. 31.615.047 Datensätze in 805,3 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-01-14 16:47:23"))
     
     # Bitfinex - Coinbase Pro: ~3h22min. 63.107.943 Datensätze in 2 GB (unkomprimiert).
@@ -572,10 +580,10 @@ if (FALSE) {
     # Bitfinex - Kraken: ~1h30min. 23.692.297 Datensätze in 758.2 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "kraken",   "btcusd", as.POSIXct("2013-10-06 21:34:15"))
     
-    # Bitstamp - Coinbase Pro: ~2h04min. 37.166.579 Datensätze in 1.2 GB (unkomprimiert).
+    # Bitstamp - Coinbase Pro: ~?, 37.538.963 Datensätze in 1,6 GB (unkomprimiert).
     compareTwoExchanges("bitstamp", "coinbase", "btcusd", as.POSIXct("2014-12-01 05:33:56"))
     
-    # Bitstamp - Kraken: ~1h. 16.156.610 Datensätze in 517 MB (unkomprimiert).
+    # Bitstamp - Kraken: ~2h30min. 16.332.564 Datensätze in 402,7 MB (unkomprimiert).
     compareTwoExchanges("bitstamp", "kraken",   "btcusd", as.POSIXct("2013-10-06 21:34:15"))
     
     # Coinbase Pro - Kraken: ~1h53min. 31.205.136 Datensätze in 998.6 MB (unkomprimiert).
@@ -584,7 +592,7 @@ if (FALSE) {
     
     # BTC/EUR -----------------------------------------------------------------
     
-    # Bitfinex - Bitstamp: ~17min. 3.989.521 Datensätze in 127.7 MB (unkomprimiert).
+    # Bitfinex - Bitstamp: ~22min. 4.035.994 Datensätze in 100,7 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "bitstamp", "btceur", as.POSIXct("2019-09-01 00:00:00"))
     
     # Bitfinex - Coinbase Pro: ~27min. 7.244.291 Datensätze in 231.8 MB (unkomprimiert).
@@ -593,22 +601,20 @@ if (FALSE) {
     # Bitfinex - Kraken: ~28min. 6.351.131 Datensätze in 203.2 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "kraken",   "btceur", as.POSIXct("2019-09-01 00:00:00"))
     
-    # Bitstamp - Coinbase Pro: ~1h. 15.386.478 Datensätze in 492.4 MB (unkomprimiert).
-    compareTwoExchanges("bitstamp", "coinbase", "btceur", as.POSIXct("2017-12-05 11:43:49"))
+    # Bitstamp - Coinbase Pro: ~1h10min. 16.767.027 Datensätze in 402,7 MB (unkomprimiert).
+    compareTwoExchanges("bitstamp", "coinbase", "btceur", as.POSIXct("2016-04-16 16:55:02"))
     
-    # Bitstamp - Kraken: ~1h. 13.818.555 Datensätze in 442.2 MB (unkomprimiert).
-    compareTwoExchanges("bitstamp", "kraken",   "btceur", as.POSIXct("2017-12-05 11:43:49"))
+    # Bitstamp - Kraken: ~1h11min. 15.322.141 Datensätze in 402,7 MB (unkomprimiert).
+    compareTwoExchanges("bitstamp", "kraken",   "btceur", as.POSIXct("2016-04-16 16:55:02"))
     
     # Coinbase Pro - Kraken: ~1h38min. 26.473.562 Datensätze in 847.2 MB (unkomprimiert).
     compareTwoExchanges("coinbase", "kraken",   "btceur", as.POSIXct("2015-04-23 01:42:34"))
     
     
     # BTC/GBP -----------------------------------------------------------------
-    # Anmerkung: Daten für BTC/GBP an Bitstamp wurden erst ab 14.12.2021 erfasst und sind daher
-    # für eine repräsentative Auswertung nicht geeignet.
     
-    # Bitfinex - Bitstamp: wenigen Sekunden. 11.289 Datensätze in 362.9 kB (unkomprimiert).
-    compareTwoExchanges("bitfinex", "bitstamp", "btcgbp", as.POSIXct("2021-12-14 14:48:35"))
+    # Bitfinex - Bitstamp: ~5min. 429.638 Datensätze in 12,6 MB (unkomprimiert).
+    compareTwoExchanges("bitfinex", "bitstamp", "btcgbp", as.POSIXct("2020-05-28 09:37:26"))
     
     # Bitfinex - Coinbase Pro: ~18min. 4.517.869 Datensätze in 144.6 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "coinbase", "btcgbp", as.POSIXct("2018-03-29 14:40:57"))
@@ -616,11 +622,11 @@ if (FALSE) {
     # Bitfinex - Kraken: ~4min. 610.423 Datensätze in 19.5 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "kraken",   "btcgbp", as.POSIXct("2018-03-29 14:40:57"))
     
-    # Bitstamp - Coinbase Pro: wenigen Sekunden. 27.216 Datensätze in 872.5 kB (unkomprimiert).
-    compareTwoExchanges("bitstamp", "coinbase", "btcgbp", as.POSIXct("2021-12-14 14:48:35"))
+    # Bitstamp - Coinbase Pro: ~6min. 978.408 Datensätze in 25,2 MB (unkomprimiert).
+    compareTwoExchanges("bitstamp", "coinbase", "btcgbp", as.POSIXct("2020-05-28 09:37:26"))
     
-    # Bitstamp - Kraken: wenigen Sekunden. 3.831 Datensätze in 124.2 kB (unkomprimiert).
-    compareTwoExchanges("bitstamp", "kraken",   "btcgbp", as.POSIXct("2021-12-14 14:48:35"))
+    # Bitstamp - Kraken: ~2min30s. 192.105 Datensätze in 6,3 MB (unkomprimiert).
+    compareTwoExchanges("bitstamp", "kraken",   "btcgbp", as.POSIXct("2020-05-28 09:37:26"))
     
     # Coinbase Pro - Kraken: ~7min. 1.396.126 Datensätze in 44.7 MB (unkomprimiert).
     compareTwoExchanges("coinbase", "kraken",   "btcgbp", as.POSIXct("2015-04-21 22:22:41"))

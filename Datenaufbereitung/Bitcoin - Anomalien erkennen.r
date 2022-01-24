@@ -255,7 +255,7 @@ findPriceAnomalies <- function(
            format.currencyPair(currencyPair), exchange, format(startDate, "%d.%m.%Y %H:%M:%S"))
     printf("  % 13s   % 11s   %-26s   % 10s   % 10s\n",
            "Laufzeit", "Verarbeitet", "Aktueller Datensatz",
-           "Ergebnisse", "Geschw.")
+           "Auffällig", "Geschw.")
     
     while (TRUE) {
         
@@ -364,14 +364,14 @@ bitfinex.btcjpy <- findPriceAnomalies("bitfinex", "btcjpy", as.POSIXct("2018-03-
 
 
 # Bitstamp
-# BTC/USD: 57.645.761 Ticks, davon 55 auffällige Zeitpunkte
-bitstamp.btcusd <- findPriceAnomalies("bitstamp", "btcusd", as.POSIXct("2011-09-01"))
+# BTC/USD: 58.123.079 Ticks, davon 63 auffällige Zeitpunkte
+bitstamp.btcusd <- findPriceAnomalies("bitstamp", "btcusd", as.POSIXct("2011-08-18"))
 
-# BTC/EUR: 20.052.494 Ticks, davon 5 auffällige Zeitpunkte
-bitstamp.btceur <- findPriceAnomalies("bitstamp", "btceur", as.POSIXct("2017-12-01"))
+# BTC/EUR: 22.704.977 Ticks, davon 5 auffällige Zeitpunkte
+bitstamp.btceur <- findPriceAnomalies("bitstamp", "btceur", as.POSIXct("2016-04-16"))
 
-# BTC/GBP: 26.596 Ticks, dabei keine auffälligen Zeitpunkte
-bitstamp.btcgbp <- findPriceAnomalies("bitstamp", "btcgbp", as.POSIXct("2021-12-01"))
+# BTC/GBP: 1.084.564 Ticks, davon 8 auffällige Zeitpunkte
+bitstamp.btcgbp <- findPriceAnomalies("bitstamp", "btcgbp", as.POSIXct("2020-05-28"))
 
 
 # Coinbase Pro

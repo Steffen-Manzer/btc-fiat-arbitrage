@@ -25,9 +25,9 @@ Abfrage folgender URLs:
 Anmerkung: Dieser Zeitraum beschreibt lediglich die über die Schnittstelle abgerufenen Daten.
 Bitstamp hat dem Autor zum Zweck der wissenschaftlichen Untersuchung sämtliche historischen Tickdaten zur Verfügung gestellt.
 
-- BTCUSD enthält Daten von 01.09.2019, 00:00:00 (UTC) bis heute.
-- BTCEUR enthält Daten von 01.09.2019, 00:00:00 (UTC) bis heute.
-- BTCGBP enthält Daten von 01.01.2022, 00:00:00 (UTC) bis heute.
+- BTCUSD umfasst Daten von 01.09.2019, 00:00:00 (UTC) bis heute.
+- BTCEUR umfasst Daten von 01.09.2019, 00:00:00 (UTC) bis heute.
+- BTCGBP umfasst Daten von 01.01.2022, 00:00:00 (UTC) bis heute.
 
 ## Dateistruktur
 - Vorgangs-ID

@@ -133,7 +133,7 @@
   },
   "bitstamp": {
     "btcusd": {
-      "startDate": "2011-09-13 13:53:36",
+      "startDate": "2011-08-18 12:37:25",
       "notes": "Einige Ausreißer, Datenlücken und Kursabweichungen mit anschließender Korrektur",
       "suspiciousPeriods": [
         {
@@ -217,7 +217,7 @@
       ]
     },
     "btceur": {
-      "startDate": "2017-12-05 11:43:49",
+      "startDate": "2016-04-16 16:55:02",
       "notes": "Einige Kurssprünge und Ausreißer",
       "suspiciousPeriods": [
         {
@@ -253,9 +253,16 @@
       ]
     },
     "btcgbp": {
-      "startDate": "2021-12-14 14:48:35",
-      "notes": "Keine auffälligen Zeitabschnitte",
-      "suspiciousPeriods": []
+      "startDate": "2020-05-28 09:37:26",
+      "notes": "Wenige Ausreißer, teils geringe Aktivität",
+      "suspiciousPeriods": [
+        {
+          "startDate": "2021-04-18 03:35:00",
+          "endDate": "2021-04-18 03:40:00",
+          "notes": "Ausreißer",
+          "filter": true
+        }
+      ]
     }
   },
   "coinbase": {
