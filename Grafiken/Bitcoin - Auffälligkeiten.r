@@ -101,17 +101,21 @@ print(
             show.legend=FALSE
         ) +
         geom_text(
-            aes(x=Time, y=max(a_bitstamp$Price, a_coinbase$Price)+400, label=paste0("n\\,=\\,", N)),
-            data=a_bitstamp_count,
-            size=2.5,
-            angle=90,
-            hjust=0
+            aes(
+                x = Time,
+                y = max(a_bitstamp$Price, a_coinbase$Price) + 400,
+                label = paste0("n\\,=\\,", N)
+            ),
+            data = a_bitstamp_count,
+            size = 2.5,
+            angle = 90,
+            hjust = 0
         ) + 
         theme_minimal() +
         theme(
             #legend.position = "none",
             legend.position = c(0.85, 0.3),
-            legend.background = element_rect(fill = "white", size = 0.2, linetype = "solid"),
+            legend.background = element_rect(fill="white", size=0.2, linetype="solid"),
             legend.margin = margin(0, 12, 5, 5),
             legend.title = element_blank(), #element_text(size=9),
             axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
@@ -201,7 +205,7 @@ print(
         theme_minimal() +
         theme(
             legend.position = c(0.85, 0.3),
-            legend.background = element_rect(fill = "white", size = 0.2, linetype = "solid"),
+            legend.background = element_rect(fill="white", size=0.2, linetype="solid"),
             legend.margin = margin(0, 12, 5, 5),
             legend.title = element_blank(), #element_text(size=9),
             axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
@@ -284,7 +288,7 @@ print(
         theme_minimal() +
         theme(
             legend.position = c(0.85, 0.3),
-            legend.background = element_rect(fill = "white", size = 0.2, linetype = "solid"),
+            legend.background = element_rect(fill="white", size=0.2, linetype="solid"),
             legend.margin = margin(0, 12, 5, 5),
             legend.title = element_blank(), #element_text(size=9),
             axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),

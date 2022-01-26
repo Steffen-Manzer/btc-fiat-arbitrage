@@ -10,6 +10,7 @@ library("data.table")
 library("lubridate")
 library("ggplot2")
 library("ggthemes")
+library("tictoc")
 source("Funktionen/AddOneMonth.r")
 source("Funktionen/AppendToDataTable.r")
 source("Funktionen/printf.r")
@@ -20,8 +21,8 @@ source("Konfiguration/FilePaths.r")
 
 # Startzeit
 # Beginn der vorliegenden Daten: 01.01.2020
-# Beginn der Bitcoin-Daten: 13.09.2011 = Relevanter Zeitraum
-now <- as.POSIXct("2011-09-01")
+# Beginn der Bitcoin-Daten: 18.08.2011 = Relevanter Zeitraum
+now <- as.POSIXct("2011-08-01")
 
 # Ausgabedateien
 plotAsLaTeX <- TRUE
@@ -55,7 +56,8 @@ if (file.exists("Cache/stats/forex-comparison-spread.fst")) {
     differences <- data.table()
     median_per_day <- data.table()
     while (TRUE) {
-        printf("Lese %d-%02d...\n", year(now), month(now))
+        tic()
+        printf("Lese %d-%02d...", year(now), month(now))
         file <- format(now, "%Y-%m")
         
         # Quelldateien bestimmen
@@ -83,20 +85,24 @@ if (file.exists("Cache/stats/forex-comparison-spread.fst")) {
         spread <- appendDT(spread, list(
             Time = as.double(now),
             Source = "TrueFX",
+            Min = truefx.spread[[1]],
             Q1 = truefx.spread[[2]],
             Median = truefx.spread[[3]],
             Mean = truefx.spread[[4]],
-            Q3 = truefx.spread[[5]]
+            Q3 = truefx.spread[[5]],
+            Max = truefx.spread[[6]]
         ))
 
         dukascopy.spread <- summary(dukascopy$Ask - dukascopy$Bid)
         spread <- appendDT(spread, list(
             Time = as.double(now),
             Source = "Dukascopy",
+            Min = dukascopy.spread[[1]],
             Q1 = dukascopy.spread[[2]],
             Median = dukascopy.spread[[3]],
             Mean = dukascopy.spread[[4]],
-            Q3 = dukascopy.spread[[5]]
+            Q3 = dukascopy.spread[[5]],
+            Max = dukascopy.spread[[6]]
         ))
         
         
@@ -120,10 +126,12 @@ if (file.exists("Cache/stats/forex-comparison-spread.fst")) {
         mittel_diff <- summary(abs(truefx$Mittel - dukascopy$Mittel))
         differences <- appendDT(differences, list(
             Time = as.double(now),
+            Min = mittel_diff[[1]],
             Q1 = mittel_diff[[2]],
             Median = mittel_diff[[3]],
             Mean = mittel_diff[[4]],
-            Q3 = mittel_diff[[5]]
+            Q3 = mittel_diff[[5]],
+            Max = mittel_diff[[6]]
         ))
         
         
@@ -141,6 +149,7 @@ if (file.exists("Cache/stats/forex-comparison-spread.fst")) {
             truefx_dukascopy_differences
         ))
         
+        toc()
         
         # Nächster Monat
         now <- addOneMonth(now)
