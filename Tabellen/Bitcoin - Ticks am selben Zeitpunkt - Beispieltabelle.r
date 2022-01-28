@@ -48,7 +48,7 @@ joined[7,`:=`(PriceLow=NA,PriceHigh=NA,n=NA)]
 tabIndentFirst <- strrep(" ", 8)
 tabIndent <- strrep(" ", 12)
 for (i in seq_len(nrow(joined))) {
-    tick <- joined[i,]
+    tick <- joined[i]
     printf("%s%s &\n",
            tabIndentFirst,
            formatPOSIXctWithFractionalSeconds(tick$Time, "%d.%m.%Y, %H:%M:%OS")

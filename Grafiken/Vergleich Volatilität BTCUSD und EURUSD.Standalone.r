@@ -19,7 +19,7 @@ btcusd$vClose <- volatility(
 
 # Für die ersten 365 Datenpunkte kann keine 1-Jahres-Volatilität
 # berechnet werden. Begrenze den Datensatz daher auf gültige Werte.
-btcusd <- btcusd[handelstageProJahr:nrow(btcusd),]
+btcusd <- btcusd[handelstageProJahr:nrow(btcusd)]
 
 # Führe die gleiche Berechnung analog für EUR/USD durch. Struktur:
 #       Time     Mean    Open     High      Low   Close  NumDatasets
@@ -33,4 +33,4 @@ eurusd <- read_fst("Cache/Dukascopy/dukascopy-daily-eurusd.fst")
 eurusd$vClose <- volatility(
     eurusd$Close, n = handelstageProJahr, N = handelstageProJahr
 )
-eurusd <- eurusd[handelstageProJahr:nrow(eurusd),]
+eurusd <- eurusd[handelstageProJahr:nrow(eurusd)]

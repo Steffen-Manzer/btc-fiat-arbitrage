@@ -75,7 +75,7 @@ for (pair in currencyPairs) {
     dataset$vClose <- volatility(dataset$Close, n=312, N=312)
     
     # Auf sinnvolle Daten (für Volatilität) beschränken
-    dataset <- dataset[312:nrow(dataset),]
+    dataset <- dataset[312:nrow(dataset)]
     
     # Nur die notwendigen Spalten behalten: Datensatz, Schlusskurs, Tagesrendite, Volatilität
     dataset <- dataset[, c("Time", "Datensatz", "Close", "Rendite", "vClose")]

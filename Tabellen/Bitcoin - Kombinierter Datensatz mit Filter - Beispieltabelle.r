@@ -51,7 +51,7 @@ triplets <- c(
 tabIndentFirst <- strrep(" ", 8)
 tabIndent <- strrep(" ", 12)
 for (i in seq_len(nrow(ab))) {
-    tick <- ab[i,]
+    tick <- ab[i]
     printf("%s%s &\n",
            tabIndentFirst, 
            formatPOSIXctWithFractionalSeconds(tick$Time, "%d.%m.%Y, %H:%M:%OS")

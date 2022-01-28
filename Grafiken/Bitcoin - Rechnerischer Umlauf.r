@@ -72,8 +72,8 @@
     
     # Letzte Zahl gepunktet verbinden und nicht in Skala anzeigen
     numResults <- nrow(results)
-    lastResults <- results[(numResults-1):numResults,]
-    results <- results[-nrow(results),]
+    lastResults <- results[(numResults-1):numResults]
+    results <- results[-nrow(results)]
     
     # Damit der Abstand nach hinten nicht zu groß ist: nur halben Verlauf anzeigen
     lastVisible <- tail(results, 1)

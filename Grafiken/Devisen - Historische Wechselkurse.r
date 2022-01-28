@@ -52,9 +52,9 @@ for (pair in pairs) {
     
     # Datum einheitlich begrenzen. Historische EURUSD-Kurse nicht ganz klar, daher begrenzen
     if (pair == "EURUSD") {
-        dataset <- dataset[dataset$timestamp >= "1999-01-01",]
+        dataset <- dataset[dataset$timestamp >= "1999-01-01"]
     } else {
-        dataset <- dataset[dataset$timestamp >= "1990-01-01",] # Vormals 1987 (1/2)
+        dataset <- dataset[dataset$timestamp >= "1990-01-01"] # Vormals 1987 (1/2)
     }
     
     # Beispiel GBPUSD:
@@ -69,7 +69,7 @@ for (pair in pairs) {
     #dataset$vClose <- volatility(dataset$Close, n=312, N=312)
     
     # Auf sinnvolle Daten (für Volatilität) beschränken
-    #dataset <- dataset[312:nrow(dataset),]
+    #dataset <- dataset[312:nrow(dataset)]
     
     # Tagesschlusskurse
     plot <- dataset %>%

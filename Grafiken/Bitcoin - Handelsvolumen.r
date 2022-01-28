@@ -43,7 +43,7 @@
     
     # Entferne letzten Monat, weil der sehr wahrscheinlich unvollständig ist
     lastMonth <- last(btcvolume$Time)
-    btcvolume <- btcvolume[btcvolume$Time < paste0(year(lastMonth), "-", month(lastMonth), "-01"),]
+    btcvolume <- btcvolume[btcvolume$Time < paste0(year(lastMonth), "-", month(lastMonth), "-01")]
     
     # Börsen zu einem Gesamtvolumen zusammenfassen
     btcvolume$Volume <- rowSums(btcvolume[,2:ncol(btcvolume)], na.rm = TRUE)

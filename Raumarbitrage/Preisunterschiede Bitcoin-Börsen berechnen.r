@@ -66,7 +66,7 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
     # Beide Datensätze enden am exakt gleichen Zeitpunkt.
     # In diesem Fall muss nichts gefiltert werden.
     if (last_a == last_b) {
-        return(NA)
+        return(invisible(NULL))
     }
     
     # Behalte nur gemeinsame Daten.
@@ -77,13 +77,13 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
         
         # Datensatz A enthält mehr Daten als B
         pos_of_last_common_tick <- last(dataset_a$data[Time <= last_b, which=TRUE])
-        dataset_a$data <- dataset_a$data[1L:(pos_of_last_common_tick+1L),]
+        dataset_a$data <- dataset_a$data[1L:(pos_of_last_common_tick+1L)]
         
     } else {
         
         # Datensatz B enthält mehr Daten als A
         pos_of_last_common_tick <- last(dataset_b$data[Time <= last_a, which=TRUE])
-        dataset_b$data <- dataset_b$data[1L:(pos_of_last_common_tick+1L),]
+        dataset_b$data <- dataset_b$data[1L:(pos_of_last_common_tick+1L)]
         
     }
     
@@ -92,7 +92,7 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
         stop("filterTwoDatasetsByCommonTimeInterval: ein Datensatz ist nach dem Filtern leer!\n")
     }
     
-    return(NA)
+    return(invisible(NULL))
 }
 
 
@@ -170,7 +170,7 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
     )
     
     # Datensatz ohne gefundene Tripel zurückgeben
-    return(dataset_ab[!triplets,])
+    return(dataset_ab[!triplets])
 }
 
 
@@ -202,8 +202,7 @@ saveInterimResult <- function(result, index, exchange_a, exchange_b, currencyPai
     result <- cleanupDT(result)
     
     # Um Probleme mit appendDT (NA+POSIXct) zu umgehen, wurde der Zeitstempel
-    # unten in ein double umgewandelt und wird an dieser Stelle (nachdem der
-    # reservierte Speicher in Form von `NA`s entfernt wurde) wieder in 
+    # unten in ein double umgewandelt und wird an dieser Stelle wieder in 
     # POSIXct konvertiert.
     result[, Time:=as.POSIXct(Time, origin="1970-01-01")]
     
@@ -388,7 +387,7 @@ compareTwoExchanges <- function(
                          currentRow, 
                          numRows,
                          format(dataset_ab$Time[currentRow]))
-            currentTick <- dataset_ab[currentRow,]
+            currentTick <- dataset_ab[currentRow]
             
             # Lese weitere Daten ab letztem gemeinsamen Datenpunkt
             baseDate <- currentTick$Time
@@ -488,8 +487,8 @@ compareTwoExchanges <- function(
         }
         
         # Aktuelle und nächste Zeile speichern
-        tick_a <- dataset_ab[currentRow,]
-        tick_b <- dataset_ab[nextRow,]
+        tick_a <- dataset_ab[currentRow]
+        tick_b <- dataset_ab[nextRow]
         
         # Gleiche Börse, überspringe.
         if (tick_a$Exchange == tick_b$Exchange) {

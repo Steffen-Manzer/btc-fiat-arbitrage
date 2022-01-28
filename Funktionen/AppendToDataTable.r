@@ -71,5 +71,5 @@ cleanupDT <- function(dt) {
     }
     
     setattr(dt, "rowCount", NULL)
-    return(dt[1:n,])
+    return(dt[1:n])
 }

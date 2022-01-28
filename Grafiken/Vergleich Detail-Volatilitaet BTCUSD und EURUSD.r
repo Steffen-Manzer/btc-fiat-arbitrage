@@ -59,13 +59,13 @@
     #btcusd$vClose <- volatility(btcusd$Close, n = 365, N = 365)
     
     # Erst ab dem 365. Wert lässt sich annualisierte Vola. berechnen
-    #btcusd <- btcusd[365:nrow(btcusd),]
+    #btcusd <- btcusd[365:nrow(btcusd)]
     
     # Bitcoin-Tagesdaten (BTC/USD) aus Bitcoin Price Index laden
     btcusd <- read_fst("Cache/coindesk/bpi-daily-btcusd.fst", as.data.table = TRUE)
     
     # Auf Daten ab 2011 beschränken, da vorher mehrmals keine Preisveränderungen vorliegen
-    btcusd <- btcusd[btcusd$Time >= "2011-01-01",]
+    btcusd <- btcusd[btcusd$Time >= "2011-01-01"]
     
     # Berechnung der Close-to-close-Volatilität mit Paket "TTR"
     # Hier sind es durchgängige Daten, also 7 Werte pro Woche / 28 pro vier Wochen
@@ -73,15 +73,15 @@
     btcusd$vClose <- volatility(btcusd$Close, n = zeitspanne, N = 52)
     
     # Begrenze Datensatz auf gültige Werte
-    btcusd <- btcusd[zeitspanne:nrow(btcusd),]
+    btcusd <- btcusd[zeitspanne:nrow(btcusd)]
     
     # Analog für EUR/USD aus TrueFX-Datensatz
     # Hier sind es 6 Werte pro Woche (Samstag fehlt) / 24 pro vier Wochen
     zeitspanne <- 24
     eurusd <- read_fst("Cache/Dukascopy/dukascopy-daily-eurusd.fst", as.data.table = TRUE)
-    eurusd <- eurusd[eurusd$Time >= "2011-01-01",]
+    eurusd <- eurusd[eurusd$Time >= "2011-01-01"]
     eurusd$vClose <- volatility(eurusd$Close, n = zeitspanne, N = 52)
-    eurusd <- eurusd[zeitspanne:nrow(eurusd),]
+    eurusd <- eurusd[zeitspanne:nrow(eurusd)]
     
     
     # Verhältnis beider Volatilitäten

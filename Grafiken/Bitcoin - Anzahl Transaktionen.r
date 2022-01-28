@@ -53,7 +53,7 @@
     weeklyData$Time <- as.Date(weeklyData$Time)
     
     # Letzten Datensatz entfernen, potentiell unvollständig und damit verzerrend
-    weeklyData <- weeklyData[1:nrow(weeklyData)-1,]
+    weeklyData <- weeklyData[1:nrow(weeklyData)-1]
     
     # Grafiken erstellen
     if (plotAsLaTeX) {

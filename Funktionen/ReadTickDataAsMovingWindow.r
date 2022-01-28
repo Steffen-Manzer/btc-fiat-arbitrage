@@ -43,7 +43,7 @@ readTickDataAsMovingWindow <- function(
         # `data.table` kann leider noch kein subsetting per Referenz, sodass eine
         # Kopie (`<-`) notwendig ist.
         printf.debug("Bereinige Daten vor %s.\n", format(currentTime - 2 * 60))
-        dataset$data <- dataset$data[Time >= (currentTime - 2 * 60),]
+        dataset$data <- dataset$data[Time >= (currentTime - 2 * 60)]
         
         # Lese Daten ab dem letzten Tick ein
         currentTime <- last(dataset$data$Time)

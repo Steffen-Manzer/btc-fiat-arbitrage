@@ -20,7 +20,7 @@ library("ggthemes")
     btcVolume$Time <- anydate(btcVolume$Time)
     
     # Erste Zeile enthält immer fehlerhafte Daten
-    btcVolume <- btcVolume[btcVolume$Time > "2010-01-01",]
+    btcVolume <- btcVolume[btcVolume$Time > "2010-01-01"]
     
     # CNY herausnehmen und Rest aggregieren
     cnyVolume <- btcVolume$CNY
@@ -47,7 +47,7 @@ library("ggthemes")
     btcVolume$Time <- anydate(btcVolume$Time)
     
     # Zeitraum begrenzen
-    btcVolume <- btcVolume[btcVolume$Time >= "2014-01-01" & btcVolume$Time <= "2018-01-01",]
+    btcVolume <- btcVolume[btcVolume$Time >= "2014-01-01" & btcVolume$Time <= "2018-01-01"]
     
     # Grafiken erstellen
     if (plotAsLaTeX) {

@@ -138,7 +138,7 @@
     # destatisTable$Annualized <- frollsum(destatisTable$Value, n = 12)
     # 
     # # Auf gemeinsame Daten beschränken
-    # destatisTable <- destatisTable[destatisTable$Time >= rawData$Time[1],]
+    # destatisTable <- destatisTable[destatisTable$Time >= rawData$Time[1]]
     
     
     # Grafiken erstellen

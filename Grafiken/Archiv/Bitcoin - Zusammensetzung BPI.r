@@ -32,7 +32,6 @@
         "OkCoin", "itBit", "Coinbase"
     )))
     setorder(bpi, Exchange)
-    #bpi = bpi[order(bpi$Exchange),]
     
 
     # Grafiken ----------------------------------------------------------------

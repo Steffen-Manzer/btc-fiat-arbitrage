@@ -95,7 +95,7 @@ for (i in seq_len(nrow(srcsets))) {
     dataset <- read_fst(srcset$SrcFile, as.data.table=TRUE)
     
     # Nach Datum filtern
-    dataset <- dataset[dataset$Time >= dateFrom & dataset$Time < dateTo,]
+    dataset <- dataset[dataset$Time >= dateFrom & dataset$Time < dateTo]
     
     # Handelsvolumen berechnen
     volume <- sum(abs(dataset$Amount))

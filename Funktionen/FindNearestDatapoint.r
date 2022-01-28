@@ -47,14 +47,14 @@ findNearestDatapoint <- function(
     
     # Optional: Daten vor dem gesuchten Zeitpunkt entfernen
     if (isFALSE(withPastData)) {
-        dataset <- dataset[dataset$Time >= datetime,]
+        dataset <- dataset[dataset$Time >= datetime]
         if (nrow(dataset) == 0) {
             return(NA)
         }
     }
     
     # Daten außerhalb des konfigurierten Zeitfensters entfernen
-    dataset <- dataset[abs(dataset$Time - datetime) <= threshold,]
+    dataset <- dataset[abs(dataset$Time - datetime) <= threshold]
     if (nrow(dataset) == 0) {
         return(NA)
     }
@@ -62,7 +62,6 @@ findNearestDatapoint <- function(
     # Nach zeitlicher Nähe sortieren und im Datensatz hinterlegen
     dataset$TimeDifference <- abs(dataset$Time - datetime)
     setorder(dataset, TimeDifference)
-    #dataset <- dataset[order(abs(dataset$TimeDifference)),]
     
     if (isTRUE(getAllWithinThreshold)) {
         # Alle gefundenen Datensätze nach zeitlicher Nähe sortiert zurückgeben
@@ -70,7 +69,7 @@ findNearestDatapoint <- function(
         
     } else {
         # Nur den zeitlich nächsten Datensatz zurückgeben
-        return(dataset[1,])
+        return(dataset[1])
         
     }
 }
