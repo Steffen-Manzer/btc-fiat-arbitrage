@@ -531,7 +531,6 @@ if (FALSE) {
     
     # Übersicht mit allen Segmenten anzeigen
     arbitrageIndex <- aggregateArbitrageIndex(comparablePrices, "1 month")
-    intervals <- calculateIntervals(arbitrageIndex$Time, breakpoints)
     plotArbitrageIndex(
         arbitrageIndex,
         breakpoints = breakpoints
@@ -561,7 +560,7 @@ if (FALSE) {
         # ...
         
         # Beschreibende Statistiken
-        # Siehe oben
+        # -> Wie für gesamten Datensatz
         # ...
     }
     

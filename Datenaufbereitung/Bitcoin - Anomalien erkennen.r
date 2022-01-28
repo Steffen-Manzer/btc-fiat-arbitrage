@@ -350,61 +350,65 @@ findPriceAnomalies <- function(
 
 # Anomalien finden und speichern ----------------------------------------------
 
-# Bitfinex
-# BTC/USD: 171.633.442 Ticks, davon 54 auffällige Zeitpunkte
-bitfinex.btcusd <- findPriceAnomalies("bitfinex", "btcusd", as.POSIXct("2013-01-01"))
-
-# BTC/EUR: 21.291.120 Ticks, dabei keine auffälligen Zeitpunkte
-bitfinex.btceur <- findPriceAnomalies("bitfinex", "btceur", as.POSIXct("2019-09-01"))
-
-# BTC/GBP: 15.128.461 Ticks, dabei keine auffälligen Zeitpunkte
-bitfinex.btcgbp <- findPriceAnomalies("bitfinex", "btcgbp", as.POSIXct("2018-03-01"))
-
-# BTC/JPY: 21.090.315, davon 3 auffällige Zeitpunkte
-bitfinex.btcjpy <- findPriceAnomalies("bitfinex", "btcjpy", as.POSIXct("2018-03-01"))
-
-
-# Bitstamp
-# BTC/USD: 58.123.079 Ticks, davon 63 auffällige Zeitpunkte
-bitstamp.btcusd <- findPriceAnomalies("bitstamp", "btcusd", as.POSIXct("2011-08-18"))
-
-# BTC/EUR: 22.704.977 Ticks, davon 5 auffällige Zeitpunkte
-bitstamp.btceur <- findPriceAnomalies("bitstamp", "btceur", as.POSIXct("2016-04-16"))
-
-# BTC/GBP: 1.084.564 Ticks, davon 8 auffällige Zeitpunkte
-bitstamp.btcgbp <- findPriceAnomalies("bitstamp", "btcgbp", as.POSIXct("2020-05-28"))
-
-
-# Coinbase Pro
-# BTC/USD: 262.356.683 Ticks, davon 453 auffällige Zeitpunkte
-coinbase.btcusd <- findPriceAnomalies("coinbase", "btcusd", as.POSIXct("2014-12-01"))
-
-# BTC/EUR: 58.033.711 Ticks, davon 5 auffällige Zeitpunkte
-coinbase.btceur <- findPriceAnomalies("coinbase", "btceur", as.POSIXct("2015-04-01"))
-
-# BTC/GBP: 26.637.863 Ticks, davon 11 auffällige Zeitpunkte
-coinbase.btcgbp <- findPriceAnomalies("coinbase", "btcgbp", as.POSIXct("2015-04-01"))
-
-
-# Kraken
-# BTC/USD: 45.031.172 Ticks, davon 28 auffällige Zeitpunkte
-kraken.btcusd <- findPriceAnomalies("kraken", "btcusd", as.POSIXct("2013-10-01"))
-
-# BTC/EUR: 64.523.617 Ticks, davon 16 auffällige Zeitpunkte
-kraken.btceur <- findPriceAnomalies("kraken", "btceur", as.POSIXct("2013-09-01"))
-
-# BTC/GBP: 1.754.149 Ticks, davon 214 auffällige Zeitpunkte
-# Siehe zB: https://status.kraken.com/incidents/nswthr1lyx72
-kraken.btcgbp <- findPriceAnomalies("kraken", "btcgbp", as.POSIXct("2014-11-01"))
-
-# BTC/JPY: 530.055 Ticks, davon 234 auffällige Zeitpunkte
-kraken.btcjpy <- findPriceAnomalies("kraken", "btcjpy", as.POSIXct("2014-11-01"))
-
-# BTC/CAD: 2.076.761 Ticks, davon 205 auffällige Zeitpunkte
-kraken.btccad <- findPriceAnomalies("kraken", "btccad", as.POSIXct("2015-06-01"))
-
-# BTC/CHF: 950.639 Ticks, 49 auffällige Zeitpunkte
-kraken.btcchf <- findPriceAnomalies("kraken", "btcchf", as.POSIXct("2019-12-01"))
-
-# BTC/AUD: 387.311 Ticks, 114 auffällige Zeitpunkte
-kraken.btcaud <- findPriceAnomalies("kraken", "btcaud", as.POSIXct("2020-06-01"))
+# Händisch starten
+if (FALSE) {
+    
+    # Bitfinex
+    # BTC/USD: 171.633.442 Ticks, davon 54 auffällige Zeitpunkte
+    bitfinex.btcusd <- findPriceAnomalies("bitfinex", "btcusd", as.POSIXct("2013-01-01"))
+    
+    # BTC/EUR: 21.291.120 Ticks, dabei keine auffälligen Zeitpunkte
+    bitfinex.btceur <- findPriceAnomalies("bitfinex", "btceur", as.POSIXct("2019-09-01"))
+    
+    # BTC/GBP: 15.128.461 Ticks, dabei keine auffälligen Zeitpunkte
+    bitfinex.btcgbp <- findPriceAnomalies("bitfinex", "btcgbp", as.POSIXct("2018-03-01"))
+    
+    # BTC/JPY: 21.090.315, davon 3 auffällige Zeitpunkte
+    bitfinex.btcjpy <- findPriceAnomalies("bitfinex", "btcjpy", as.POSIXct("2018-03-01"))
+    
+    
+    # Bitstamp
+    # BTC/USD: 58.123.079 Ticks, davon 63 auffällige Zeitpunkte
+    bitstamp.btcusd <- findPriceAnomalies("bitstamp", "btcusd", as.POSIXct("2011-08-18"))
+    
+    # BTC/EUR: 22.704.977 Ticks, davon 5 auffällige Zeitpunkte
+    bitstamp.btceur <- findPriceAnomalies("bitstamp", "btceur", as.POSIXct("2016-04-16"))
+    
+    # BTC/GBP: 1.084.564 Ticks, davon 8 auffällige Zeitpunkte
+    bitstamp.btcgbp <- findPriceAnomalies("bitstamp", "btcgbp", as.POSIXct("2020-05-28"))
+    
+    
+    # Coinbase Pro
+    # BTC/USD: 262.356.683 Ticks, davon 453 auffällige Zeitpunkte
+    coinbase.btcusd <- findPriceAnomalies("coinbase", "btcusd", as.POSIXct("2014-12-01"))
+    
+    # BTC/EUR: 58.033.711 Ticks, davon 5 auffällige Zeitpunkte
+    coinbase.btceur <- findPriceAnomalies("coinbase", "btceur", as.POSIXct("2015-04-01"))
+    
+    # BTC/GBP: 26.637.863 Ticks, davon 11 auffällige Zeitpunkte
+    coinbase.btcgbp <- findPriceAnomalies("coinbase", "btcgbp", as.POSIXct("2015-04-01"))
+    
+    
+    # Kraken
+    # BTC/USD: 45.031.172 Ticks, davon 28 auffällige Zeitpunkte
+    kraken.btcusd <- findPriceAnomalies("kraken", "btcusd", as.POSIXct("2013-10-01"))
+    
+    # BTC/EUR: 64.523.617 Ticks, davon 16 auffällige Zeitpunkte
+    kraken.btceur <- findPriceAnomalies("kraken", "btceur", as.POSIXct("2013-09-01"))
+    
+    # BTC/GBP: 1.754.149 Ticks, davon 214 auffällige Zeitpunkte
+    # Siehe zB: https://status.kraken.com/incidents/nswthr1lyx72
+    kraken.btcgbp <- findPriceAnomalies("kraken", "btcgbp", as.POSIXct("2014-11-01"))
+    
+    # BTC/JPY: 530.055 Ticks, davon 234 auffällige Zeitpunkte
+    kraken.btcjpy <- findPriceAnomalies("kraken", "btcjpy", as.POSIXct("2014-11-01"))
+    
+    # BTC/CAD: 2.076.761 Ticks, davon 205 auffällige Zeitpunkte
+    kraken.btccad <- findPriceAnomalies("kraken", "btccad", as.POSIXct("2015-06-01"))
+    
+    # BTC/CHF: 950.639 Ticks, 49 auffällige Zeitpunkte
+    kraken.btcchf <- findPriceAnomalies("kraken", "btcchf", as.POSIXct("2019-12-01"))
+    
+    # BTC/AUD: 387.311 Ticks, 114 auffällige Zeitpunkte
+    kraken.btcaud <- findPriceAnomalies("kraken", "btcaud", as.POSIXct("2020-06-01"))
+}

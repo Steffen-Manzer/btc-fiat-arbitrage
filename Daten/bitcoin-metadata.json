@@ -495,9 +495,9 @@
           "filter": true
         },
         {
-          "startDate": "2018-02-02 11:45:00",
-          "endDate": "2018-02-02 11:46:30",
-          "notes": "Ausreißer",
+          "startDate": "2018-02-02 00:00:00",
+          "endDate": "2018-02-10 06:00:00",
+          "notes": "Ausreißer, Kurssprünge, deutlicher Kursabfall",
           "filter": true
         },
         {
