@@ -501,15 +501,20 @@ compareTwoExchanges <- function(
             next
         }
         
-        # Höchst-/Tiefstpreise bestimmen: jeweils von zwei verschiedenen Börsen
-        if (tick_a$PriceHigh >= tick_b$PriceHigh) {
-            # Preisniveau an Börse A ist (hier) höher als an Börse B
+        # Finde größte Preisdifferenz
+        if (
+            tick_a$PriceHigh - tick_b$PriceLow >=
+            tick_b$PriceHigh - tick_a$PriceLow
+        ) {
             PriceHigh <- tick_a$PriceHigh
             PriceLow <- tick_b$PriceLow
+            ExchangeHigh <- tick_a$Exchange
+            ExchangeLow <- tick_b$Exchange
         } else {
-            # Preisniveau an Börse B ist (hier) höher als an Börse A
             PriceHigh <- tick_b$PriceHigh
             PriceLow <- tick_a$PriceLow
+            ExchangeHigh <- tick_b$Exchange
+            ExchangeLow <- tick_a$Exchange
         }
         
         # Set in Ergebnisvektor speichern
@@ -520,8 +525,10 @@ compareTwoExchanges <- function(
         # Informationsverlust und noch immer signifikant schneller als rbind()
         result <- appendDT(result, list(
             Time = as.double(tick_b$Time),
+            PriceHigh = PriceHigh,
             PriceLow = PriceLow,
-            PriceHigh = PriceHigh
+            ExchangeHigh = ExchangeHigh,
+            ExchangeLow = ExchangeLow
         ))
         
         # 100 Mio. Datenpunkte im Ergebnisvektor: Zwischenspeichern
