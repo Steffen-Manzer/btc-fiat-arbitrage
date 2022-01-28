@@ -10,6 +10,7 @@ source("Funktionen/AppendToDataTable.r")
 source("Funktionen/FormatCurrencyPair.r")
 source("Funktionen/FormatDuration.r")
 source("Funktionen/FormatNumber.r")
+source("Funktionen/FormatPOSIXctWithFractionalSeconds.r")
 source("Funktionen/ReadTickDataAsMovingWindow.r")
 source("Funktionen/printf.r")
 library("fst")
@@ -276,7 +277,7 @@ findPriceAnomalies <- function(
         printf("\r  % 13s   % 11s   % 26s   % 10s   % 6s T/s",
                format.duration(runtime),
                format.number(processedDatasets),
-               format(last(dataset$data$Time), "%d.%m.%Y %H:%M:%OS"),
+               formatPOSIXctWithFractionalSeconds(last(dataset$data$Time), "%d.%m.%Y %H:%M:%OS"),
                format.number(nrow(result)),
                format.number(round(processedDatasets/runtime, 0))
         )

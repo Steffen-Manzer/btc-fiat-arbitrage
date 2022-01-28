@@ -1,6 +1,7 @@
 library("fst")
 library("data.table")
 source("Funktionen/FormatNumber.r")
+source("Funktionen/FormatPOSIXctWithFractionalSeconds.r")
 source("Funktionen/printf.r")
 
 # Beispieldaten laden
@@ -48,7 +49,10 @@ tabIndentFirst <- strrep(" ", 8)
 tabIndent <- strrep(" ", 12)
 for (i in seq_len(nrow(joined))) {
     tick <- joined[i,]
-    printf("%s%s &\n", tabIndentFirst, format(tick$Time, "%d.%m.%Y, %H:%M:%OS"))
+    printf("%s%s &\n",
+           tabIndentFirst,
+           formatPOSIXctWithFractionalSeconds(tick$Time, "%d.%m.%Y, %H:%M:%OS")
+    )
     printf("%s%s\\,USD &\n", tabIndent, format.money(tick$Price, digits=2))
     
     if (is.na(tick$PriceLow)) {

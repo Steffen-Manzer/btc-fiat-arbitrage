@@ -1,6 +1,7 @@
 library("fst")
 library("data.table")
 source("Funktionen/FormatNumber.r")
+source("Funktionen/FormatPOSIXctWithFractionalSeconds.r")
 source("Funktionen/printf.r")
 
 # Betrachtungszeitraum
@@ -21,7 +22,10 @@ tabIndentFirst <- strrep(" ", 8)
 tabIndent <- strrep(" ", 12)
 for (i in seq_len(nrow(combined))) {
     tick <- combined[i]
-    printf("%s%s &\n", tabIndentFirst, format(tick$Time, "%d.%m.%Y, %H:%M:%OS"))
+    printf("%s%s &\n",
+           tabIndentFirst,
+           formatPOSIXctWithFractionalSeconds(tick$Time, "%d.%m.%Y, %H:%M:%OS3")
+    )
     printf("%s%s\\,USD &\n", tabIndent, format.money(tick$Bid, digits=5))
     printf("%s%s\\,USD &\n", tabIndent, format.money(tick$Ask, digits=5))
     printf("%s%s\\,USD &\n", tabIndent, format.money(tick$Mittel, digits=6))

@@ -28,6 +28,7 @@ DEBUG_PRINT <- TRUE
 source("Funktionen/FormatCurrencyPair.r")
 source("Funktionen/FormatNumber.r")
 source("Funktionen/printf.r")
+source("Funktionen/FormatPOSIXctWithFractionalSeconds.r")
 library("fst")
 library("data.table")
 library("lubridate") # floor_date
@@ -42,7 +43,8 @@ library("tictoc")
 #' 
 #' @param currencyPair Kurspaar (z.B. BTCUSD)
 #' @return `data.table` mit den Preisunterschieden
-loadComparablePricesByCurrencyPair <- function(currencyPair) {
+loadComparablePricesByCurrencyPair <- function(currencyPair)
+{
     # Parameter validieren
     stopifnot(
         is.character(currencyPair), length(currencyPair) == 1L,
@@ -83,7 +85,7 @@ loadComparablePricesByCurrencyPair <- function(currencyPair) {
                 format.number(ArbitrageIndex),
                 format.money(PriceLow),
                 format.money(PriceHigh),
-                format(Time, "%d.%m.%Y %H:%M:%OS")
+                formatPOSIXctWithFractionalSeconds(Time, "%d.%m.%Y %H:%M:%OS")
             ))
         }
         
@@ -117,7 +119,7 @@ loadComparablePricesByCurrencyPair <- function(currencyPair) {
             format.number(ArbitrageIndex),
             format.money(PriceLow),
             format.money(PriceHigh),
-            format(Time, "%d.%m.%Y %H:%M:%OS")
+            formatPOSIXctWithFractionalSeconds(Time, "%d.%m.%Y %H:%M:%OS")
         ))
     }
     
@@ -175,7 +177,7 @@ aggregateArbitrageIndex <- function(
 }
 
 
-#' Intervalle berechnen
+#' Intervalle mit den angegebenen Breakpoints berechnen
 calculateIntervals <- function(timeBoundaries, breakpoints)
 {
     intervals <- data.table()

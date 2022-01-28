@@ -1,8 +1,12 @@
 library("fst")
 library("data.table")
-library("zoo")
+library("zoo") # rollapply
 source("Funktionen/FormatNumber.r")
+source("Funktionen/FormatPOSIXctWithFractionalSeconds.r")
 source("Funktionen/printf.r")
+
+# Betrachtetes Zeitfenster
+timeframe <- c("2021-12-05 19:35:12.097997", "2021-12-05 19:35:14.505134")
 
 # Beispieldaten laden
 a <- read_fst(
@@ -17,8 +21,8 @@ b <- read_fst(
 )
 
 # Auf Beispiel-Zeitfenster beschränken
-a <- a[Time %between% c("2021-12-05 19:35:12.097997", "2021-12-05 19:35:14.505134")]
-b <- b[Time %between% c("2021-12-05 19:35:12.097997", "2021-12-05 19:35:14.505134")]
+a <- a[Time %between% timeframe]
+b <- b[Time %between% timeframe]
 
 # Gleiche Ticks gruppieren und ursprüngliche Börse vermerken
 a <- a[j=.(PriceLow=min(Price),PriceHigh=max(Price),n=.N),by=Time]
@@ -48,7 +52,10 @@ tabIndentFirst <- strrep(" ", 8)
 tabIndent <- strrep(" ", 12)
 for (i in seq_len(nrow(ab))) {
     tick <- ab[i,]
-    printf("%s%s &\n", tabIndentFirst, format(tick$Time, "%d.%m.%Y, %H:%M:%OS"))
+    printf("%s%s &\n",
+           tabIndentFirst, 
+           formatPOSIXctWithFractionalSeconds(tick$Time, "%d.%m.%Y, %H:%M:%OS")
+    )
     printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceLow, digits=2))
     printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceHigh, digits=2))
     printf("%s%d &\n", tabIndent, tick$n)
