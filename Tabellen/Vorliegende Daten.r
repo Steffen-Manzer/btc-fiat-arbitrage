@@ -23,14 +23,30 @@ exchanges <- list(
     "truefx"="TrueFX"
 )
 
+#' Zeitliche Auflösung
+resolutionByExchange <- list(
+    "bitfinex"="1 ms",
+    "bitstamp"="1 s",
+    "coinbase"="1 µs",
+    "kraken"="100 µs",
+    "dukascopy"="1 ms",
+    "truefx"="1 ms"
+)
+
 #' Genutzte Kurspaare (Kleinbuchstaben)
 filterByPairs <- c("btcusd", "btceur", "eurusd")
 
 #' Tabellen-Template mit `{tableContent}` als Platzhalter
-templateFile <- sprintf("%s/Tabellen/Templates/Vorliegende_Datensaetze.tex", latexOutPath)
+templateFile <- sprintf(
+    "%s/Tabellen/Templates/Empirie_Eigenschaften_Ueberblick_VorliegendeDatensaetze.tex",
+    latexOutPath
+)
 
 #' Zieldatei
-outFile <- sprintf("%s/Tabellen/Vorliegende_Datensaetze.tex", latexOutPath)
+outFile <- sprintf(
+    "%s/Tabellen/Empirie_Eigenschaften_Ueberblick_VorliegendeDatensaetze.tex", 
+    latexOutPath
+)
 
 
 # Konfiguration prüfen ----------------------------------------------------
@@ -47,6 +63,7 @@ tableContent <- ""
 for (i in seq_along(exchanges)) {
     source <- names(exchanges)[i]
     exchangeName <- exchanges[[i]]
+    resolution <- resolutionByExchange[[source]]
     
     tableContent <- paste0(
         tableContent,
@@ -93,8 +110,10 @@ for (i in seq_along(exchanges)) {
             tableContent,
             sprintf("        \\qquad %s &\n", format.currencyPair(pair)), # Kurspaar
             sprintf("            %s &\n", format.number(numTicks)), # Anzahl Ticks
-            sprintf("            %s &\n", format(firstDataset, "%d.%m.%Y %H:%M:%S")), # Von
-            sprintf("            %s \\\\\n", format(lastDataset, "%d.%m.%Y %H:%M:%S")), # Bis
+            sprintf("            %s\n", format(firstDataset, "%d.%m.%Y %H:%M:%S")), # Von
+            sprintf("            -- %s &\n", format(lastDataset, "%d.%m.%Y %H:%M:%S")), # Bis
+            sprintf("            %s \\\\\n", 
+                    resolution |> str_replace(fixed(" "), "\\,")), # Auflösung
             "\n"
         )
     }
