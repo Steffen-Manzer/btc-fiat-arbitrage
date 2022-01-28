@@ -19,22 +19,30 @@
 #' einzelne Dateien die Schwelle von 100 Mio. Datensätzen überschreiten.
 
 
-# Konfiguration ---------------------------------------------------------------
-plotAsLaTeX <- FALSE
-DEBUG_PRINT <- TRUE
-
-
 # Bibliotheken und externe Hilfsfunktionen laden ------------------------------
 source("Funktionen/FormatCurrencyPair.r")
 source("Funktionen/FormatNumber.r")
-source("Funktionen/printf.r")
 source("Funktionen/FormatPOSIXctWithFractionalSeconds.r")
+DEBUG_PRINT <- TRUE; source("Funktionen/printf.r")
+source("Konfiguration/FilePaths.r")
 library("fst")
 library("data.table")
 library("lubridate") # floor_date
 library("ggplot2")
 library("ggthemes")
+library("readr") # read_file
+library("stringr") # str_replace
 library("tictoc")
+
+
+# Konfiguration ---------------------------------------------------------------
+plotAsLaTeX <- FALSE
+
+#' Tabellen-Template mit `{tableContent}`, `{tableCaption` und `{tableLabel}` 
+#' als Platzhalter
+summaryTableTemplateFile <- 
+    sprintf("%s/Tabellen/Templates/Empirie_Raumarbitrage_Uebersicht_nach_Boerse.tex",
+            latexOutPath)
 
 
 # Hilfsfunktionen -------------------------------------------------------------
@@ -63,9 +71,16 @@ loadComparablePricesByCurrencyPair <- function(currencyPair)
     
     # Alle Datensätze einlesen
     for (i in seq_along(sourceFiles)) {
+        
+        # Dateiname und Kurspaar bestimmen
         sourceFile <- sourceFiles[[i]]
+        exchangePair <- basename(sourceFile) |>
+            str_replace(fixed(paste0(currencyPair, "-")), "") |>
+            str_replace(fixed("-1.fst"), "")
+        
+        # Datei lesen
         priceDifferences <- read_fst(sourceFile, as.data.table=TRUE)
-        priceDifferences[,ExchangePair:=basename(sourceFile)]
+        priceDifferences[,ExchangePair:=exchangePair]
         
         numRows <- nrow(priceDifferences)
         
@@ -103,6 +118,9 @@ loadComparablePricesByCurrencyPair <- function(currencyPair)
         rm(priceDifferences)
         gc()
     }
+    
+    # Sortieren
+    setorder(combinedPriceDifferences, Time)
     
     # Statistiken ausgeben
     if (exists("DEBUG_PRINT") && isTRUE(DEBUG_PRINT)) {
@@ -301,7 +319,7 @@ plotArbitrageIndex <- function(
     } else {
         stop(sprintf("Unbekannter Plot-Typ: %s", plotType))
     }
-        
+    
     plot <- plot +
         theme_minimal() +
         theme(
@@ -334,6 +352,168 @@ plotArbitrageIndex <- function(
 }
 
 
+#' Informationen über einen Datensatz ausgeben
+#' 
+#' @param comparablePrices `data.table` aus `loadComparablePricesByCurrency`
+#'                         oder aus `aggregateArbitrageIndex`
+printDatasetSummary <- function(dataset)
+{
+    printf("Anzahl Transaktionspaare zwischen jeweils zwei Börsen: %s\n",
+           format.number(nrow(comparablePrices)))
+    printf(" - Davon zwischen Bitfinex und Bitstamp: %s\n",
+           format.number(nrow(comparablePrices[ExchangePair=="bitfinex-bitstamp"])))
+    printf(" - Davon zwischen Bitfinex und Coinbase Pro: %s\n",
+           format.number(nrow(comparablePrices[ExchangePair=="bitfinex-coinbase"])))
+    printf(" - Davon zwischen Bitfinex und Kraken: %s\n",
+           format.number(nrow(comparablePrices[ExchangePair=="bitfinex-kraken"])))
+    printf(" - Davon zwischen Bitstamp und Coinbase Pro: %s\n",
+           format.number(nrow(comparablePrices[ExchangePair=="bitstamp-coinbase"])))
+    printf(" - Davon zwischen Bitstamp und Kraken: %s\n",
+           format.number(nrow(comparablePrices[ExchangePair=="bitstamp-kraken"])))
+    printf(" - Davon zwischen Coinbase Pro und Kraken: %s\n",
+           format.number(nrow(comparablePrices[ExchangePair=="coinbase-kraken"])))
+}
+
+
+#' Informationen über einen Datensatz als LaTeX-Tabelle ausgeben
+#' 
+#' @param comparablePrices `data.table` aus `loadComparablePricesByCurrency`
+#'                         oder aus `aggregateArbitrageIndex`
+#' @param outFile Zieldatei
+#' @param caption Tabellentitel
+#' @param label Tabellenlabel
+printDatasetSummaryAsLaTeXTable <- function(
+    dataset,
+    outFile,
+    caption,
+    label
+)
+{
+    printf("Erzeuge Überblickstabelle in %s\n", basename(outFile))
+    format.percentage <- function(d)
+        formatC(d*100, digits=3, format="f", decimal.mark=",", big.mark=".")
+    createRow <- function(numRows, summary) {
+        if (summary[[1]] != 1) {
+            printf("Achtung: Mindestwert nicht gleich 1: %s\n", summary[[1]])
+        }
+        return(paste0(
+            sprintf("            %s &\n", format.number(numRows)),
+            sprintf("            %s &\n", format.percentage(summary[[2]])), # Q1
+            sprintf("            %s &\n", format.percentage(summary[[3]])), # Median
+            sprintf("            %s &\n", format.percentage(summary[[4]])), # Mean
+            sprintf("            %s &\n", format.percentage(summary[[5]])), # Q3
+            sprintf("            %s \\\\\n\n", format.percentage(summary[[6]])) # Max
+        ))
+    }
+    
+    tableContent <- ""
+    
+    # Bitfinex - Bitstamp
+    numRows <- nrow(dataset[ExchangePair=="bitfinex-bitstamp"])
+    if (numRows > 0L) {
+        tableContent <- paste0(
+            tableContent,
+            "        Bitfinex & Bitstamp &\n",
+            createRow(
+                numRows,
+                summary(dataset[ExchangePair=="bitfinex-bitstamp", ArbitrageIndex])
+            )
+        )
+    }
+    
+    # Bitfinex - Coinbase Pro
+    numRows <- nrow(dataset[ExchangePair=="bitfinex-coinbase"])
+    if (numRows > 0L) {
+        tableContent <- paste0(
+            tableContent,
+            "        Bitfinex & Coinbase Pro &\n",
+            createRow(
+                numRows,
+                summary(dataset[ExchangePair=="bitfinex-coinbase", ArbitrageIndex])
+            )
+        )
+    }
+    
+    # Bitfinex - Kraken
+    numRows <- nrow(dataset[ExchangePair=="bitfinex-kraken"])
+    if (numRows > 0L) {
+        tableContent <- paste0(
+            tableContent,
+            "        Bitfinex & Kraken &\n",
+            createRow(
+                numRows,
+                summary(dataset[ExchangePair=="bitfinex-kraken", ArbitrageIndex])
+            )
+        )
+    }
+    
+    # Bitstamp - Coinbase Pro
+    numRows <- nrow(dataset[ExchangePair=="bitstamp-coinbase"])
+    if (numRows > 0L) {
+        tableContent <- paste0(
+            tableContent,
+            "        Bitstamp & Coinbase Pro &\n",
+            createRow(
+                numRows,
+                summary(dataset[ExchangePair=="bitstamp-coinbase", ArbitrageIndex])
+            )
+        )
+    }
+    
+    # Bitstamp - Kraken
+    numRows <- nrow(dataset[ExchangePair=="bitstamp-kraken"])
+    if (numRows > 0L) {
+        tableContent <- paste0(
+            tableContent,
+            "        Bitstamp & Kraken &\n",
+            createRow(
+                numRows,
+                summary(dataset[ExchangePair=="bitstamp-kraken", ArbitrageIndex])
+            )
+        )
+    }
+    
+    # Coinbase Pro - Kraken
+    numRows <- nrow(dataset[ExchangePair=="coinbase-kraken"])
+    if (numRows > 0L) {
+        tableContent <- paste0(
+            tableContent,
+            "        Coinbase Pro & Kraken &\n",
+            createRow(
+                numRows,
+                summary(dataset[ExchangePair=="coinbase-kraken", ArbitrageIndex])
+            )
+        )
+    }
+    
+    tableContent <- paste0(
+        tableContent,
+        "        \\tablebody\n\n",
+        "        \\multicolumn{2}{@{}l}{Gesamt} &\n",
+        createRow(
+            nrow(dataset),
+            summary(dataset$ArbitrageIndex)
+        )
+    )
+    
+    # Tabelle schreiben
+    if (file.exists(outFile)) {
+        Sys.chmod(outFile, mode="0644")
+    }
+    summaryTableTemplateFile |>
+        read_file() |>
+        str_replace(coll("{tableCaption}"), caption) |>
+        str_replace(coll("{tableContent}"), tableContent) |>
+        str_replace(coll("{tableLabel}"), label) |>
+        write_file(outFile)
+    
+    # Vor versehentlichem Überschreiben schützen
+    Sys.chmod(outFile, mode="0444")
+    
+    return(invisible(NULL))
+}
+
+
 # Auswertung (grafisch, numerisch) --------------------------------------------
 
 # Händisch einzeln bei Bedarf starten, da große Datenmengen geladen werden
@@ -352,9 +532,22 @@ if (FALSE) {
     # Übersicht mit allen Segmenten anzeigen
     arbitrageIndex <- aggregateArbitrageIndex(comparablePrices, "1 month")
     intervals <- calculateIntervals(arbitrageIndex$Time, breakpoints)
-    plotArbitrageIndex(arbitrageIndex, breakpoints=breakpoints)
+    plotArbitrageIndex(
+        arbitrageIndex,
+        breakpoints = breakpoints
+        # , latexOutPath = sprintf("%s/Abbildungen/Empirie_Raumarbitrage_BTCUSD_Uebersicht.tex", 
+        #                          latexOutPath)
+    )
     
     # Beschreibende Statistiken
+    printDatasetSummary(comparablePrices)
+    printDatasetSummaryAsLaTeXTable(
+        comparablePrices,
+        outFile = sprintf("%s/Tabellen/Empirie_Raumarbitrage_USD_Uebersicht.tex",
+                          latexOutPath),
+        caption = "Zentrale Kenngrößen des Arbitrageindex für BTC/USD im Gesamtüberblick",
+        label = "Empirie_Raumarbitrage_USD_Ueberblick"
+    )
     # ...
     # TODO
     # - Boxplot?
@@ -384,9 +577,22 @@ if (FALSE) {
     
     # Übersicht mit allen Segmenten anzeigen
     arbitrageIndex <- aggregateArbitrageIndex(comparablePrices, "1 month")
-    plotArbitrageIndex(arbitrageIndex, breakpoints=breakpoints)
+    plotArbitrageIndex(
+        arbitrageIndex,
+        breakpoints = breakpoints
+        # , latexOutPath = sprintf("%s/Abbildungen/Empirie_Raumarbitrage_BTCEUR_Uebersicht.tex", 
+        #                          latexOutPath)
+    )
     
     # Beschreibende Statistiken
+    printDatasetSummary(comparablePrices)
+    printDatasetSummaryAsLaTeXTable(
+        comparablePrices,
+        outFile = sprintf("%s/Tabellen/Empirie_Raumarbitrage_EUR_Uebersicht.tex",
+                          latexOutPath),
+        caption = "Zentrale Kenngrößen des Arbitrageindex für BTC/EUR im Gesamtüberblick",
+        label = "Empirie_Raumarbitrage_EUR_Ueberblick"
+    )
     # ...
     
     # Einzelne Segmente auswerten
@@ -402,7 +608,8 @@ if (FALSE) {
     # BTC/GBP -----------------------------------------------------------------
     
     # Daten laden (~400 MB unkomprimiert)
-    comparablePrices <- loadComparablePricesByCurrencyPair("btcgbp")
+    pair <- "btcgbp"
+    comparablePrices <- loadComparablePricesByCurrencyPair(pair)
     
     # Intervalle definieren
     breakpoints <- c("2016-01-01", "2017-06-01", "2018-04-01", "2019-06-01")
@@ -410,9 +617,22 @@ if (FALSE) {
     
     # Übersicht mit allen Segmenten anzeigen
     arbitrageIndex <- aggregateArbitrageIndex(comparablePrices, "1 month")
-    plotArbitrageIndex(arbitrageIndex, breakpoints=breakpoints)
+    plotArbitrageIndex(
+        arbitrageIndex,
+        breakpoints = breakpoints
+        # , latexOutPath = sprintf("%s/Abbildungen/Empirie_Raumarbitrage_BTCGBP_Uebersicht.tex", 
+        #                          latexOutPath)
+    )
     
     # Beschreibende Statistiken
+    printDatasetSummary(comparablePrices)
+    printDatasetSummaryAsLaTeXTable(
+        comparablePrices,
+        outFile = sprintf("%s/Tabellen/Empirie_Raumarbitrage_GBP_Uebersicht.tex",
+                          latexOutPath),
+        caption = "Zentrale Kenngrößen des Arbitrageindex für BTC/GBP im Gesamtüberblick",
+        label = "Empirie_Raumarbitrage_GBP_Ueberblick"
+    )
     # ...
     
     # Einzelne Segmente auswerten
@@ -457,9 +677,22 @@ if (FALSE) {
     
     # Übersicht mit allen Segmenten anzeigen
     arbitrageIndex <- aggregateArbitrageIndex(comparablePrices, "1 day")
-    plotArbitrageIndex(arbitrageIndex, breakpoints=breakpoints)
+    plotArbitrageIndex(
+        arbitrageIndex,
+        breakpoints = breakpoints
+        # , latexOutPath = sprintf("%s/Abbildungen/Empirie_Raumarbitrage_BTCJPY_Uebersicht.tex",
+        #                          latexOutPath)
+    )
     
     # Beschreibende Statistiken
+    printDatasetSummary(comparablePrices)
+    printDatasetSummaryAsLaTeXTable(
+        comparablePrices,
+        outFile = sprintf("%s/Tabellen/Empirie_Raumarbitrage_JPY_Uebersicht.tex",
+                          latexOutPath),
+        caption = "Zentrale Kenngrößen des Arbitrageindex für BTC/JPY im Gesamtüberblick",
+        label = "Empirie_Raumarbitrage_JPY_Ueberblick"
+    )
     # ...
     
     # Einzelne Segmente auswerten
