@@ -196,8 +196,8 @@ saveInterimResult <- function(result, index, exchange_a, exchange_b, currencyPai
                        tolower(currencyPair), exchange_a, exchange_b, index)
     stopifnot(!file.exists(outFile))
     
-    # Ergebnis um zwischenzeitlich eingefügte `NA`s
-    # (= reservierter Speicher für weitere Ergebnisse) bereinigen
+    # Ergebnis um zwischenzeitlich eingefügte `NA`s bereinigen
+    # (= reservierter Speicher für weitere Ergebnisse)
     result <- cleanupDT(result)
     
     # Um Probleme mit appendDT (NA+POSIXct) zu umgehen, wurde der Zeitstempel
@@ -212,6 +212,7 @@ saveInterimResult <- function(result, index, exchange_a, exchange_b, currencyPai
     # Ergebnis speichern
     write_fst(result, outFile, compress=100)
     
+    return(invisible(NULL))
 }
 
 
@@ -332,7 +333,11 @@ compareTwoExchanges <- function(
     
     # Hauptschleife: Paarweise vergleichen
     printf("\n  Beginne Auswertung für %s der Börsen %s und %s ab %s.\n\n", 
-           format.currencyPair(currencyPair), exchange_a, exchange_b, format(startDate, "%d.%m.%Y %H:%M:%S"))
+           format.currencyPair(currencyPair),
+           exchange_a,
+           exchange_b,
+           format(startDate, "%d.%m.%Y %H:%M:%S")
+    )
     printf("  % 13s   % 11s   %-26s   % 10s   % 10s   % 10s   % 3s\n",
            "Laufzeit", "Verarbeitet", "Aktueller Datensatz",
            "Ergebnisse", "Größe", "Geschw.", "Set")
@@ -397,9 +402,13 @@ compareTwoExchanges <- function(
             readTickDataAsMovingWindow(dataset_b, baseDate, loadUntil)
             
             printf.debug("A: %d Tickdaten von %s bis %s\n",
-                         nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+                         nrow(dataset_a$data),
+                         first(dataset_a$data$Time),
+                         last(dataset_a$data$Time))
             printf.debug("B: %d Tickdaten von %s bis %s\n",
-                         nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
+                         nrow(dataset_b$data),
+                         first(dataset_b$data$Time),
+                         last(dataset_b$data$Time))
             
             # Begrenze auf gemeinsamen Zeitraum
             filterTwoDatasetsByCommonTimeInterval(dataset_a, dataset_b)
@@ -432,9 +441,13 @@ compareTwoExchanges <- function(
             }
             
             printf.debug("A (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n",
-                         nrow(dataset_a$data), first(dataset_a$data$Time), last(dataset_a$data$Time))
+                         nrow(dataset_a$data),
+                         first(dataset_a$data$Time),
+                         last(dataset_a$data$Time))
             printf.debug("B (auf gemeinsame Daten begrenzt): %d Tickdaten von %s bis %s\n",
-                         nrow(dataset_b$data), first(dataset_b$data$Time), last(dataset_b$data$Time))
+                         nrow(dataset_b$data), 
+                         first(dataset_b$data$Time),
+                         last(dataset_b$data$Time))
             
             # Ticks zum selben Zeitpunkt zusammenfassen, dann Merge + Sort + Filter
             dataset_ab <- mergeSortAndFilterTwoDatasets(
@@ -457,8 +470,10 @@ compareTwoExchanges <- function(
             
             # Aktuelle Position in neuem Betrachtungsfenster nicht gefunden!
             if (length(currentRow) == 0) {
-                stop(sprintf("Aktueller Arbeitspunkt (%s) in neu geladenen Daten nicht vorhanden!",
-                             format(currentTick$Time)))
+                stop(sprintf(
+                    "Aktueller Arbeitspunkt (%s) in neu geladenen Daten nicht vorhanden!",
+                    format(currentTick$Time)
+                ))
             }
             
             printf.debug("Aktueller Datenpunkt nun in Zeile %d.\n", currentRow)
@@ -506,10 +521,12 @@ compareTwoExchanges <- function(
             PriceHigh = PriceHigh
         ))
         
-        # Alle 100 Mio. Datenpunkte: Ergebnis speichern
+        # 100 Mio. Datenpunkte im Ergebnisvektor: Zwischenspeichern
         if (nrowDT(result) > 1e8) {
             
-            printf.debug("\n100 Mio. Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...\n")
+            printf.debug(
+                "\n100 Mio. Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...\n"
+            )
             
             # Ergebnis speichern
             saveInterimResult(result, result_set_index, exchange_a, exchange_b, currencyPair)
