@@ -198,12 +198,13 @@ aggregateArbitrageIndex <- function(
 #' Intervalle mit den angegebenen Breakpoints berechnen
 calculateIntervals <- function(timeBoundaries, breakpoints)
 {
+    breakpoints <- as.POSIXct(breakpoints)
     intervals <- data.table()
     prevDate <- as.Date(min(timeBoundaries))
     for (i in seq_along(breakpoints)) {
         intervals <- rbindlist(list(intervals, data.table(
             From = c(prevDate),
-            To = c(as.Date(breakpoints[i])),
+            To = c(as.Date(breakpoints[i] - 1)),
             Set = c(as.character(i))
         )))
         prevDate <- as.Date(breakpoints[i])
@@ -520,23 +521,42 @@ summariseDatasetAsTable <- function(
 )
 {
     printf("Erzeuge Überblickstabelle in %s\n", basename(outFile))
-    format.percentage <- function(d)
-        formatC(d*100, digits=3, format="f", decimal.mark=",", big.mark=".")
+    format.percentage <- function(d, digits=3L)
+        formatC(d*100, digits=digits, format="f", decimal.mark=",", big.mark=".")
     
+    numRowsTotal <- nrow(dataset)
     
-    
-    # Alte Variante mit den Spalten n, Q1, Median, Mean, Q3, Max
-    createRow <- function(numRows, summary) {
-        if (summary[[1]] != 1) {
-            printf("Achtung: Mindestwert nicht gleich 1: %s\n", summary[[1]])
-        }
+    # Tabellenzeile erzeugen
+    createRow <- function(numRows, dataSubset) {
+        intervalLengthHours <- 
+            difftime(
+                last(dataSubset$Time),
+                first(dataSubset$Time),
+                units = "hours"
+            ) |>
+            round() |>
+            as.double()
+        numRowsPerHour <- numRows / intervalLengthHours
+        numRowsLargerThan2Pct <- length(which(dataSubset$ArbitrageIndex >= 1.02))
+        numRowsLargerThan5Pct <- length(which(dataSubset$ArbitrageIndex >= 1.05))
+        numRowsLargerThan10Pct <- length(which(dataSubset$ArbitrageIndex >= 1.1))
+        s <- strrep(" ", 12) # Einrückung in der Ergebnisdatei
         return(paste0(
-            sprintf("            %s &\n", format.number(numRows)),
-            sprintf("            %s &\n", format.percentage(summary[[2]])), # Q1
-            sprintf("            %s &\n", format.percentage(summary[[3]])), # Median
-            sprintf("            %s &\n", format.percentage(summary[[4]])), # Mean
-            sprintf("            %s &\n", format.percentage(summary[[5]])), # Q3
-            sprintf("            %s \\\\\n\n", format.percentage(summary[[6]])) # Max
+            sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
+                    format.number(numRows),
+                    format.percentage(numRows / numRowsTotal, 1L)),
+            sprintf("%s%s &\n", s, format.numberWithFixedDigits(numRowsPerHour, 1)),
+            sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
+                    format.number(numRowsLargerThan2Pct),
+                    format.percentage(numRowsLargerThan2Pct / numRows, 1L)),
+            sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
+                    format.number(numRowsLargerThan5Pct),
+                    format.percentage(numRowsLargerThan5Pct / numRows, 1L)),
+            sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
+                    format.number(numRowsLargerThan10Pct),
+                    format.percentage(numRowsLargerThan10Pct / numRows, 1L)),
+            sprintf("%s%s\\,\\%% \\\\\n\n", s, 
+                    format.percentage(max(dataSubset$ArbitrageIndex), 1))
         ))
     }
     
@@ -550,7 +570,7 @@ summariseDatasetAsTable <- function(
             "        Bitfinex & Bitstamp &\n",
             createRow(
                 numRows,
-                summary(dataset[ExchangePair=="bitfinex-bitstamp", ArbitrageIndex])
+                dataset[ExchangePair=="bitfinex-bitstamp"]
             )
         )
     }
@@ -563,7 +583,7 @@ summariseDatasetAsTable <- function(
             "        Bitfinex & Coinbase Pro &\n",
             createRow(
                 numRows,
-                summary(dataset[ExchangePair=="bitfinex-coinbase", ArbitrageIndex])
+                dataset[ExchangePair=="bitfinex-coinbase"]
             )
         )
     }
@@ -576,7 +596,7 @@ summariseDatasetAsTable <- function(
             "        Bitfinex & Kraken &\n",
             createRow(
                 numRows,
-                summary(dataset[ExchangePair=="bitfinex-kraken", ArbitrageIndex])
+                dataset[ExchangePair=="bitfinex-kraken"]
             )
         )
     }
@@ -589,7 +609,7 @@ summariseDatasetAsTable <- function(
             "        Bitstamp & Coinbase Pro &\n",
             createRow(
                 numRows,
-                summary(dataset[ExchangePair=="bitstamp-coinbase", ArbitrageIndex])
+                dataset[ExchangePair=="bitstamp-coinbase"]
             )
         )
     }
@@ -602,7 +622,7 @@ summariseDatasetAsTable <- function(
             "        Bitstamp & Kraken &\n",
             createRow(
                 numRows,
-                summary(dataset[ExchangePair=="bitstamp-kraken", ArbitrageIndex])
+                dataset[ExchangePair=="bitstamp-kraken"]
             )
         )
     }
@@ -615,7 +635,7 @@ summariseDatasetAsTable <- function(
             "        Coinbase Pro & Kraken &\n",
             createRow(
                 numRows,
-                summary(dataset[ExchangePair=="coinbase-kraken", ArbitrageIndex])
+                dataset[ExchangePair=="coinbase-kraken"]
             )
         )
     }
@@ -626,10 +646,7 @@ summariseDatasetAsTable <- function(
             tableContent,
             "        \\tablebody\n\n",
             "        \\multicolumn{2}{@{}l}{Gesamt} &\n",
-            createRow(
-                nrow(dataset),
-                summary(dataset$ArbitrageIndex)
-            )
+            createRow(nrow(dataset), dataset)
         )
     }
     
@@ -661,6 +678,9 @@ summariseDatasetAsTable <- function(
 #' Preisunterschiede auf Arbitragemöglichkeiten abklopfen
 analyseArbitrageIndex <- function(pair, breakpoints)
 {
+    # Vorherige Berechnungen ggf. aus dem Speicher bereinigen
+    gc()
+    
     # Daten laden
     comparablePrices <- loadComparablePricesByCurrencyPair(pair)
     
@@ -790,31 +810,31 @@ analyseArbitrageIndex <- function(pair, breakpoints)
 if (FALSE) {
     
     # BTC/USD
-    # Datenmenge: ~8 GB
+    # Datenmenge: ~11,5 GB
     analyseArbitrageIndex(
         pair = "btcusd",
         breakpoints = 
             c("2014-03-01", "2017-01-01", "2018-06-01", "2019-07-01", "2020-05-01")
-    )
+    ) ; gc()
     
     # BTC/EUR
-    # Datenmenge: ~3 GB
+    # Datenmenge: ~4,5 GB
     analyseArbitrageIndex(
         pair = "btceur",
-        breakpoints = c("2016-03-01", "2017-01-01", "2018-03-01")
-    )
+        breakpoints = c("2016-04-01", "2017-01-01", "2018-03-01")
+    ) ; gc()
     
     # BTC/GBP
-    # Datenmenge: ~400 MB
+    # Datenmenge: ~450 MB
     analyseArbitrageIndex(
         pair = "btcgbp",
         breakpoints = c("2016-01-01", "2017-06-01", "2018-04-01", "2019-06-01")
-    )
+    ) ; gc()
     
     # BTC/JPY
-    # Datenmenge: wenige MB
+    # Datenmenge: < 10 MB
     analyseArbitrageIndex(
         pair = "btcjpy",
         breakpoints = c("2019-06-01", "2019-11-01")
-    )
+    ) ; gc()
 }
