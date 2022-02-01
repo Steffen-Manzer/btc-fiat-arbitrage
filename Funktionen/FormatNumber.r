@@ -3,7 +3,10 @@ format.number <- function(...) {
     prettyNum(..., big.mark=".", decimal.mark=",")
 }
 
-#' Währungsausgabe, wie sie in DE üblich ist: 123456.789 -> 123.456,79
-format.money <- function(..., digits=2) { 
+#' Ausgabe mit einer exakten Anzahl Nachkommastellen
+format.numberWithFixedDigits <- function(..., digits=1L) { 
     formatC(..., format="f", big.mark=".", decimal.mark=",", digits=digits)
 }
+
+#' Währungsausgabe, wie sie in DE üblich ist: 123456.789 -> 123.456,79
+format.money <- function(..., digits=2L) format.numberWithFixedDigits(..., digits)
