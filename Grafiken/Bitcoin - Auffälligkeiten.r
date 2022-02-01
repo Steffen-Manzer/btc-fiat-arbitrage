@@ -130,6 +130,8 @@ print(
         scale_y_continuous(
             labels = function(x) format.money(x, digits=0),
             breaks = seq(from=51000, to=56000, by=1000)
+            # Hier NICHT die Option limits verwenden, da sich das auf die
+            # Berechnung von geom_boxplot auswirkt!
         ) +
         # Sichtbaren Bereich begrenzen, ohne dass Daten abgeschnitten werden
         coord_cartesian(xlim=a_viewport, ylim=c(51000,57250)) +
