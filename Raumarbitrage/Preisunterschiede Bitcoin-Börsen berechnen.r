@@ -112,9 +112,10 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
 summariseMultipleTicksAtSameTime <- function(dataset) {
     return(dataset[ 
         j=.(
-            ID = last(ID),
-            PriceLow = min(Price), 
-            PriceHigh = max(Price), 
+            IDLow = ID[which.min(Price)],
+            PriceLow = min(Price),
+            IDHigh = ID[which.max(Price)],
+            PriceHigh = max(Price),
             Exchange = last(Exchange),
             RowNum = last(RowNum),
             n = .N
@@ -525,27 +526,27 @@ compareTwoExchanges <- function(
         ) {
             result <- appendDT(result, list(
                 Time = as.double(tick_b$Time),
+                IDHigh = as.integer(tick_a$IDHigh),
                 PriceHigh = tick_a$PriceHigh,
                 ExchangeHigh = tick_a$Exchange,
-                IDHigh = as.integer(tick_a$ID),
+                IDLow = as.integer(tick_b$IDLow),
                 PriceLow = tick_b$PriceLow,
-                ExchangeLow = tick_b$Exchange,
-                IDLow = as.integer(tick_b$ID)
+                ExchangeLow = tick_b$Exchange
             ))
         } else {
             result <- appendDT(result, list(
                 Time = as.double(tick_b$Time),
+                IDHigh = as.integer(tick_b$IDHigh),
                 PriceHigh = tick_b$PriceHigh,
                 ExchangeHigh = tick_b$Exchange,
-                IDHigh = as.integer(tick_b$ID),
+                IDLow = as.integer(tick_a$IDLow),
                 PriceLow = tick_a$PriceLow,
-                ExchangeLow = tick_a$Exchange,
-                IDLow = as.integer(tick_a$ID)
+                ExchangeLow = tick_a$Exchange
             ))
         }
         
         # 100 Mio. Datenpunkte im Ergebnisvektor: Zwischenspeichern
-        if (nrowDT(result) > 1e8) {
+        if (nrowDT(result) >= 1e8) {
             
             printf.debug(
                 "\n100 Mio. Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...\n"
