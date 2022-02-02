@@ -32,31 +32,42 @@ bitcoinSummariseCallback <- function() {
 }
 
 
-# Daten einlesen --------------------------------------------------------------
+# Daten einlesen
 
-# Bitfinex
+# Bitfinex --------------------------------------------------------------------
 printf("\n--------- Verarbeite Bitfinex ---------\n")
 readMonthlyDividedDataset(
+    
+    # Börsenname
     exchangeName = "Bitfinex",
+    
+    # Kurspaare
     currencyPairs = c("btcusd", "btceur", "btcgbp", "btcjpy"),
+    
+    # Dateiname der Quelldatei für ein Kurspaar/Jahr/Monat erzeugen
     getSourceFileCallback = function(pair, year, month) {
-        # Dateinamen der Quelldatei erzeugen
         return(sprintf("Daten/bitfinex/%s/bitfinex-tick-%1$s-%2$d-%3$02d.csv.gz",
                        pair, year, month))
     },
+    
+    # Rohdaten einlesen und normalisieren
     parseSourceFileCallback = function(srcFile) {
-        # Daten der angegebenen Quelldatei einlesen
         #                            ID         Time         Amount    Price
         sourceFileColumnClasses <- c("numeric", "character", "double", "double")
         thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
         thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
         return(thisDataset)
     },
+    
+    # Daten aggregieren
     summariseDataCallback = bitcoinSummariseCallback
 )
 
 
-# Bitstamp: Historische Tickdaten aus .csv extrahieren und für weitere
+# Bitstamp --------------------------------------------------------------------
+
+# Schritt 1:
+# Historische Tickdaten aus .csv extrahieren und für weitere
 # Verarbeitung als .fst speichern
 printf("\n--------- Verarbeite Bitstamp (historische Daten) ---------\n")
 bitstampHistoricalSets <- data.table(
@@ -154,46 +165,62 @@ for (i in seq_len(nrow(bitstampHistoricalSets))) {
     }
 }
 
-# Bitstamp: REST-API ab September 2019 / ab Januar 2022
+# Schritt 2: REST-API ab September 2019 / ab Januar 2022 einlesen
 printf("\n--------- Verarbeite Bitstamp (REST-API) ---------\n")
 readMonthlyDividedDataset(
+    
+    # Börsenname
     "Bitstamp",
-    currencyPairs = c("btcusd", "btceur", "btcgbp"),
+    
+    # Kurspaare
+    currencyPairs = bitstampHistoricalSets$pair,
+    
+    # Dateiname der Quelldatei für ein Kurspaar/Jahr/Monat erzeugen
     getSourceFileCallback = function(pair, year, month) {
-        # Dateinamen der Quelldatei erzeugen
         return(sprintf("Daten/bitstamp/%s/bitstamp-tick-%1$s-%2$d-%3$02d.csv.gz",
                        pair, year, month))
     },
+    
+    # Rohdaten einlesen und normalisieren
     parseSourceFile = function(srcFile) {
-        # Daten der angegebenen Quelldatei einlesen
-        #                            ID         Time         Amount    Price     Type
-        sourceFileColumnClasses <- c("numeric", "character", "double", "double", "numeric")
-        thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
-        thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
-        return(thisDataset)
-    },
-    summariseDataCallback = bitcoinSummariseCallback
-)
-
-
-# Coinbase Pro
-printf("\n--------- Verarbeite Coinbase Pro ---------\n")
-readMonthlyDividedDataset(
-    "Coinbase Pro",
-    currencyPairs = c("btcusd", "btceur", "btcgbp"),
-    getSourceFileCallback = function(pair, year, month) {
-        # Dateinamen der Quelldatei erzeugen
-        return(sprintf("Daten/coinbase/%s/coinbase-tick-%1$s-%2$d-%3$02d.csv.gz",
-                       pair, year, month))
-    },
-    parseSourceFile = function(srcFile) {
-        # Daten der angegebenen Quelldatei einlesen
         #                             ID         Time         Amount    Price     Type
         sourceFileColumnClasses <- c("numeric", "character", "double", "double", "numeric")
         thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
         thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
         return(thisDataset)
     },
+    
+    # Daten aggregieren
+    summariseDataCallback = bitcoinSummariseCallback
+)
+
+
+# Coinbase Pro ----------------------------------------------------------------
+printf("\n--------- Verarbeite Coinbase Pro ---------\n")
+readMonthlyDividedDataset(
+    
+    # Börsenname
+    "Coinbase Pro",
+    
+    # Kurspaare
+    currencyPairs = c("btcusd", "btceur", "btcgbp"),
+    
+    # Dateiname der Quelldatei für ein Kurspaar/Jahr/Monat erzeugen
+    getSourceFileCallback = function(pair, year, month) {
+        return(sprintf("Daten/coinbase/%s/coinbase-tick-%1$s-%2$d-%3$02d.csv.gz",
+                       pair, year, month))
+    },
+    
+    # Rohdaten einlesen und normalisieren
+    parseSourceFile = function(srcFile) {
+        #                             ID         Time         Amount    Price     Type
+        sourceFileColumnClasses <- c("numeric", "character", "double", "double", "numeric")
+        thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
+        thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
+        return(thisDataset)
+    },
+    
+    # Daten aggregieren
     summariseDataCallback = bitcoinSummariseCallback,
     
     # Unter dem Namen "coinbase" abspeichern, ohne Leerzeichen und "Pro"
@@ -201,14 +228,18 @@ readMonthlyDividedDataset(
 )
 
 
-# Kraken
-printf("\n--------- Verarbeite Kraken ---------\n")
+# Kraken ----------------------------------------------------------------------
+# Daten aggregieren
+printf("\n--------- Verarbeite Kraken (Aggregation) ---------\n")
 readMonthlyDividedDataset(
+    
+    # Börsenname
     "Kraken",
     currencyPairs = c("btcusd", "btceur", "btcgbp", "btcjpy",
                       "btccad", "btcchf", "btcaud"),
+    
+    # Dateiname der Quelldatei für ein Kurspaar/Jahr/Monat erzeugen
     getSourceFileCallback = function(pair, year, month) {
-        # Dateinamen der Quelldatei erzeugen
         return(sprintf("Daten/kraken/%s/kraken-tick-%1$s-%2$d-%3$02d.csv.gz",
                        pair, year, month))
     },
@@ -220,5 +251,7 @@ readMonthlyDividedDataset(
         thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
         return(thisDataset)
     },
+    
+    # Daten aggregieren
     summariseDataCallback = bitcoinSummariseCallback
 )

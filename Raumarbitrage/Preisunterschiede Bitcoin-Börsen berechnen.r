@@ -5,6 +5,10 @@
 #' und lösche verarbeitete Daten regelmäßig, um den Bedarf an Arbeitsspeicher
 #' verhältnismäßig gering zu halten und somit eine gute Parallelisierbarkeit
 #' zu ermöglichen.
+#' 
+#' Hinweis: Mit der aktuellen Einstellung wird erst nach 100 Mio. gefundenen
+#' Preis-Paaren eine neue Datei begonnen und Arbeitsspeicher freigegeben.
+#' Damit wird im Maximum bis zu ca. 5 GB Arbeitsspeicher belegt.
 #'
 #' - Erste x Daten beider Börsen laden = "Betrachtungsfenster" initialisieren:
 #'   [t = 0, ..., t = 1h], mindestens jedoch je 10.000 Datenpunkte.
@@ -18,7 +22,7 @@
 #'       - Speicher freigeben: Daten des ersten Betrachtungsfensters entfernen (0...1h)
 #'       - Letzte paar Datenpunkte des vorherigen Betrachtungsfensters behalten, um
 #'         korrekt filtern/vergleichen zu können
-#' - Alle fünf Millionen Datenpunkte: Teilergebnisse in einer eigenen Datei speichern,
+#' - Alle 100 Millionen Datenpunkte: Teilergebnisse in einer eigenen Datei speichern,
 #'   um Arbeitsspeicher freizugeben.
 
 
@@ -557,13 +561,6 @@ compareTwoExchanges <- function(
 
 
 # Berechnung starten ----------------------------------------------------------
-# Nur Testlauf
-#compareTwoExchanges("bitfinex", "bitstamp", "btcusd", as.POSIXct("2013-01-14 00:00:00"))
-
-# Speicher-Warnung anzeigen
-printf("Hinweis: Derzeit wird ab 100 Millionen Ergebnisdatensätzen ")
-printf("eine weitere Datei begonnen und Arbeitsspeicher freigegeben.\n")
-printf("Dies entspricht einem maximalen Bedarf von etwa 4 GB RAM.\n")
 
 # Abarbeitung händisch parallelisieren, da CPU- und RAM-limitiert
 if (FALSE) {

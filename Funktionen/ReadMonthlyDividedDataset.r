@@ -206,7 +206,7 @@ readMonthlyDividedDataset <- function(
                 if (!file.exists(srcFile) && !file.exists(targetFileTick)) {
                     # Es sind neue Daten vorhanden, dieser Datensatz fehlt allerdings.
                     if (newDataFound) {
-                        printf("%s nicht gefunden! Ende.\n")
+                        printf("%s nicht gefunden! Ende.\n", srcFile)
                         stop <- TRUE
                     }
                     next()
