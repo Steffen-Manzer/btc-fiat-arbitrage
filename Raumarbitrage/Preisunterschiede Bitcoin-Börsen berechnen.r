@@ -112,6 +112,7 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
 summariseMultipleTicksAtSameTime <- function(dataset) {
     return(dataset[ 
         j=.(
+            ID = last(ID),
             PriceLow = min(Price), 
             PriceHigh = max(Price), 
             Exchange = last(Exchange),
@@ -214,6 +215,9 @@ saveInterimResult <- function(result, index, exchange_a, exchange_b, currencyPai
     result[, ArbitrageIndex:=PriceHigh/PriceLow]
     
     # Ergebnis speichern
+    if (!dir.exists(dirname(outFile))) {
+        dir.create(dirname(outFile), recursive=TRUE)
+    }
     write_fst(result, outFile, compress=100)
     
     return(invisible(NULL))
@@ -504,35 +508,38 @@ compareTwoExchanges <- function(
             next
         }
         
-        # Finde größte Preisdifferenz
-        if (
-            tick_a$PriceHigh - tick_b$PriceLow >=
-            tick_b$PriceHigh - tick_a$PriceLow
-        ) {
-            PriceHigh <- tick_a$PriceHigh
-            PriceLow <- tick_b$PriceLow
-            ExchangeHigh <- tick_a$Exchange
-            ExchangeLow <- tick_b$Exchange
-        } else {
-            PriceHigh <- tick_b$PriceHigh
-            PriceLow <- tick_a$PriceLow
-            ExchangeHigh <- tick_b$Exchange
-            ExchangeLow <- tick_a$Exchange
-        }
-        
         # Set in Ergebnisvektor speichern
         # Anmerkung:
         # Um Probleme mit appendDT (NA+POSIXct) zu umgehen, wird der Zeitstempel
         # hier temporär in ein double (= Unixzeit inkl. Sekundenbruchteile) umgewandelt
         # und später wieder in POSIXct konvertiert. Dieses Vorgehen ist ohne
         # Informationsverlust und noch immer signifikant schneller als rbind()
-        result <- appendDT(result, list(
-            Time = as.double(tick_b$Time),
-            PriceHigh = PriceHigh,
-            PriceLow = PriceLow,
-            ExchangeHigh = ExchangeHigh,
-            ExchangeLow = ExchangeLow
-        ))
+        #
+        # Finde größte Preisdifferenz
+        if (
+            tick_a$PriceHigh - tick_b$PriceLow >=
+            tick_b$PriceHigh - tick_a$PriceLow
+        ) {
+            result <- appendDT(result, list(
+                Time = as.double(tick_b$Time),
+                PriceHigh = tick_a$PriceHigh,
+                ExchangeHigh = tick_a$Exchange,
+                IDHigh = tick_a$ID,
+                PriceLow = tick_b$PriceLow,
+                ExchangeLow = tick_b$Exchange,
+                IDLow = tick_b$ID
+            ))
+        } else {
+            result <- appendDT(result, list(
+                Time = as.double(tick_b$Time),
+                PriceHigh = tick_b$PriceHigh,
+                ExchangeHigh = tick_b$Exchange,
+                IDHigh = tick_b$ID,
+                PriceLow = tick_a$PriceLow,
+                ExchangeLow = tick_a$Exchange,
+                IDLow = tick_a$ID
+            ))
+        }
         
         # 100 Mio. Datenpunkte im Ergebnisvektor: Zwischenspeichern
         if (nrowDT(result) > 1e8) {

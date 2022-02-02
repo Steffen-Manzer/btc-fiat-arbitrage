@@ -34,6 +34,7 @@ readDataFileChunked <- function(
     
     # Metadaten der Datei lesen
     numRowsInFile <- metadata_fst(dataFile)$nrOfRows
+    columns <- c("ID", "Time", "Price")
     
     # Keine weiteren Daten in dieser Datei: Abbruch
     if (startRow == numRowsInFile) {
@@ -48,7 +49,7 @@ readDataFileChunked <- function(
         
         # Datei einlesen
         # printf.debug("Lese %s von Zeile %d bis %d: ", basename(dataFile), startRow, endRow)
-        newData <- read_fst(dataFile, c("Time", "Price"), startRow, endRow, as.data.table=TRUE)
+        newData <- read_fst(dataFile, columns, startRow, endRow, as.data.table=TRUE)
         newData[, RowNum:=startRow:endRow]
         
         # Daten anhängen
@@ -77,7 +78,9 @@ readDataFileChunked <- function(
             while (endRow < numRowsInFile) {
                 
                 endRow <- endRow + 1L
-                oneMoreRow <- read_fst(dataFile, c("Time", "Price"), endRow, endRow, as.data.table=TRUE)
+                oneMoreRow <- read_fst(
+                    dataFile, columns, endRow, endRow, as.data.table=TRUE
+                )
                 
                 # Nächster Tick ist nicht in der selben Sekunde:
                 # Einlesen abgeschlossen.
@@ -86,7 +89,6 @@ readDataFileChunked <- function(
                 }
                 
                 # Nächster Tick ist in der exakt selben Sekunde: anhängen.
-                # printf.debug("Ein weiterer Datensatz zum exakt selben Zeitpunkt hinzugefügt.\n")
                 oneMoreRow[, RowNum:=endRow]
                 result <- rbindlist(list(result, oneMoreRow), use.names=TRUE)
             }
