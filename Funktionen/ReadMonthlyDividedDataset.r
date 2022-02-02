@@ -230,6 +230,11 @@ readMonthlyDividedDataset <- function(
                     thisDataset <- parseSourceFileCallback(srcFile)
                     printf("(.csv) ")
                     
+                    # Gültigkeit der Daten grob überprüfen
+                    if (!is.null(thisDataset$ID)) {
+                        stopifnot(all(is.numeric(thisDataset$ID)))
+                    }
+                    
                     # Tickdaten nach Datum sortieren
                     # Nicht alle Datensätze sind exakt nach Zeit sortiert, beispielsweise
                     # für Coinbase Pro kann es Abweichungen auf ms-Basis geben.
