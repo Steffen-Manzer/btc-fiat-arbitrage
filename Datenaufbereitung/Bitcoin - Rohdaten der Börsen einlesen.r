@@ -10,6 +10,7 @@ source("Funktionen/FormatCurrencyPair.r")
 library("data.table") # fread
 library("fasttime")
 library("lubridate") # floor_date
+library("stringr") # str_match
 library("tictoc")
 
 
@@ -229,27 +230,115 @@ readMonthlyDividedDataset(
 
 
 # Kraken ----------------------------------------------------------------------
+
+krakenCurrencyPairs <- c("btcusd", "btceur", "btcgbp", "btcjpy",
+                         "btccad", "btcchf", "btcaud")
+
+# Schritt 1:
+# Tickdaten aus CSV extrahieren und um interne ID ergänzen
+printf("\n--------- Verarbeite Kraken (CSV) ---------\n")
+for (pair in krakenCurrencyPairs) {
+    printf("----- Kraken %s -----\n", format.currencyPair(pair))
+    
+    # Zielverzeichnis
+    targetDirTick <- sprintf("Cache/kraken/%s/tick", pair)
+    lastFile <- last(list.files(targetDirTick, pattern = "\\.fst$", full.names = TRUE))
+    
+    if (length(lastFile) == 1L) {
+        
+        # Daten bereits teilweise eingelesen, lese letzte ID
+        meta <- metadata_fst(lastFile)
+        ID <- read_fst(
+            lastFile, 
+            columns = c("ID"), 
+            from = meta$nrOfRows,
+            to = meta$nrOfRows,
+            as.data.table = TRUE
+        )$ID
+        
+        printf("Daten bereits vorhanden, ID: %d\n", ID)
+        
+    } else {
+        
+        # Daten noch nicht eingelesen
+        if (!dir.exists(targetDirTick)) {
+            dir.create(targetDirTick, recursive=TRUE)
+        }
+        ID <- 1L
+        
+    }
+    
+    sourceFiles <- list.files(
+        sprintf("Daten/kraken/%s", pair), 
+        pattern = "\\.csv\\.gz$",
+        full.names = TRUE
+    )
+    
+    for (sourceFile in sourceFiles) {
+        
+        printf("Lese %s...", sourceFile)
+        ym <- str_match(sourceFile, "-(\\d{4})-(\\d{2})\\.csv\\.gz$")
+        
+        # Zieldatei
+        targetFile <- sprintf("Cache/kraken/%1$s/tick/kraken-%1$s-tick-%2$s-%3$s.fst",
+                              pair, ym[1,2], ym[1,3])
+        
+        # Datensatz existiert
+        if (file.exists(targetFile)) {
+            printf(" Bereits eingelesen.\n")
+            next
+        }
+        
+        # Datei einlesen
+        dataset <- fread(
+            file = sourceFile,
+            #              Time         Amount    Price     Type         Limit
+            colClasses = c("character", "double", "double", "character", "character"),
+            showProgress = FALSE
+        )
+        
+        # Zeit einlesen
+        dataset[,Time:=fastPOSIXct(Time, tz="UTC")]
+        
+        # Sortieren
+        setorder(dataset, Time)
+        
+        # ID ergänzen
+        dataset[,ID:=ID:(ID+nrow(dataset)-1L)]
+        
+        # ID an den Anfang verschieben
+        setcolorder(dataset, neworder="ID")
+        
+        # Speichern
+        write_fst(dataset, targetFile, compress=100)
+        
+        ID <- ID + nrow(dataset)
+        printf("\n")
+    }
+}
+
+# Schritt 2:
 # Daten aggregieren
 printf("\n--------- Verarbeite Kraken (Aggregation) ---------\n")
 readMonthlyDividedDataset(
     
     # Börsenname
     "Kraken",
-    currencyPairs = c("btcusd", "btceur", "btcgbp", "btcjpy",
-                      "btccad", "btcchf", "btcaud"),
+    
+    # Kurspaare
+    currencyPairs = krakenCurrencyPairs,
     
     # Dateiname der Quelldatei für ein Kurspaar/Jahr/Monat erzeugen
     getSourceFileCallback = function(pair, year, month) {
         return(sprintf("Daten/kraken/%s/kraken-tick-%1$s-%2$d-%3$02d.csv.gz",
                        pair, year, month))
     },
+    
+    # Rohdaten einlesen und normalisieren - hier nicht nötig:
+    # Alle Tickdaten liegen nach Schritt 1 bereits als präparierte .fst vor,
+    # die um eine ID ergänzt wurde. Hier niemals CSV einlesen!
     parseSourceFile = function(srcFile) {
-        # Daten der angegebenen Quelldatei einlesen
-        #                            Time         Amount    Price     Type         Limit
-        sourceFileColumnClasses <- c("character", "double", "double", "character", "character")
-        thisDataset <- fread(srcFile, colClasses=sourceFileColumnClasses, showProgress=FALSE)
-        thisDataset[,Time:=fastPOSIXct(Time, tz="UTC")]
-        return(thisDataset)
+        stop(sprintf("Kraken-CSV (%s) nie direkt einlesen!", srcFile))
     },
     
     # Daten aggregieren
