@@ -229,12 +229,14 @@ calculateIntervals <- function(timeBoundaries, breakpoints)
 #' @param arbitrageIndex `data.table` mit den aggr. Preisen der verschiedenen Börsen
 #' @param latexOutPath Ausgabepfad als LaTeX-Datei
 #' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
+#' @param removeGaps Datenlücken nicht interpolieren/zeichnen
 #' @param plotType Plot-Typ: line oder point
 #' @return Der Plot (unsichtbar)
 plotAggregatedArbitrageIndexOverTime <- function(
     arbitrageIndex,
     latexOutPath = NULL,
     breakpoints = NULL,
+    removeGaps = TRUE,
     plotType = "line"
 ) {
     # Parameter validieren
@@ -309,7 +311,13 @@ plotAggregatedArbitrageIndexOverTime <- function(
         
         # Liniengrafik. Nützlich, wenn Daten nahezu kontinuierlich vorliegen
         # Bestehende Lücken > 2 Tage dennoch auslassen und nicht interpolieren
-        gapGroups <- c(0, cumsum(diff(arbitrageIndex$Time) > 2))
+        # https://stackoverflow.com/a/21529560
+        # TODO Variabel gestalten (nicht fix 2 Tage)?
+        if (removeGaps) {
+            gapGroups <- c(0, cumsum(diff(arbitrageIndex$Time) > 2))
+        } else {
+            gapGroups <- 0
+        }
         
         plot <- plot +
             # Q1/Q3 zeichnen
@@ -432,24 +440,24 @@ plotArbitrageIndexByExchange <- function(
         )))
     }
     
-    # Globale Statistiken
-    totalSummary <- summary(comparablePrices$ArbitrageIndex)
-    iqr <- totalSummary[[5]] - totalSummary[[2]]
-    boxplot_stats <- rbindlist(list(boxplot_stats, data.table(
-        Exchange = "Gesamt",
-        ColorGroup = "Gesamt",
-        min = max(totalSummary[[1]], totalSummary[[2]] - 1.5*iqr),
-        lower = totalSummary[[2]],
-        middle = totalSummary[[3]],
-        upper = totalSummary[[5]],
-        max = min(totalSummary[[6]], totalSummary[[5]] + 1.5*iqr)
-    )))
-    boxplot_stats[,
-                  Exchange:=factor(
-                      Exchange,
-                      levels=c("Gesamt", exchangeNames |> unlist() |> unname())
-                  )
-    ]
+    # Globale Statistiken: Nur dann, wenn mehr als eine Börse vorhanden ist
+    if (nrow(boxplot_stats) > 1L) {
+        totalSummary <- summary(comparablePrices$ArbitrageIndex)
+        iqr <- totalSummary[[5]] - totalSummary[[2]]
+        boxplot_stats <- rbindlist(list(boxplot_stats, data.table(
+            Exchange = "Gesamt",
+            ColorGroup = "Gesamt",
+            min = max(totalSummary[[1]], totalSummary[[2]] - 1.5*iqr),
+            lower = totalSummary[[2]],
+            middle = totalSummary[[3]],
+            upper = totalSummary[[5]],
+            max = min(totalSummary[[6]], totalSummary[[5]] + 1.5*iqr)
+        )))
+        boxplot_stats[,Exchange:=factor(
+            Exchange,
+            levels=c("Gesamt", exchangeNames |> unlist() |> unname())
+        )]
+    }
     
     # Bedeutung der Werte:
     # ymin = "...", # Kleinster Wert, der nicht Ausreißer ist = (lower - 1.5*IQR)
@@ -606,22 +614,24 @@ plotArbitrageIndexByExchangePair <- function(
         }
     }
     
-    # Globale Statistiken
-    totalSummary <- summary(comparablePrices$ArbitrageIndex)
-    iqr <- totalSummary[[5]] - totalSummary[[2]]
-    boxplot_stats <- rbindlist(list(boxplot_stats, data.table(
-        ExchangePair = "Gesamt",
-        ColorGroup = "Gesamt",
-        min = max(totalSummary[[1]], totalSummary[[2]] - 1.5*iqr),
-        lower = totalSummary[[2]],
-        middle = totalSummary[[3]],
-        upper = totalSummary[[5]],
-        max = min(totalSummary[[6]], totalSummary[[5]] + 1.5*iqr)
-    )))
-    boxplot_stats[,ExchangePair:=factor(
-        ExchangePair,
-        levels=c("Gesamt", exchange_pairs)
-    )]
+    # Globale Statistiken nur dann, wenn mehr als ein Börsenpaar vorhanden ist
+    if (nrow(boxplot_stats) > 1L) {
+        totalSummary <- summary(comparablePrices$ArbitrageIndex)
+        iqr <- totalSummary[[5]] - totalSummary[[2]]
+        boxplot_stats <- rbindlist(list(boxplot_stats, data.table(
+            ExchangePair = "Gesamt",
+            ColorGroup = "Gesamt",
+            min = max(totalSummary[[1]], totalSummary[[2]] - 1.5*iqr),
+            lower = totalSummary[[2]],
+            middle = totalSummary[[3]],
+            upper = totalSummary[[5]],
+            max = min(totalSummary[[6]], totalSummary[[5]] + 1.5*iqr)
+        )))
+        boxplot_stats[,ExchangePair:=factor(
+            ExchangePair,
+            levels=c("Gesamt", exchange_pairs)
+        )]
+    }
     
     # Bedeutung der Werte:
     # ymin = "...", # Kleinster Wert, der nicht Ausreißer ist = (lower - 1.5*IQR)
@@ -744,56 +754,80 @@ summariseDatasetAsTable <- function(
     
     tableContent <- ""
     
-    # Jede Börse durchgehen
-    for (i in seq_along(exchangeNames)) {
-        exchange <- names(exchangeNames)[[i]]
-        numRows <- nrow(dataset[ExchangeHigh == exchange | ExchangeLow == exchange])
-        if (numRows > 0L) {
-            
-            # Gesamtüberblick für diese Börse
-            tableContent <- paste0(
-                tableContent,
-                sprintf("        \\textbf{%s} &\n", exchangeNames[[i]]),
-                createRow(
-                    numRows, 
-                    dataset[ExchangeHigh == exchange | ExchangeLow == exchange]
-                )
-            )
-            
-            # Paarweise mit anderen Börsen
-            for (j in seq_along(exchangeNames)) {
-                if (i == j) {
-                    next
-                }
-                otherExchange <- names(exchangeNames)[[j]]
-                numRows_withOtherExchange <- nrow(dataset[
-                    (ExchangeHigh == exchange & ExchangeLow == otherExchange) |
-                    (ExchangeHigh == otherExchange & ExchangeLow == exchange)
-                ])
-                if (numRows_withOtherExchange > 0L) {
-                    tableContent <- paste0(
-                        tableContent,
-                        sprintf("        \\qquad davon mit %s &\n", exchangeNames[[j]]),
-                        createRow(
-                            numRows_withOtherExchange, 
-                            dataset[
-                                (ExchangeHigh == exchange & ExchangeLow == otherExchange) |
-                                (ExchangeHigh == otherExchange & ExchangeLow == exchange)
-                            ]
-                        )
+    # Anzahl Börsenpaare
+    exchangePairsInThisSubset <- unique(
+        c(
+            unique(dataset$ExchangeHigh),
+            unique(dataset$ExchangeLow)
+        )
+    )
+    
+    if (length(exchangePairsInThisSubset) == 2L) {
+        
+        # Nur ein Börsenpaar: Kompakte Statistiken für gesamten Datensatz
+        exchangePairsInThisSubset <- sort(exchangePairsInThisSubset)
+        exchange_1 <- exchangePairsInThisSubset[1]
+        exchange_2 <- exchangePairsInThisSubset[2]
+        tableContent <- paste0(
+            tableContent,
+            sprintf("        %s mit %s &\n",
+                    exchangeNames[[exchange_1]], exchangeNames[[exchange_2]]),
+            createRow(numRowsTotal, dataset)
+        )
+        
+    } else {
+        
+        # Jede Börse durchgehen + Gesamtstatistik erstellen
+        for (i in seq_along(exchangeNames)) {
+            exchange <- names(exchangeNames)[[i]]
+            numRows <- nrow(dataset[ExchangeHigh == exchange | ExchangeLow == exchange])
+            if (numRows > 0L) {
+                
+                # Gesamtüberblick für diese Börse
+                tableContent <- paste0(
+                    tableContent,
+                    sprintf("        \\textbf{%s} &\n", exchangeNames[[i]]),
+                    createRow(
+                        numRows, 
+                        dataset[ExchangeHigh == exchange | ExchangeLow == exchange]
                     )
+                )
+                
+                # Paarweise mit anderen Börsen
+                for (j in seq_along(exchangeNames)) {
+                    if (i == j) {
+                        next
+                    }
+                    otherExchange <- names(exchangeNames)[[j]]
+                    numRows_withOtherExchange <- nrow(dataset[
+                        (ExchangeHigh == exchange & ExchangeLow == otherExchange) |
+                        (ExchangeHigh == otherExchange & ExchangeLow == exchange)
+                    ])
+                    if (numRows_withOtherExchange > 0L) {
+                        tableContent <- paste0(
+                            tableContent,
+                            sprintf("        \\qquad davon mit %s &\n", exchangeNames[[j]]),
+                            createRow(
+                                numRows_withOtherExchange, 
+                                dataset[
+                                    (ExchangeHigh == exchange & ExchangeLow == otherExchange) |
+                                    (ExchangeHigh == otherExchange & ExchangeLow == exchange)
+                                ]
+                            )
+                        )
+                    }
                 }
             }
         }
+        
+        # Gesamtdaten
+        tableContent <- paste0(
+            tableContent,
+            "        \\tablebody\n\n",
+            "        Gesamt &\n",
+            createRow(nrow(dataset), dataset)
+        )
     }
-    
-    # Gesamtdaten
-    tableContent <- paste0(
-        tableContent,
-        "        \\tablebody\n\n",
-        "        Gesamt &\n",
-        createRow(nrow(dataset), dataset)
-    )
     
     # Tabelle einfach ausgeben
     if (is.null(outFile)) {
@@ -860,6 +894,7 @@ analyseArbitrageIndex <- function(pair, breakpoints)
     plotAggregatedArbitrageIndexOverTime(
         arbitrageIndex,
         breakpoints = breakpoints,
+        removeGaps = FALSE, # Lücken werden auf 1d-Basis entfernt, daher hier nicht
         latexOutPath = sprintf(
             "%s/Abbildungen/Empirie_Raumarbitrage_%s_Uebersicht.tex",
             latexOutPath, toupper(pair)
@@ -906,7 +941,7 @@ analyseArbitrageIndex <- function(pair, breakpoints)
             interval = segmentInterval
         )
         
-        if (nrow(arbitrageIndex) > 200) {
+        if (nrow(arbitrageIndex) > 50L) {
             
             # Variante 1: Aggregierte Liniengrafik: Nur sinnvoll, wenn keine/wenige Lücken
             plotAggregatedArbitrageIndexOverTime(
