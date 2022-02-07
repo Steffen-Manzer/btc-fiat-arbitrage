@@ -37,6 +37,12 @@ library("tictoc")
 
 # Konfiguration ---------------------------------------------------------------
 plotAsLaTeX <- FALSE
+exchangeNames <- list(
+    "bitfinex" = "Bitfinex",
+    "bitstamp" = "Bitstamp",
+    "coinbase" = "Coinbase Pro",
+    "kraken" = "Kraken"
+)
 
 #' Tabellen-Template mit `{tableContent}`, `{tableCaption` und `{tableLabel}` 
 #' als Platzhalter
@@ -46,6 +52,104 @@ summaryTableTemplateFile <-
 
 
 # Hilfsfunktionen -------------------------------------------------------------
+
+#' Lade alle vergleichbaren Preise für ein Kurspaar nach Börse
+#' 
+#' @param currencyPair Kurspaar (z.B. BTCUSD)
+#' @param exchange Börse (z.B. bitfinex)
+#' @return `data.table` mit den Preisunterschieden
+loadComparablePricesByCurrencyPairAndExchange <- function(currencyPair, exchange)
+{
+    stop("Unbenutzt?")
+    
+    # Parameter validieren
+    stopifnot(
+        is.character(currencyPair), length(currencyPair) == 1L,
+        is.character(exchange), length(exchange) == 1L,
+        nchar(currencyPair) == 6L
+    )
+    
+    # Nur jeweils erste Datei einlesen, siehe oben.
+    sourceFiles <- list.files(
+        "Cache/Raumarbitrage",
+        pattern=sprintf("^%s-.*%s.*-1\\.fst$", currencyPair, exchange),
+        full.names = TRUE
+    )
+    
+    # Variablen initialisieren / leeren
+    combinedPriceDifferences <- NULL
+    
+    # Alle Datensätze einlesen
+    for (i in seq_along(sourceFiles)) {
+        
+        # Dateiname bestimmen
+        sourceFile <- sourceFiles[[i]]
+        
+        # Datei lesen
+        priceDifferences <- read_fst(sourceFile, as.data.table=TRUE)
+        
+        # Statistiken ausgeben
+        if (exists("DEBUG_PRINT") && isTRUE(DEBUG_PRINT)) {
+            printf.debug(
+                "%s (%s) mit %s Datensätzen von %s bis %s.\n", 
+                basename(sourceFile),
+                format(object.size(priceDifferences), units="auto", standard="SI"),
+                format.number(nrow(priceDifferences)),
+                format(first(priceDifferences$Time), "%d.%m.%Y"),
+                format(last(priceDifferences$Time), "%d.%m.%Y")
+            )
+            maxIndexValue <- priceDifferences[which.max(ArbitrageIndex)]
+            with(maxIndexValue, printf.debug(
+                "Höchstwert: %s (%s <-> %s) am %s\n",
+                format.number(ArbitrageIndex),
+                format.money(PriceLow),
+                format.money(PriceHigh),
+                formatPOSIXctWithFractionalSeconds(Time, "%d.%m.%Y %H:%M:%OS")
+            ))
+        }
+        
+        if (i > 1L) {
+            # Ergebnisse anhängen
+            combinedPriceDifferences <- rbindlist(
+                list(combinedPriceDifferences, priceDifferences)
+            )
+        } else {
+            # Erste Datei
+            combinedPriceDifferences <- priceDifferences
+        }
+        
+        # Speicher freigeben
+        rm(priceDifferences)
+        gc()
+    }
+    
+    # Sortieren
+    setorder(combinedPriceDifferences, Time)
+    
+    # Statistiken ausgeben
+    if (exists("DEBUG_PRINT") && isTRUE(DEBUG_PRINT)) {
+        printf.debug(
+            "\nKombination aller Daten ergab %s Datensätze (%s) von %s bis %s.\n",
+            format.number(nrow(combinedPriceDifferences)),
+            format(object.size(combinedPriceDifferences), units="auto", standard="SI"),
+            format(first(combinedPriceDifferences$Time), "%d.%m.%Y"),
+            format(last(combinedPriceDifferences$Time), "%d.%m.%Y")
+        )
+        maxIndexValue <- combinedPriceDifferences[which.max(ArbitrageIndex)]
+        with(maxIndexValue, printf.debug(
+            "Höchstwert: %s (%s <-> %s) am %s\n",
+            format.number(ArbitrageIndex),
+            format.money(PriceLow),
+            format.money(PriceHigh),
+            formatPOSIXctWithFractionalSeconds(Time, "%d.%m.%Y %H:%M:%OS")
+        ))
+    }
+    
+    combinedPriceDifferences[,Exchange:=exchangeNames[[exchange]] ]
+    
+    return(combinedPriceDifferences)
+}
+
 
 #' Lade alle vergleichbaren Preise für ein Kurspaar
 #' 
@@ -72,17 +176,14 @@ loadComparablePricesByCurrencyPair <- function(currencyPair)
     # Alle Datensätze einlesen
     for (i in seq_along(sourceFiles)) {
         
-        # Dateiname und Kurspaar bestimmen
+        # Dateiname bestimmen
         sourceFile <- sourceFiles[[i]]
-        exchangePair <- basename(sourceFile) |>
-            str_replace(fixed(paste0(currencyPair, "-")), "") |>
-            str_replace(fixed("-1.fst"), "")
         
         # Datei lesen
         priceDifferences <- read_fst(sourceFile, as.data.table=TRUE)
-        priceDifferences[,ExchangePair:=exchangePair]
         
-        numRows <- nrow(priceDifferences)
+        # Arbitrageindex berechnen
+        priceDifferences[,ArbitrageIndex:=PriceHigh/PriceLow]
         
         # Statistiken ausgeben
         if (exists("DEBUG_PRINT") && isTRUE(DEBUG_PRINT)) {
@@ -90,7 +191,7 @@ loadComparablePricesByCurrencyPair <- function(currencyPair)
                 "%s (%s) mit %s Datensätzen von %s bis %s.\n", 
                 basename(sourceFile),
                 format(object.size(priceDifferences), units="auto", standard="SI"),
-                format.number(numRows),
+                format.number(nrow(priceDifferences)),
                 format(first(priceDifferences$Time), "%d.%m.%Y"),
                 format(last(priceDifferences$Time), "%d.%m.%Y")
             )
@@ -358,14 +459,13 @@ plotAggregatedArbitrageIndexOverTime <- function(
 #' @param comparablePrices `data.table` mit den Preisen der verschiedenen Börsen
 #' @param latexOutPath Ausgabepfad als LaTeX-Datei
 #' @return Der Plot (unsichtbar)
-plotArbitrageIndexByExchangePair <- function(
+plotArbitrageIndexByExchange <- function(
     comparablePrices,
     latexOutPath = NULL
 ) {
     # Parameter validieren
     stopifnot(
         is.data.table(comparablePrices), nrow(comparablePrices) > 0L,
-        !is.null(comparablePrices$ExchangePair),
         is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L)
     )
     
@@ -386,7 +486,7 @@ plotArbitrageIndexByExchangePair <- function(
     }
     
     # Achsenbeschriftung
-    plotXLab <- "Börsenpaar"
+    plotXLab <- "Börse"
     plotYLab <- "Arbitrageindex"
     
     # Zeichnen
@@ -404,42 +504,47 @@ plotArbitrageIndexByExchangePair <- function(
     # Das grafische Ergebnis ist identisch, da ohnehin 
     # keine Ausreißer angezeigt werden.
     boxplot_stats <- data.table()
-    for (grp in unique(comparablePrices$ExchangePair)) {
-        
-        # Unschöner Hack.
-        pairName <- grp |>
-            str_replace(fixed("-"), ",\n") |>
-            str_replace(fixed("coinbase"), "Coinbase Pro") |>
-            str_replace_all(fixed("bit"), "Bit") |>
-            str_replace(fixed("kraken"), "Kraken")
-        
-        pairSummary <- summary(comparablePrices[ExchangePair==grp,ArbitrageIndex])
-        iqr <- pairSummary[[5]] - pairSummary[[2]]
+    for (i in seq_along(exchangeNames)) {
+        exchange <- names(exchangeNames)[[i]]
+        exchangeSummary <- summary(
+            comparablePrices[
+                ExchangeHigh == exchange | ExchangeLow == exchange,
+                ArbitrageIndex
+            ]
+        )
+        if (is.na(exchangeSummary[[1]])) {
+            next
+        }
+        iqr <- exchangeSummary[[5]] - exchangeSummary[[2]]
         boxplot_stats <- rbindlist(list(boxplot_stats, data.table(
-            ExchangePair = pairName,
-            ColorGroup = "Börsenpaar",
-            min = max(pairSummary[[1]], pairSummary[[2]] - 1.5*iqr),
-            lower = pairSummary[[2]],
-            middle = pairSummary[[3]],
-            upper = pairSummary[[5]],
-            max = min(pairSummary[[6]], pairSummary[[5]] + 1.5*iqr)
+            Exchange = exchangeNames[[i]],
+            ColorGroup = "Börse",
+            min = max(exchangeSummary[[1]], exchangeSummary[[2]] - 1.5*iqr),
+            lower = exchangeSummary[[2]],
+            middle = exchangeSummary[[3]],
+            upper = exchangeSummary[[5]],
+            max = min(exchangeSummary[[6]], exchangeSummary[[5]] + 1.5*iqr)
         )))
     }
     
     # Globale Statistiken
-    if (length(unique(comparablePrices$ExchangePair)) > 1L) {
-        gSummary <- summary(comparablePrices$ArbitrageIndex)
-        iqr <- gSummary[[5]] - gSummary[[2]]
-        boxplot_stats <- rbindlist(list(boxplot_stats, data.table(
-            ExchangePair = "Gesamt",
-            ColorGroup = "Gesamt",
-            min = max(gSummary[[1]], gSummary[[2]] - 1.5*iqr),
-            lower = gSummary[[2]],
-            middle = gSummary[[3]],
-            upper = gSummary[[5]],
-            max = min(gSummary[[6]], gSummary[[5]] + 1.5*iqr)
-        )))
-    }
+    totalSummary <- summary(comparablePrices$ArbitrageIndex)
+    iqr <- totalSummary[[5]] - totalSummary[[2]]
+    boxplot_stats <- rbindlist(list(boxplot_stats, data.table(
+        Exchange = "Gesamt",
+        ColorGroup = "Gesamt",
+        min = max(totalSummary[[1]], totalSummary[[2]] - 1.5*iqr),
+        lower = totalSummary[[2]],
+        middle = totalSummary[[3]],
+        upper = totalSummary[[5]],
+        max = min(totalSummary[[6]], totalSummary[[5]] + 1.5*iqr)
+    )))
+    boxplot_stats[,
+        Exchange:=factor(
+          Exchange,
+          levels=c("Gesamt", exchangeNames |> unlist() |> unname())
+        )
+    ]
     
     # Bedeutung der Werte:
     # ymin = "...", # Kleinster Wert, der nicht Ausreißer ist = (lower - 1.5*IQR)
@@ -448,13 +553,13 @@ plotArbitrageIndexByExchangePair <- function(
     # upper = "...", # Obere Grenze der Box = 75%-Quartil
     # ymax = "...", # Größter Wert, der nicht Ausreißer ist (= upper + 1.5*IQR)
     
-    # Boxplot, gruppiert nach Börsenpaar
+    # Boxplot, gruppiert nach Börse
     plot <- ggplot(boxplot_stats) +
         
         # Horizontale Linien an den Whiskern
         geom_errorbar(
-            aes(x = ExchangePair,
-                group = ExchangePair,
+            aes(x = Exchange,
+                group = Exchange,
                 color = ColorGroup,
                 ymin = min,
                 ymax = max
@@ -466,8 +571,8 @@ plotArbitrageIndexByExchangePair <- function(
         # Boxplot
         geom_boxplot(
             aes(
-                x = ExchangePair,
-                group = ExchangePair,
+                x = Exchange,
+                group = Exchange,
                 color = ColorGroup,
                 ymin = min,
                 lower = lower,
@@ -562,93 +667,56 @@ summariseDatasetAsTable <- function(
     
     tableContent <- ""
     
-    # Bitfinex - Bitstamp
-    numRows <- nrow(dataset[ExchangePair=="bitfinex-bitstamp"])
-    if (numRows > 0L) {
-        tableContent <- paste0(
-            tableContent,
-            "        Bitfinex & Bitstamp &\n",
-            createRow(
-                numRows,
-                dataset[ExchangePair=="bitfinex-bitstamp"]
+    # Jede Börse durchgehen
+    for (i in seq_along(exchangeNames)) {
+        exchange <- names(exchangeNames)[[i]]
+        numRows <- nrow(dataset[ExchangeHigh==exchange|ExchangeLow==exchange])
+        if (numRows > 0L) {
+            
+            # Gesamtüberblick für diese Börse
+            tableContent <- paste0(
+                tableContent,
+                sprintf("        \\textbf{%s} &\n", exchangeNames[[i]]),
+                createRow(
+                    numRows, 
+                    dataset[ExchangeHigh==exchange|ExchangeLow==exchange]
+                )
             )
-        )
+            
+            # Paarweise mit anderen Börsen
+            for (j in seq_along(exchangeNames)) {
+                if (i == j) {
+                    next
+                }
+                otherExchange <- names(exchangeNames)[[j]]
+                numRows_withOtherExchange <- nrow(dataset[
+                    (ExchangeHigh == exchange & ExchangeLow == otherExchange) |
+                    (ExchangeHigh == otherExchange & ExchangeLow == exchange)
+                ])
+                if (numRows_withOtherExchange > 0L) {
+                    tableContent <- paste0(
+                        tableContent,
+                        sprintf("        \\qquad davon mit %s &\n", exchangeNames[[j]]),
+                        createRow(
+                            numRows_withOtherExchange, 
+                            dataset[
+                                (ExchangeHigh == exchange & ExchangeLow == otherExchange) |
+                                (ExchangeHigh == otherExchange & ExchangeLow == exchange)
+                            ]
+                        )
+                    )
+                }
+            }
+        }
     }
     
-    # Bitfinex - Coinbase Pro
-    numRows <- nrow(dataset[ExchangePair=="bitfinex-coinbase"])
-    if (numRows > 0L) {
-        tableContent <- paste0(
-            tableContent,
-            "        Bitfinex & Coinbase Pro &\n",
-            createRow(
-                numRows,
-                dataset[ExchangePair=="bitfinex-coinbase"]
-            )
-        )
-    }
-    
-    # Bitfinex - Kraken
-    numRows <- nrow(dataset[ExchangePair=="bitfinex-kraken"])
-    if (numRows > 0L) {
-        tableContent <- paste0(
-            tableContent,
-            "        Bitfinex & Kraken &\n",
-            createRow(
-                numRows,
-                dataset[ExchangePair=="bitfinex-kraken"]
-            )
-        )
-    }
-    
-    # Bitstamp - Coinbase Pro
-    numRows <- nrow(dataset[ExchangePair=="bitstamp-coinbase"])
-    if (numRows > 0L) {
-        tableContent <- paste0(
-            tableContent,
-            "        Bitstamp & Coinbase Pro &\n",
-            createRow(
-                numRows,
-                dataset[ExchangePair=="bitstamp-coinbase"]
-            )
-        )
-    }
-    
-    # Bitstamp - Kraken
-    numRows <- nrow(dataset[ExchangePair=="bitstamp-kraken"])
-    if (numRows > 0L) {
-        tableContent <- paste0(
-            tableContent,
-            "        Bitstamp & Kraken &\n",
-            createRow(
-                numRows,
-                dataset[ExchangePair=="bitstamp-kraken"]
-            )
-        )
-    }
-    
-    # Coinbase Pro - Kraken
-    numRows <- nrow(dataset[ExchangePair=="coinbase-kraken"])
-    if (numRows > 0L) {
-        tableContent <- paste0(
-            tableContent,
-            "        Coinbase Pro & Kraken &\n",
-            createRow(
-                numRows,
-                dataset[ExchangePair=="coinbase-kraken"]
-            )
-        )
-    }
-    
-    # Gesamtdaten, falls mehr als ein Börsenpaar
-    if (length(unique(dataset$ExchangePair)) > 1L) {
-        tableContent <- paste0(
-            tableContent,
-            "        \\tablebody\n\n",
-            "        \\multicolumn{2}{@{}l}{Gesamt} &\n",
-            createRow(nrow(dataset), dataset)
-        )
-    }
+    # Gesamtdaten
+    tableContent <- paste0(
+        tableContent,
+        "        \\tablebody\n\n",
+        "        Gesamt &\n",
+        createRow(nrow(dataset), dataset)
+    )
     
     # Tabelle einfach ausgeben
     if (is.null(outFile)) {
@@ -684,8 +752,24 @@ analyseArbitrageIndex <- function(pair, breakpoints)
     # Daten laden
     comparablePrices <- loadComparablePricesByCurrencyPair(pair)
     
+    # Doppelte Tauschmöglichkeiten zum selben Zeitpunkt entfernen
+    # Dies mindert das "Problem" der doppelten Erfassung des selben Ticks
+    # TODO Prüfen!!!
+    comparablePrices <- comparablePrices[
+        j=.(
+            IDHigh = IDHigh[which.max(ArbitrageIndex)],
+            PriceHigh = PriceHigh[which.max(ArbitrageIndex)],
+            ExchangeHigh = ExchangeHigh[which.max(ArbitrageIndex)],
+            IDLow = IDLow[which.max(ArbitrageIndex)],
+            PriceLow = PriceLow[which.max(ArbitrageIndex)],
+            ExchangeLow = ExchangeLow[which.max(ArbitrageIndex)],
+            ArbitrageIndex = min(ArbitrageIndex)
+        ),
+        by = Time
+    ]
+    
     # Boxplot für gesamten Zeitraum erstellen
-    plotArbitrageIndexByExchangePair(
+    plotArbitrageIndexByExchange(
         comparablePrices,
         latexOutPath = sprintf(
             "%s/Abbildungen/Empirie_Raumarbitrage_%s_UebersichtBoxplot.tex",
@@ -792,7 +876,7 @@ analyseArbitrageIndex <- function(pair, breakpoints)
         )
         
         # Boxplot
-        plotArbitrageIndexByExchangePair(
+        plotArbitrageIndexByExchange(
             comparablePrices[Time %between% segmentInterval],
             latexOutPath = sprintf(
                 "%s/Abbildungen/Empirie_Raumarbitrage_%s_UebersichtBoxplot_%d.tex",
@@ -815,26 +899,26 @@ if (FALSE) {
         pair = "btcusd",
         breakpoints = 
             c("2014-03-01", "2017-01-01", "2018-06-01", "2019-07-01", "2020-05-01")
-    ) ; gc()
+    ) ; invisible(gc())
     
     # BTC/EUR
     # Datenmenge: ~4,5 GB
     analyseArbitrageIndex(
         pair = "btceur",
         breakpoints = c("2016-04-01", "2017-01-01", "2018-03-01")
-    ) ; gc()
+    ) ; invisible(gc())
     
     # BTC/GBP
     # Datenmenge: ~450 MB
     analyseArbitrageIndex(
         pair = "btcgbp",
         breakpoints = c("2016-01-01", "2017-06-01", "2018-04-01", "2019-06-01")
-    ) ; gc()
+    ) ; invisible(gc())
     
     # BTC/JPY
     # Datenmenge: < 10 MB
     analyseArbitrageIndex(
         pair = "btcjpy",
         breakpoints = c("2019-06-01", "2019-11-01")
-    ) ; gc()
+    ) ; invisible(gc())
 }

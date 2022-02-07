@@ -498,7 +498,7 @@ compareTwoExchanges <- function(
             loadNewDataAtRowNumber <- numRows - 5L
         }
         
-        # Aktuelle und nächste Zeile speichern
+        # Aktuelle und nächste Zeile vergleichen
         tick_a <- dataset_ab[currentRow]
         tick_b <- dataset_ab[nextRow]
         
@@ -511,6 +511,24 @@ compareTwoExchanges <- function(
         if (difftime(tick_b$Time, tick_a$Time, units="secs") > comparisonThreshold) {
             next
         }
+        
+        # TODO Bei doppeltem/häufigerem Wechsel der Börse nur einen Tick speichern?
+        # Beispiel:
+        # Börse     ID  Preis  Verglichen in Durchlauf Nummer...
+        #     A      1     10  1
+        #     B     10     11  1 + 2
+        #     A      2      9      2 + 3
+        #     B     11     12          3 + 4
+        #     A      3      8              4 + 5
+        #     B     12     13                  5 ...
+        #
+        # Ergäbe:
+        # Durchlauf  IDHigh  PriceHigh  ExchangeHigh  IDLow  PriceLow  ExchangeLow  Differenz
+        #         1      10         11             B      1        10            A          1
+        #         2      10         11             B      2         9            A          2
+        #         3      11         12             B      2         9            A          3
+        #         4      11         12             B      3         8            A          4
+        #         5      12         13             B      3         8            A          5
         
         # Set in Ergebnisvektor speichern
         # Anmerkung:
@@ -647,22 +665,22 @@ if (FALSE) {
     
     # BTC/GBP -----------------------------------------------------------------
     
-    # Bitfinex - Bitstamp: ~5min. 429.638 Datensätze in 12,6 MB (unkomprimiert).
+    # Bitfinex - Bitstamp: ~5min. 429.638 Datensätze in 20.6 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "bitstamp", "btcgbp", "2020-05-28 09:37:26", endDate)
     
-    # Bitfinex - Coinbase Pro: ~18min. 4.517.869 Datensätze in 144.6 MB (unkomprimiert).
+    # Bitfinex - Coinbase Pro: ~18min. 4.517.863 Datensätze in 216.9 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "coinbase", "btcgbp", "2018-03-29 14:40:57", endDate)
     
-    # Bitfinex - Kraken: ~4min. 610.423 Datensätze in 19.5 MB (unkomprimiert).
+    # Bitfinex - Kraken: ~5min. 610.309 Datensätze in 29.3 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "kraken",   "btcgbp", "2018-03-29 14:40:57", endDate)
     
-    # Bitstamp - Coinbase Pro: ~6min. 978.408 Datensätze in 25,2 MB (unkomprimiert).
+    # Bitstamp - Coinbase Pro: ~6min. 978.408 Datensätze in 47 MB (unkomprimiert).
     compareTwoExchanges("bitstamp", "coinbase", "btcgbp", "2020-05-28 09:37:26", endDate)
     
-    # Bitstamp - Kraken: ~2min30s. 192.105 Datensätze in 6,3 MB (unkomprimiert).
+    # Bitstamp - Kraken: ~2min30s. 192.105 Datensätze in 9.2 MB (unkomprimiert).
     compareTwoExchanges("bitstamp", "kraken",   "btcgbp", "2020-05-28 09:37:26", endDate)
     
-    # Coinbase Pro - Kraken: ~7min. 1.396.126 Datensätze in 44.7 MB (unkomprimiert).
+    # Coinbase Pro - Kraken: ~8min. 1.396.126 Datensätze in 44.7 MB (unkomprimiert).
     compareTwoExchanges("coinbase", "kraken",   "btcgbp", "2015-04-21 22:22:41", endDate)
     
     
