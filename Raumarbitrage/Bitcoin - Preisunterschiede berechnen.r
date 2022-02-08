@@ -623,43 +623,43 @@ if (FALSE) {
     
     # BTC/USD -----------------------------------------------------------------
     
-    # Bitfinex - Bitstamp: ~2h10min. 31.615.047 Datensätze in 805,3 MB (unkomprimiert).
+    # Bitfinex - Bitstamp: ~2h45min. 31.615.047 Datensätze in 1.5 GB (unkomprimiert).
     compareTwoExchanges("bitfinex", "bitstamp", "btcusd", "2013-01-14 16:47:23", endDate)
     
-    # Bitfinex - Coinbase Pro: ~3h22min. 63.107.943 Datensätze in 2 GB (unkomprimiert).
+    # Bitfinex - Coinbase Pro: ~6h. 63.106.478 Datensätze in 3 GB (unkomprimiert).
     compareTwoExchanges("bitfinex", "coinbase", "btcusd", "2014-12-01 05:33:56", endDate)
     
-    # Bitfinex - Kraken: ~1h30min. 23.692.297 Datensätze in 758.2 MB (unkomprimiert).
+    # Bitfinex - Kraken: ~2h15min. 23.689.444 Datensätze in 1.1 GB (unkomprimiert).
     compareTwoExchanges("bitfinex", "kraken",   "btcusd", "2013-10-06 21:34:15", endDate)
     
-    # Bitstamp - Coinbase Pro: ~?, 37.538.963 Datensätze in 1,6 GB (unkomprimiert).
+    # Bitstamp - Coinbase Pro: ~3h30min, 37.538.963 Datensätze in 1,6 GB (unkomprimiert).
     compareTwoExchanges("bitstamp", "coinbase", "btcusd", "2014-12-01 05:33:56", endDate)
     
-    # Bitstamp - Kraken: ~2h30min. 16.332.564 Datensätze in 402,7 MB (unkomprimiert).
+    # Bitstamp - Kraken: ~1h30min. 16.332.564 Datensätze in 784 MB (unkomprimiert).
     compareTwoExchanges("bitstamp", "kraken",   "btcusd", "2013-10-06 21:34:15", endDate)
     
-    # Coinbase Pro - Kraken: ~1h53min. 31.205.136 Datensätze in 998.6 MB (unkomprimiert).
+    # Coinbase Pro - Kraken: ~3h. 31.202.746 Datensätze in 1.5 GB (unkomprimiert).
     compareTwoExchanges("coinbase", "kraken",   "btcusd", "2014-12-01 05:33:56", endDate)
     
     
     # BTC/EUR -----------------------------------------------------------------
     
-    # Bitfinex - Bitstamp: ~22min. 4.035.994 Datensätze in 100,7 MB (unkomprimiert).
+    # Bitfinex - Bitstamp: ~20min. 4.035.994 Datensätze in 193.7 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "bitstamp", "btceur", "2019-09-01 00:00:00", endDate)
     
-    # Bitfinex - Coinbase Pro: ~27min. 7.244.291 Datensätze in 231.8 MB (unkomprimiert).
+    # Bitfinex - Coinbase Pro: ~30min. 7.244.285 Datensätze in 347.7 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "coinbase", "btceur", "2019-09-01 00:00:00", endDate)
     
-    # Bitfinex - Kraken: ~28min. 6.351.131 Datensätze in 203.2 MB (unkomprimiert).
+    # Bitfinex - Kraken: ~30min. 6.351.131 Datensätze in 304.9 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "kraken",   "btceur", "2019-09-01 00:00:00", endDate)
     
-    # Bitstamp - Coinbase Pro: ~1h10min. 16.767.027 Datensätze in 402,7 MB (unkomprimiert).
+    # Bitstamp - Coinbase Pro: ~1h15min. 16.767.027 Datensätze in 804.8 MB (unkomprimiert).
     compareTwoExchanges("bitstamp", "coinbase", "btceur", "2016-04-16 16:55:02", endDate)
     
-    # Bitstamp - Kraken: ~1h11min. 15.322.141 Datensätze in 402,7 MB (unkomprimiert).
+    # Bitstamp - Kraken: ~1h20min. 15.322.141 Datensätze in 735.5 MB (unkomprimiert).
     compareTwoExchanges("bitstamp", "kraken",   "btceur", "2016-04-16 16:55:02", endDate)
     
-    # Coinbase Pro - Kraken: ~1h38min. 26.473.562 Datensätze in 847.2 MB (unkomprimiert).
+    # Coinbase Pro - Kraken: ~2h20min. 26.473.543 Datensätze in 1.3 GB (unkomprimiert).
     compareTwoExchanges("coinbase", "kraken",   "btceur", "2015-04-23 01:42:34", endDate)
     
     

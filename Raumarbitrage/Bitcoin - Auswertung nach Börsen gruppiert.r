@@ -806,7 +806,7 @@ summariseDatasetAsTable <- function(
                     if (numRows_withOtherExchange > 0L) {
                         tableContent <- paste0(
                             tableContent,
-                            sprintf("        \\qquad davon mit %s &\n", exchangeNames[[j]]),
+                            sprintf("        \\quad davon mit %s &\n", exchangeNames[[j]]),
                             createRow(
                                 numRows_withOtherExchange, 
                                 dataset[
@@ -1006,6 +1006,9 @@ analyseArbitrageIndex <- function(pair, breakpoints)
 # und die Verarbeitung viel Zeit in Anspruch nimmt.
 if (FALSE) {
     
+    # Die Breakpoints selbst werden immer dem letzten der beiden entstehenden
+    # Intervalle zugerechnet
+    
     # BTC/USD
     # Datenmenge: ~11,5 GB
     analyseArbitrageIndex(
@@ -1025,7 +1028,7 @@ if (FALSE) {
     # Datenmenge: ~450 MB
     analyseArbitrageIndex(
         pair = "btcgbp",
-        breakpoints = c("2016-01-01", "2017-06-01", "2018-04-01", "2019-06-01")
+        breakpoints = c("2016-01-01", "2017-06-01", "2018-03-29", "2019-06-01")
     ) ; invisible(gc())
     
     # BTC/JPY
