@@ -726,11 +726,14 @@ summariseDatasetAsTable <- function(
             round() |>
             as.double()
         numRowsPerHour <- numRows / intervalLengthHours
+        numRowsPerDay <- numRows / (intervalLengthHours / 24)
         numRowsLargerThan1_5Pct <- length(which(dataSubset$PriceDifference >= .015))
         numRowsLargerThan2_5Pct <- length(which(dataSubset$PriceDifference >= .025))
         numRowsLargerThan5Pct <- length(which(dataSubset$PriceDifference >= .05))
         s <- strrep(" ", 12) # Einrückung in der Ergebnisdatei
         return(paste0(
+            sprintf("%s%% %s Datensätze pro Tag\n", s,
+                    format.numberWithFixedDigits(numRowsPerDay, digits=1L)),
             sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
                     format.number(numRows),
                     format.percentage(numRows / numRowsTotal, 1L)),

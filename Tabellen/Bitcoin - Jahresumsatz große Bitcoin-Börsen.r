@@ -80,10 +80,10 @@ srcsets <- fread("
 
 # Ergebnistabelle
 volumeSet <- data.table(
-    Exchange=character(),
-    Pair=character(),
-    Volume=double(),
-    Share=double()
+    Exchange = character(),
+    Pair = character(),
+    Volume = double(),
+    Share = double()
 )
 
 for (i in seq_len(nrow(srcsets))) {
@@ -106,32 +106,32 @@ for (i in seq_len(nrow(srcsets))) {
     
     # Annualisieren
     if (srcset$InterpolationNeeded == 1) {
-        anzahl_tage_ist <- as.double(Sys.Date() - as.Date(first(dataset$Time)))
-        anzahl_tage_soll <- as.double(as.POSIXct(dateTo) - as.POSIXct(dateFrom))
+        anzahl_tage_ist <- as.double(Sys.Date() - as.Date(first(dataset$Time)), units="days")
+        anzahl_tage_soll <- as.double(as.POSIXct(dateTo) - as.POSIXct(dateFrom), units="days")
         volume <- volume / anzahl_tage_ist * anzahl_tage_soll
     } else {
         volume <- volume / durationInYears
     }
     
     # In Ergebnistabelle speichern
-    volumeSet <- rbind(volumeSet, data.table(
+    volumeSet <- rbindlist(list(volumeSet, data.table(
         Exchange = srcset$Exchange,
         Pair = srcset$Pair,
         Volume = volume,
         Share = 0
-    ))
+    )))
     rm(dataset)
 }
 
 # Gesamtanteil nach Währung
 for (pair in unique(volumeSet$Pair)) {
     totalVolumeThisPair <- sum(volumeSet[volumeSet$Pair == pair]$Volume)
-    volumeSet <- rbind(volumeSet, data.table(
+    volumeSet <- rbindlist(list(volumeSet, data.table(
         Exchange = "Total",
         Pair = pair,
         Volume = totalVolumeThisPair,
         Share = 0
-    ))
+    )))
 }
 
 # Berechne prozentuale Anteile
@@ -227,14 +227,14 @@ for (template in templateFiles) {
         latexTemplate |>
             str_replace(
                 fixed(paste0("{", exchange, ".TotalVolumeUSD_a}")),
-                round(volumeTotal * sampleExchangeRate_a / 1e9)
+                format.number(volumeTotal * sampleExchangeRate_a / 1e9, digits=0L)
             ) -> latexTemplate
         
         # Umrechnung in USD bei Beispielkurs b)
         latexTemplate |>
             str_replace(
                 fixed(paste0("{", exchange, ".TotalVolumeUSD_b}")),
-                round(volumeTotal * sampleExchangeRate_b / 1e9)
+                format.number(volumeTotal * sampleExchangeRate_b / 1e9, digits=0L)
             ) -> latexTemplate
     }
     
