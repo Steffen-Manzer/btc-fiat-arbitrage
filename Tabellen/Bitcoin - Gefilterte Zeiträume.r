@@ -42,6 +42,7 @@ if (file.exists(outFile)) {
 # Metadaten lesen ---------------------------------------------------------
 exchangeMetadata <- fromJSON(file="Daten/bitcoin-metadata.json")
 tableContent <- ""
+vspaceTemplate <- "\\rule{0pt}{6mm}"
 `%nin%` = Negate(`%in%`)
 
 for (i in seq_along(exchangeMetadata)) {
@@ -49,26 +50,39 @@ for (i in seq_along(exchangeMetadata)) {
         names(exchangeMetadata)[i]
     ]]
     exchangeData <- exchangeMetadata[[i]]
+    if (i > 1L) {
+        vspace <- vspaceTemplate
+    } else {
+        vspace <- ""
+    }
     tableContent <- paste0(
         tableContent,
         "    \\rowcolor{white}\n",
-        sprintf("    \\multicolumn{4}{@{}l@{}}{\\textbf{%s}}\n", exchangeName),
+        sprintf("    \\multicolumn{4}{@{}l@{}}{%s\\textbf{%s}}\n", vspace, exchangeName),
         "    \\global\\rownum=1\\relax\\\\\n\n"
     )
     
+    # pairNum <- 0L
     for (j in seq_along(exchangeData)) {
         pairRaw <- names(exchangeData)[j]
         if (tolower(pairRaw) %nin% requiredPairs) {
             next
         }
+        # pairNum <- pairNum + 1L
         pair <- format.currencyPair(pairRaw)
         pairData <- exchangeData[[j]]
+        # periodNum <- 0L
         for (k in seq_along(pairData$suspiciousPeriods)) {
             period <- pairData$suspiciousPeriods[[k]]
-            
             if (period$filter == FALSE) {
                 next
             }
+            # periodNum <- periodNum + 1L
+            # if (periodNum == 1L && pairNum > 1L) {
+            #     vspace <- vspaceTemplate
+            # } else {
+            #     vspace <- ""
+            # }
             
             # Dauer berechnen
             periodDuration <- difftime(period$endDate, period$startDate, units="secs") |>
@@ -99,3 +113,7 @@ templateFile |>
 
 # Vor versehentlichem Überschreiben schützen
 Sys.chmod(outFile, mode="0444")
+cat(
+    "Achtung: Ergebnisdatei ggf. händisch nachbearbeiten und Zeilenumbrüche",
+    "an ungünstigen Stellen verhindern (`\\\\*` statt `\\\\`)\n"
+)

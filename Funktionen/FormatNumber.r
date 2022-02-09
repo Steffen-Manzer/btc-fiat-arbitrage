@@ -10,3 +10,8 @@ format.numberWithFixedDigits <- function(..., digits=1L) {
 
 #' Währungsausgabe, wie sie in DE üblich ist: 123456.789 -> 123.456,79
 format.money <- function(..., digits=2L) format.numberWithFixedDigits(..., digits)
+
+#' Prozentangabe mit fester Anzahl Nachkommastellen formatieren
+format.percentage <- function(d, digits=3L) {
+    return(formatC(d*100, digits=digits, format="f", decimal.mark=",", big.mark="."))
+}

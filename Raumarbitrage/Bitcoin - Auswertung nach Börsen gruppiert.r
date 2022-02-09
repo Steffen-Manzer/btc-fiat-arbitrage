@@ -713,9 +713,6 @@ summariseDatasetAsTable <- function(
 )
 {
     printf("Erzeuge Überblickstabelle in %s\n", basename(outFile))
-    format.percentage <- function(d, digits=3L)
-        formatC(d*100, digits=digits, format="f", decimal.mark=",", big.mark=".")
-    
     numRowsTotal <- nrow(dataset)
     
     # Tabellenzeile erzeugen
