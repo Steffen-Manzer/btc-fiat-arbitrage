@@ -2,6 +2,7 @@
 # Besonderheiten gegenüber normalen Skripten:
 # - setwd + source(.Rprofile)
 # - Caching, da 3x pro Kompilierung aufgerufen
+# - Keine Umlaute im Dateinamen
 
 (function() {
     

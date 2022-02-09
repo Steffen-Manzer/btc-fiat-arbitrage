@@ -1,6 +1,7 @@
 # Aufruf aus LaTeX heraus via \executeR{...}
 # Besonderheiten gegenüber normalen Skripten:
 # - Caching, da 3x pro Kompilierung aufgerufen
+# - Keine Umlaute im Dateinamen
 
 (function() {
     

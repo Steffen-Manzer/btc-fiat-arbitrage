@@ -20,6 +20,8 @@ LaTeX-Befehl `executeR` erwähnt:
 
 ```latex
 % R aus LaTeX heraus ausführen
+% Anmerkung: Der Dateiname sollte unter keinen Umständen irgendwelche
+% Sonderzeichen (nicht-ASCII) enthalten. Leerzeichen sind in Ordnung.
 \newcommand{\executeR}[1]{%
     \ignorespaces%
     \immediate%
