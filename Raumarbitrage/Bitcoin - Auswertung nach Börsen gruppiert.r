@@ -860,23 +860,6 @@ analyseArbitrageIndex <- function(pair, breakpoints)
     # Daten laden
     comparablePrices <- loadComparablePricesByCurrencyPair(pair)
     
-    # Doppelte Tauschmöglichkeiten zum selben Zeitpunkt entfernen
-    # Dies mindert das "Problem" der doppelten Erfassung des selben Ticks
-    # TODO Prüfen!!!
-    printf("Gruppiere nach identischen Zeitpunkten...\n")
-    comparablePrices <- comparablePrices[
-        j=.(
-            IDHigh = IDHigh[which.max(ArbitrageIndex)],
-            PriceHigh = PriceHigh[which.max(ArbitrageIndex)],
-            ExchangeHigh = ExchangeHigh[which.max(ArbitrageIndex)],
-            IDLow = IDLow[which.max(ArbitrageIndex)],
-            PriceLow = PriceLow[which.max(ArbitrageIndex)],
-            ExchangeLow = ExchangeLow[which.max(ArbitrageIndex)],
-            ArbitrageIndex = min(ArbitrageIndex)
-        ),
-        by = Time
-    ]
-    
     # Boxplot für gesamten Zeitraum erstellen
     plotArbitrageIndexByExchangePair(
         comparablePrices,
