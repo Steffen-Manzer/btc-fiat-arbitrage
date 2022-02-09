@@ -84,8 +84,8 @@ loadComparablePricesByCurrencyPair <- function(currencyPair)
         # Datei lesen
         priceDifferences <- read_fst(sourceFile, as.data.table=TRUE)
         
-        # Arbitrageindex berechnen
-        priceDifferences[,ArbitrageIndex:=PriceHigh/PriceLow]
+        # Unterschiede berechnen
+        priceDifferences[,PriceDifference:=(PriceHigh/PriceLow)-1]
         
         # Statistiken ausgeben
         if (exists("DEBUG_PRINT") && isTRUE(DEBUG_PRINT)) {
@@ -97,10 +97,10 @@ loadComparablePricesByCurrencyPair <- function(currencyPair)
                 format(first(priceDifferences$Time), "%d.%m.%Y"),
                 format(last(priceDifferences$Time), "%d.%m.%Y")
             )
-            maxIndexValue <- priceDifferences[which.max(ArbitrageIndex)]
-            with(maxIndexValue, printf.debug(
+            maxDifference <- priceDifferences[which.max(PriceDifference)]
+            with(maxDifference, printf.debug(
                 "Höchstwert: %s (%s <-> %s) am %s\n",
-                format.number(ArbitrageIndex),
+                format.number(PriceDifference),
                 format.money(PriceLow),
                 format.money(PriceHigh),
                 formatPOSIXctWithFractionalSeconds(Time, "%d.%m.%Y %H:%M:%OS")
@@ -134,10 +134,10 @@ loadComparablePricesByCurrencyPair <- function(currencyPair)
             format(first(combinedPriceDifferences$Time), "%d.%m.%Y"),
             format(last(combinedPriceDifferences$Time), "%d.%m.%Y")
         )
-        maxIndexValue <- combinedPriceDifferences[which.max(ArbitrageIndex)]
-        with(maxIndexValue, printf.debug(
+        maxDifference <- combinedPriceDifferences[which.max(PriceDifference)]
+        with(maxDifference, printf.debug(
             "Höchstwert: %s (%s <-> %s) am %s\n",
-            format.number(ArbitrageIndex),
+            format.number(PriceDifference),
             format.money(PriceLow),
             format.money(PriceHigh),
             formatPOSIXctWithFractionalSeconds(Time, "%d.%m.%Y %H:%M:%OS")
@@ -148,13 +148,13 @@ loadComparablePricesByCurrencyPair <- function(currencyPair)
 }
 
 
-#' Aggregiere Arbitrageindex auf den angegebenen Zeitraum
+#' Aggregiere auf den angegebenen Zeitraum
 #' 
 #' @param comparablePrices `data.table` mit den Preisen der verschiedenen Börsen
 #' @param floorUnits Aggregations-Zeitfenster, genutzt als `unit` für
 #'   `floor_date`. Werte kleiner als ein Tag sind grafisch kaum darstellbar.
 #' @return `data.table` mit Q1, Median, Mean, Q3, Max
-aggregateArbitrageIndex <- function(
+aggregatePriceDifferences <- function(
     comparablePrices,
     floorUnits,
     interval = NULL
@@ -163,7 +163,7 @@ aggregateArbitrageIndex <- function(
     # Parameter validieren
     stopifnot(
         is.data.table(comparablePrices), nrow(comparablePrices) > 0L,
-        !is.null(comparablePrices$Time), !is.null(comparablePrices$ArbitrageIndex),
+        !is.null(comparablePrices$Time), !is.null(comparablePrices$PriceDifference),
         is.character(floorUnits), length(floorUnits) == 1L,
         is.null(interval) || length(interval) == 2L
     )
@@ -178,23 +178,23 @@ aggregateArbitrageIndex <- function(
     }
     
     # Aggregation aller gefundener Tauschmöglichkeiten
-    arbitrageIndex <- comparablePrices[
+    priceDifferences <- comparablePrices[
         j=.(
-            Q1 = quantile(ArbitrageIndex, probs=.25, names=FALSE),
-            Mean = mean(ArbitrageIndex),
-            Median = median(ArbitrageIndex),
-            Q3 = quantile(ArbitrageIndex, probs=.75, names=FALSE),
-            Max = max(ArbitrageIndex)
+            Q1 = quantile(PriceDifference, probs=.25, names=FALSE),
+            Mean = mean(PriceDifference),
+            Median = median(PriceDifference),
+            Q3 = quantile(PriceDifference, probs=.75, names=FALSE),
+            Max = max(PriceDifference)
         ),
         by=.(Time=floor_date(Time, unit=floorUnits))
     ]
     printf.debug("Aggregation auf '%s' ergab %s Datensätze. ",
-                 floorUnits, format.number(nrow(arbitrageIndex)))
+                 floorUnits, format.number(nrow(priceDifferences)))
     if (exists("DEBUG_PRINT") && isTRUE(DEBUG_PRINT)) {
         toc()
     }
     
-    return(arbitrageIndex)
+    return(priceDifferences)
 }
 
 
@@ -224,16 +224,16 @@ calculateIntervals <- function(timeBoundaries, breakpoints)
 }
 
 
-#' Zeichne Arbitrageindex als Linien-/Punktgrafik im Zeitverlauf
+#' Zeichne Preisunterschiede als Linien-/Punktgrafik im Zeitverlauf
 #' 
-#' @param arbitrageIndex `data.table` mit den aggr. Preisen der verschiedenen Börsen
+#' @param priceDifferences `data.table` mit den aggr. Preisen der verschiedenen Börsen
 #' @param latexOutPath Ausgabepfad als LaTeX-Datei
 #' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
 #' @param removeGaps Datenlücken nicht interpolieren/zeichnen
 #' @param plotType Plot-Typ: line oder point
 #' @return Der Plot (unsichtbar)
-plotAggregatedArbitrageIndexOverTime <- function(
-    arbitrageIndex,
+plotAggregatedPriceDifferencesOverTime <- function(
+    priceDifferences,
     latexOutPath = NULL,
     breakpoints = NULL,
     removeGaps = TRUE,
@@ -241,8 +241,8 @@ plotAggregatedArbitrageIndexOverTime <- function(
 ) {
     # Parameter validieren
     stopifnot(
-        is.data.table(arbitrageIndex), nrow(arbitrageIndex) > 0L,
-        !is.null(arbitrageIndex$Time),
+        is.data.table(priceDifferences), nrow(priceDifferences) > 0L,
+        !is.null(priceDifferences$Time),
         is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L),
         is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L)
     )
@@ -265,24 +265,24 @@ plotAggregatedArbitrageIndexOverTime <- function(
     
     # Einige Bezeichnungen
     plotXLab <- "Datum"
-    plotYLab <- "Arbitrageindex"
+    plotYLab <- "Preisunterschied"
     
     # Zeichnen
-    if (!is.null(arbitrageIndex$Q3)) {
-        maxValue <- max(arbitrageIndex$Q3)
-    } else if (!is.null(arbitrageIndex$ArbitrageIndex)) {
-        maxValue <- max(arbitrageIndex$ArbitrageIndex)
+    if (!is.null(priceDifferences$Q3)) {
+        maxValue <- max(priceDifferences$Q3)
+    } else if (!is.null(priceDifferences$PriceDifference)) {
+        maxValue <- max(priceDifferences$PriceDifference)
     } else {
         stop("Keine Quartile und keine Rohdaten gefunden!")
     }
-    plot <- ggplot(arbitrageIndex)
+    plot <- ggplot(priceDifferences)
     
     # Bereiche zeichnen und Nummer anzeigen
     if (!is.null(breakpoints)) {
         
         # Die hier bestimmten Intervalle der aggregierten Daten können
         # von den Intervallen des gesamten Datensatzes abweichen
-        intervals <- calculateIntervals(arbitrageIndex$Time, breakpoints)
+        intervals <- calculateIntervals(priceDifferences$Time, breakpoints)
         
         # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
         plot <- plot + 
@@ -290,8 +290,8 @@ plotAggregatedArbitrageIndexOverTime <- function(
                 aes(
                     xmin = From,
                     xmax = To,
-                    ymin = 1,
-                    ymax = maxValue * 1.02,
+                    ymin = 0,
+                    ymax = maxValue * 1.05,
                     fill = Set
                 ),
                 data = intervals,
@@ -314,7 +314,7 @@ plotAggregatedArbitrageIndexOverTime <- function(
         # https://stackoverflow.com/a/21529560
         # TODO Variabel gestalten (nicht fix 2 Tage)?
         if (removeGaps) {
-            gapGroups <- c(0, cumsum(diff(arbitrageIndex$Time) > 2))
+            gapGroups <- c(0, cumsum(diff(priceDifferences$Time) > 2))
         } else {
             gapGroups <- 0
         }
@@ -330,7 +330,7 @@ plotAggregatedArbitrageIndexOverTime <- function(
         
         # Punkt-Grafik. Besser, wenn Daten viele Lücken aufweisen
         plot <- plot +
-            geom_point(aes(x=Time, y=ArbitrageIndex, color="1"), size=.25)
+            geom_point(aes(x=Time, y=PriceDifference, color="1"), size=.25)
         
     } else {
         stop(sprintf("Unbekannter Plot-Typ: %s", plotType))
@@ -345,7 +345,7 @@ plotAggregatedArbitrageIndexOverTime <- function(
             axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
         ) +
         scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
-        coord_cartesian(ylim=c(1, maxValue)) +
+        coord_cartesian(ylim=c(0, maxValue)) +
         scale_y_continuous(
             labels = function(x) paste(format.number(x * 100), "%")
         ) +
@@ -367,12 +367,12 @@ plotAggregatedArbitrageIndexOverTime <- function(
 }
 
 
-#' Zeichne Arbitrageindex als Boxplot nach Börsen gruppiert
+#' Zeichne Preisunterschiede als Boxplot nach Börsen gruppiert
 #' 
 #' @param comparablePrices `data.table` mit den Preisen der verschiedenen Börsen
 #' @param latexOutPath Ausgabepfad als LaTeX-Datei
 #' @return Der Plot (unsichtbar)
-plotArbitrageIndexByExchange <- function(
+plotPriceDifferencesByExchange <- function(
     comparablePrices,
     latexOutPath = NULL
 ) {
@@ -400,13 +400,13 @@ plotArbitrageIndexByExchange <- function(
     
     # Achsenbeschriftung
     plotXLab <- "Börse"
-    plotYLab <- "Arbitrageindex"
+    plotYLab <- "Preisunterschied"
     
     # Zeichnen
     if (!is.null(comparablePrices$Q3)) {
         maxValue <- max(comparablePrices$Q3)
-    } else if (!is.null(comparablePrices$ArbitrageIndex)) {
-        maxValue <- max(comparablePrices$ArbitrageIndex)
+    } else if (!is.null(comparablePrices$PriceDifference)) {
+        maxValue <- max(comparablePrices$PriceDifference)
     } else {
         stop("Keine Quartile und keine Rohdaten gefunden!")
     }
@@ -422,7 +422,7 @@ plotArbitrageIndexByExchange <- function(
         exchangeSummary <- summary(
             comparablePrices[
                 ExchangeHigh == exchange | ExchangeLow == exchange,
-                ArbitrageIndex
+                PriceDifference
             ]
         )
         if (is.na(exchangeSummary[[1]])) {
@@ -442,7 +442,7 @@ plotArbitrageIndexByExchange <- function(
     
     # Globale Statistiken: Nur dann, wenn mehr als eine Börse vorhanden ist
     if (nrow(boxplot_stats) > 1L) {
-        totalSummary <- summary(comparablePrices$ArbitrageIndex)
+        totalSummary <- summary(comparablePrices$PriceDifference)
         iqr <- totalSummary[[5]] - totalSummary[[2]]
         boxplot_stats <- rbindlist(list(boxplot_stats, data.table(
             Exchange = "Gesamt",
@@ -524,12 +524,12 @@ plotArbitrageIndexByExchange <- function(
 }
 
 
-#' Zeichne Arbitrageindex als Boxplot nach Börsenpaar gruppiert
+#' Zeichne Preisunterschiede als Boxplot nach Börsenpaar gruppiert
 #' 
 #' @param comparablePrices `data.table` mit den Preisen der verschiedenen Börsen
 #' @param latexOutPath Ausgabepfad als LaTeX-Datei
 #' @return Der Plot (unsichtbar)
-plotArbitrageIndexByExchangePair <- function(
+plotPriceDifferencesByExchangePair <- function(
     comparablePrices,
     latexOutPath = NULL
 ) {
@@ -557,13 +557,13 @@ plotArbitrageIndexByExchangePair <- function(
     
     # Achsenbeschriftung
     plotXLab <- "Börsenpaar"
-    plotYLab <- "Arbitrageindex"
+    plotYLab <- "Preisunterschied"
     
     # Zeichnen
     if (!is.null(comparablePrices$Q3)) {
         maxValue <- max(comparablePrices$Q3)
-    } else if (!is.null(comparablePrices$ArbitrageIndex)) {
-        maxValue <- max(comparablePrices$ArbitrageIndex)
+    } else if (!is.null(comparablePrices$PriceDifference)) {
+        maxValue <- max(comparablePrices$PriceDifference)
     } else {
         stop("Keine Quartile und keine Rohdaten gefunden!")
     }
@@ -588,7 +588,7 @@ plotArbitrageIndexByExchangePair <- function(
                         (ExchangeHigh == exchange_1 & ExchangeLow == exchange_2) |
                         (ExchangeHigh == exchange_2 & ExchangeLow == exchange_1)
                     ),
-                    ArbitrageIndex
+                    PriceDifference
                 ]
             )
             if (is.na(pairSummary[[1]])) {
@@ -616,7 +616,7 @@ plotArbitrageIndexByExchangePair <- function(
     
     # Globale Statistiken nur dann, wenn mehr als ein Börsenpaar vorhanden ist
     if (nrow(boxplot_stats) > 1L) {
-        totalSummary <- summary(comparablePrices$ArbitrageIndex)
+        totalSummary <- summary(comparablePrices$PriceDifference)
         iqr <- totalSummary[[5]] - totalSummary[[2]]
         boxplot_stats <- rbindlist(list(boxplot_stats, data.table(
             ExchangePair = "Gesamt",
@@ -671,8 +671,8 @@ plotArbitrageIndexByExchangePair <- function(
             width = .75
         ) +
         scale_y_continuous(
-            labels = function(x) paste0(format.number((x-1) * 100), "\\,%"),
-            limits = c(1, max(boxplot_stats$max)*1.0005)
+            labels = function(x) paste0(format.number(x * 100), "\\,%"),
+            limits = c(0, max(boxplot_stats$max)*1.0005)
         ) +
         theme_minimal() +
         theme(
@@ -701,7 +701,7 @@ plotArbitrageIndexByExchangePair <- function(
 #' Informationen über einen Datensatz als LaTeX-Tabelle ausgeben
 #' 
 #' @param comparablePrices `data.table` aus `loadComparablePricesByCurrency`
-#'                         oder aus `aggregateArbitrageIndex`
+#'                         oder aus `aggregatePriceDifferences`
 #' @param outFile Zieldatei
 #' @param caption Tabellentitel
 #' @param label Tabellenlabel
@@ -716,7 +716,7 @@ summariseDatasetAsTable <- function(
     numRowsTotal <- nrow(dataset)
     
     # Tabellenzeile erzeugen
-    createRow <- function(numRows, dataSubset) {
+    createRow <- function(numRows, dataSubset, end="\\\\\n\n") {
         intervalLengthHours <- 
             difftime(
                 last(dataSubset$Time),
@@ -726,9 +726,9 @@ summariseDatasetAsTable <- function(
             round() |>
             as.double()
         numRowsPerHour <- numRows / intervalLengthHours
-        numRowsLargerThan2Pct <- length(which(dataSubset$ArbitrageIndex >= 1.02))
-        numRowsLargerThan5Pct <- length(which(dataSubset$ArbitrageIndex >= 1.05))
-        numRowsLargerThan10Pct <- length(which(dataSubset$ArbitrageIndex >= 1.1))
+        numRowsLargerThan1_5Pct <- length(which(dataSubset$PriceDifference >= .015))
+        numRowsLargerThan2_5Pct <- length(which(dataSubset$PriceDifference >= .025))
+        numRowsLargerThan5Pct <- length(which(dataSubset$PriceDifference >= .05))
         s <- strrep(" ", 12) # Einrückung in der Ergebnisdatei
         return(paste0(
             sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
@@ -736,16 +736,17 @@ summariseDatasetAsTable <- function(
                     format.percentage(numRows / numRowsTotal, 1L)),
             sprintf("%s%s &\n", s, format.numberWithFixedDigits(numRowsPerHour, 1)),
             sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
-                    format.number(numRowsLargerThan2Pct),
-                    format.percentage(numRowsLargerThan2Pct / numRows, 1L)),
+                    format.number(numRowsLargerThan1_5Pct),
+                    format.percentage(numRowsLargerThan1_5Pct / numRows, 1L)),
+            sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
+                    format.number(numRowsLargerThan2_5Pct),
+                    format.percentage(numRowsLargerThan2_5Pct / numRows, 1L)),
             sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
                     format.number(numRowsLargerThan5Pct),
                     format.percentage(numRowsLargerThan5Pct / numRows, 1L)),
-            sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
-                    format.number(numRowsLargerThan10Pct),
-                    format.percentage(numRowsLargerThan10Pct / numRows, 1L)),
-            sprintf("%s%s\\,\\%% \\\\\n\n", s, 
-                    format.percentage(max(dataSubset$ArbitrageIndex), 1))
+            sprintf("%s%s\\,\\%% ", s, 
+                    format.percentage(max(dataSubset$PriceDifference), 1)),
+            end
         ))
     }
     
@@ -775,19 +776,32 @@ summariseDatasetAsTable <- function(
     } else {
         
         # Jede Börse durchgehen + Gesamtstatistik erstellen
+        vspaceTemplate <- "        \\rule{0pt}{9mm}\n"
+        iterationCounter <- 0L
         for (i in seq_along(exchangeNames)) {
             exchange <- names(exchangeNames)[[i]]
             numRows <- nrow(dataset[ExchangeHigh == exchange | ExchangeLow == exchange])
             if (numRows > 0L) {
+                iterationCounter <- iterationCounter + 1L
+                if (iterationCounter > 1L) {
+                    vspace <- vspaceTemplate
+                } else {
+                    vspace <- ""
+                }
                 
                 # Gesamtüberblick für diese Börse
                 tableContent <- paste0(
                     tableContent,
+                    "\n",
+                    "        \\rowcolor{white}\n",
+                    vspace,
                     sprintf("        \\textbf{%s} &\n", exchangeNames[[i]]),
                     createRow(
                         numRows, 
-                        dataset[ExchangeHigh == exchange | ExchangeLow == exchange]
-                    )
+                        dataset[ExchangeHigh == exchange | ExchangeLow == exchange],
+                        end = "\n"
+                    ),
+                    "        \\global\\rownum=2\\relax\\\\\n\n"
                 )
                 
                 # Paarweise mit anderen Börsen
@@ -852,7 +866,7 @@ summariseDatasetAsTable <- function(
 
 # Haupt-Auswertungsfunktion ---------------------------------------------------
 #' Preisunterschiede auf Arbitragemöglichkeiten abklopfen
-analyseArbitrageIndex <- function(pair, breakpoints)
+analysePriceDifferences <- function(pair, breakpoints)
 {
     # Vorherige Berechnungen ggf. aus dem Speicher bereinigen
     gc()
@@ -861,7 +875,7 @@ analyseArbitrageIndex <- function(pair, breakpoints)
     comparablePrices <- loadComparablePricesByCurrencyPair(pair)
     
     # Boxplot für gesamten Zeitraum erstellen
-    plotArbitrageIndexByExchangePair(
+    plotPriceDifferencesByExchangePair(
         comparablePrices,
         latexOutPath = sprintf(
             "%s/Abbildungen/Empirie_Raumarbitrage_%s_UebersichtBoxplot.tex",
@@ -870,9 +884,9 @@ analyseArbitrageIndex <- function(pair, breakpoints)
     )
     
     # Liniengrafik für gesamten Zeitraum erstellen
-    arbitrageIndex <- aggregateArbitrageIndex(comparablePrices, "1 month")
-    plotAggregatedArbitrageIndexOverTime(
-        arbitrageIndex,
+    priceDifferences <- aggregatePriceDifferences(comparablePrices, "1 month")
+    plotAggregatedPriceDifferencesOverTime(
+        priceDifferences,
         breakpoints = breakpoints,
         removeGaps = FALSE, # Lücken werden auf 1d-Basis entfernt, daher hier nicht
         latexOutPath = sprintf(
@@ -889,7 +903,7 @@ analyseArbitrageIndex <- function(pair, breakpoints)
             latexOutPath, toupper(pair)
         ),
         caption = sprintf(
-            "Zentrale Kenngrößen des Arbitrageindex für %s im Gesamtüberblick",
+            "Zentrale Kenngrößen der Preisunterschiede für %s im Gesamtüberblick",
             format.currencyPair(pair)
         ),
         label = sprintf("Empirie_Raumarbitrage_%s_Ueberblick", toupper(pair))
@@ -915,17 +929,17 @@ analyseArbitrageIndex <- function(pair, breakpoints)
         )
         
         # Daten auf einen Tag aggregieren
-        arbitrageIndex <- aggregateArbitrageIndex(
+        priceDifferences <- aggregatePriceDifferences(
             comparablePrices,
             floorUnits = "1 day",
             interval = segmentInterval
         )
         
-        if (nrow(arbitrageIndex) > 50L) {
+        if (nrow(priceDifferences) > 50L) {
             
             # Variante 1: Aggregierte Liniengrafik: Nur sinnvoll, wenn keine/wenige Lücken
-            plotAggregatedArbitrageIndexOverTime(
-                arbitrageIndex,
+            plotAggregatedPriceDifferencesOverTime(
+                priceDifferences,
                 latexOutPath = sprintf(
                     "%s/Abbildungen/Empirie_Raumarbitrage_%s_Uebersicht_%d.tex",
                     latexOutPath, toupper(pair), segment
@@ -936,8 +950,8 @@ analyseArbitrageIndex <- function(pair, breakpoints)
             
             # Variante 2: Punktgrafik: Sinnvoll auch bei vielen Lücken, nicht aber
             # bei großen Datenmengen
-            plotAggregatedArbitrageIndexOverTime(
-                arbitrageIndex = comparablePrices[Time %between% segmentInterval],
+            plotAggregatedPriceDifferencesOverTime(
+                priceDifferences = comparablePrices[Time %between% segmentInterval],
                 plotType = "point",
                 latexOutPath = sprintf(
                     "%s/Abbildungen/Empirie_Raumarbitrage_%s_Uebersicht_%d.tex",
@@ -957,7 +971,7 @@ analyseArbitrageIndex <- function(pair, breakpoints)
                 latexOutPath, toupper(pair), segment
             ),
             caption = sprintf(
-                "Zentrale Kenngrößen des Arbitrageindex für %s von %s bis %s",
+                "Zentrale Kenngrößen der Preisunterschiede für %s von %s bis %s",
                 format.currencyPair(pair),
                 format(segmentInterval[1], "%d.%m.%Y"),
                 format(segmentInterval[2], "%d.%m.%Y")
@@ -969,7 +983,7 @@ analyseArbitrageIndex <- function(pair, breakpoints)
         )
         
         # Boxplot
-        plotArbitrageIndexByExchangePair(
+        plotPriceDifferencesByExchangePair(
             comparablePrices[Time %between% segmentInterval],
             latexOutPath = sprintf(
                 "%s/Abbildungen/Empirie_Raumarbitrage_%s_UebersichtBoxplot_%d.tex",
@@ -991,7 +1005,7 @@ if (FALSE) {
     
     # BTC/USD
     # Datenmenge: ~11,5 GB
-    analyseArbitrageIndex(
+    analysePriceDifferences(
         pair = "btcusd",
         breakpoints = 
             c("2014-03-01", "2017-01-01", "2018-06-01", "2019-07-01", "2020-05-01")
@@ -999,21 +1013,21 @@ if (FALSE) {
     
     # BTC/EUR
     # Datenmenge: ~4,5 GB
-    analyseArbitrageIndex(
+    analysePriceDifferences(
         pair = "btceur",
         breakpoints = c("2016-04-01", "2017-01-01", "2018-03-01")
     ) ; invisible(gc())
     
     # BTC/GBP
     # Datenmenge: ~450 MB
-    analyseArbitrageIndex(
+    analysePriceDifferences(
         pair = "btcgbp",
         breakpoints = c("2016-01-01", "2017-06-01", "2018-03-29", "2019-06-01")
     ) ; invisible(gc())
     
     # BTC/JPY
     # Datenmenge: < 10 MB
-    analyseArbitrageIndex(
+    analysePriceDifferences(
         pair = "btcjpy",
         breakpoints = c("2019-06-01", "2019-11-01")
     ) ; invisible(gc())
