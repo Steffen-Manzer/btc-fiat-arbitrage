@@ -40,17 +40,11 @@
         col.names = c("Time", "Volume")
     )
     
-    rawData$Time <- fastPOSIXct(rawData$Tim, tz="UTC")
+    rawData[,Time:=fastPOSIXct(rawData$Tim, tz="UTC")]
     
     # Wochensummen bilden
-    # TODO Gruppieren mittels data.table
-    weeklyData <- rawData %>%
-        group_by(week = floor_date(Time, unit="week")) %>%
-        summarise(
-            Volume = sum(Volume)
-        )
-    setnames(weeklyData, 1, "Time")
-    weeklyData$Time <- as.Date(weeklyData$Time)
+    weeklyData <- rawData[j=.(Volume=sum(Volume)), by=.(Time=floor_date(Time, unit="week"))]
+    weeklyData[,Time:=as.Date(weeklyData$Time)]
     
     # Letzten Datensatz entfernen, potentiell unvollständig und damit verzerrend
     weeklyData <- weeklyData[1:nrow(weeklyData)-1]
@@ -68,8 +62,7 @@
     }
     
     # 1-Wochen-Durchschnitt
-    plot <- weeklyData %>%
-        ggplot(aes(x=Time)) +
+    plot <- ggplot(weeklyData, aes(x=Time)) +
         geom_line(aes(y=Volume, color="NumTransaktionen"), size=1) +
         theme_minimal() +
         theme(

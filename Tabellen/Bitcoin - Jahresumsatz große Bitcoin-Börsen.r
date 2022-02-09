@@ -39,8 +39,8 @@ dateTo <- "2022-01-01 00:00:00" # Exklusive
 durationInYears <- 3L
 
 # Beispielkurse
-sampleExchangeRate_a = 20000 # 20.000 USD
-sampleExchangeRate_b = 50000 # 50.000 USD
+sampleExchangeRate_a = 5000 # 5.000 USD
+sampleExchangeRate_b = 65000 # 65.000 USD
 
 
 # Bibliotheken und Hilfsfunktionen laden --------------------------------------
