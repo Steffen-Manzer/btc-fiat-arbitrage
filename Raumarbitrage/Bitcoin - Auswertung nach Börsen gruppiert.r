@@ -184,7 +184,8 @@ aggregatePriceDifferences <- function(
             Mean = mean(PriceDifference),
             Median = median(PriceDifference),
             Q3 = quantile(PriceDifference, probs=.75, names=FALSE),
-            Max = max(PriceDifference)
+            Max = max(PriceDifference),
+            n = .N
         ),
         by=.(Time=floor_date(Time, unit=floorUnits))
     ]
@@ -367,169 +368,12 @@ plotAggregatedPriceDifferencesOverTime <- function(
 }
 
 
-#' Zeichne Preisunterschiede als Boxplot nach Börsen gruppiert
-#' 
-#' @param comparablePrices `data.table` mit den Preisen der verschiedenen Börsen
-#' @param latexOutPath Ausgabepfad als LaTeX-Datei
-#' @return Der Plot (unsichtbar)
-plotPriceDifferencesByExchange <- function(
-    comparablePrices,
-    latexOutPath = NULL
-) {
-    # Parameter validieren
-    stopifnot(
-        is.data.table(comparablePrices), nrow(comparablePrices) > 0L,
-        is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L)
-    )
-    
-    # Ausgabeoptionen
-    if (!is.null(latexOutPath)) {
-        source("Konfiguration/TikZ.r")
-        printf.debug("Ausgabe als LaTeX in Datei %s\n", basename(latexOutPath))
-        tikz(
-            file = latexOutPath,
-            width = documentPageWidth,
-            height = 6 / 2.54, # cm -> Zoll
-            sanitize = TRUE
-        )
-        
-        plotTextPrefix <- "\\footnotesize "
-    } else {
-        plotTextPrefix <- ""
-    }
-    
-    # Achsenbeschriftung
-    plotXLab <- "Börse"
-    plotYLab <- "Preisunterschied"
-    
-    # Zeichnen
-    if (!is.null(comparablePrices$Q3)) {
-        maxValue <- max(comparablePrices$Q3)
-    } else if (!is.null(comparablePrices$PriceDifference)) {
-        maxValue <- max(comparablePrices$PriceDifference)
-    } else {
-        stop("Keine Quartile und keine Rohdaten gefunden!")
-    }
-    
-    
-    # Werte berechnen: Wesentlich schneller,
-    # als geom_boxplot die Berechnung übernehmen zu lassen.
-    # Das grafische Ergebnis ist identisch, da ohnehin 
-    # keine Ausreißer angezeigt werden.
-    boxplot_stats <- data.table()
-    for (i in seq_along(exchangeNames)) {
-        exchange <- names(exchangeNames)[[i]]
-        exchangeSummary <- summary(
-            comparablePrices[
-                ExchangeHigh == exchange | ExchangeLow == exchange,
-                PriceDifference
-            ]
-        )
-        if (is.na(exchangeSummary[[1]])) {
-            next
-        }
-        iqr <- exchangeSummary[[5]] - exchangeSummary[[2]]
-        boxplot_stats <- rbindlist(list(boxplot_stats, data.table(
-            Exchange = exchangeNames[[i]],
-            ColorGroup = "Börse",
-            min = max(exchangeSummary[[1]], exchangeSummary[[2]] - 1.5*iqr),
-            lower = exchangeSummary[[2]],
-            middle = exchangeSummary[[3]],
-            upper = exchangeSummary[[5]],
-            max = min(exchangeSummary[[6]], exchangeSummary[[5]] + 1.5*iqr)
-        )))
-    }
-    
-    # Globale Statistiken: Nur dann, wenn mehr als eine Börse vorhanden ist
-    if (nrow(boxplot_stats) > 1L) {
-        totalSummary <- summary(comparablePrices$PriceDifference)
-        iqr <- totalSummary[[5]] - totalSummary[[2]]
-        boxplot_stats <- rbindlist(list(boxplot_stats, data.table(
-            Exchange = "Gesamt",
-            ColorGroup = "Gesamt",
-            min = max(totalSummary[[1]], totalSummary[[2]] - 1.5*iqr),
-            lower = totalSummary[[2]],
-            middle = totalSummary[[3]],
-            upper = totalSummary[[5]],
-            max = min(totalSummary[[6]], totalSummary[[5]] + 1.5*iqr)
-        )))
-        boxplot_stats[,Exchange:=factor(
-            Exchange,
-            levels=c("Gesamt", exchangeNames |> unlist() |> unname())
-        )]
-    }
-    
-    # Bedeutung der Werte:
-    # ymin = "...", # Kleinster Wert, der nicht Ausreißer ist = (lower - 1.5*IQR)
-    # lower = "...", # Untere Grenze der Box = 25%-Quartil
-    # middle = "...", # Median
-    # upper = "...", # Obere Grenze der Box = 75%-Quartil
-    # ymax = "...", # Größter Wert, der nicht Ausreißer ist (= upper + 1.5*IQR)
-    
-    # Boxplot, gruppiert nach Börse
-    plot <- ggplot(boxplot_stats) +
-        
-        # Horizontale Linien an den Whiskern
-        geom_errorbar(
-            aes(x = Exchange,
-                group = Exchange,
-                color = ColorGroup,
-                ymin = min,
-                ymax = max
-            ),
-            width = .75,
-            position = position_dodge(width = 0.9)
-        ) +
-        
-        # Boxplot
-        geom_boxplot(
-            aes(
-                x = Exchange,
-                group = Exchange,
-                color = ColorGroup,
-                ymin = min,
-                lower = lower,
-                middle = middle,
-                upper = upper,
-                ymax = max
-            ),
-            stat = "identity",
-            width = .75
-        ) +
-        scale_y_continuous(
-            labels = function(x) paste(format.number(x * 100), "%"),
-            limits = c(1, max(boxplot_stats$max)*1.0005)
-        ) +
-        theme_minimal() +
-        theme(
-            legend.position = "none",
-            axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
-            axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
-        ) +
-        scale_color_ptol() +
-        scale_fill_ptol() + 
-        labs(
-            x = paste0(plotTextPrefix, plotXLab),
-            y = paste0(plotTextPrefix, plotYLab)
-        )
-    
-    # Plot zeichnen
-    print(plot)
-    
-    if (!is.null(latexOutPath)) {
-        dev.off()
-    }
-    
-    return(invisible(plot))
-}
-
-
 #' Zeichne Preisunterschiede als Boxplot nach Börsenpaar gruppiert
 #' 
 #' @param comparablePrices `data.table` mit den Preisen der verschiedenen Börsen
 #' @param latexOutPath Ausgabepfad als LaTeX-Datei
 #' @return Der Plot (unsichtbar)
-plotPriceDifferencesByExchangePair <- function(
+plotPriceDifferencesBoxplotByExchangePair <- function(
     comparablePrices,
     latexOutPath = NULL
 ) {
@@ -878,7 +722,7 @@ analysePriceDifferences <- function(pair, breakpoints)
     comparablePrices <- loadComparablePricesByCurrencyPair(pair)
     
     # Boxplot für gesamten Zeitraum erstellen
-    plotPriceDifferencesByExchangePair(
+    plotPriceDifferencesBoxplotByExchangePair(
         comparablePrices,
         latexOutPath = sprintf(
             "%s/Abbildungen/Empirie_Raumarbitrage_%s_UebersichtBoxplot.tex",
@@ -887,9 +731,9 @@ analysePriceDifferences <- function(pair, breakpoints)
     )
     
     # Liniengrafik für gesamten Zeitraum erstellen
-    priceDifferences <- aggregatePriceDifferences(comparablePrices, "1 month")
+    aggregatedPriceDifferences <- aggregatePriceDifferences(comparablePrices, "1 month")
     plotAggregatedPriceDifferencesOverTime(
-        priceDifferences,
+        aggregatedPriceDifferences,
         breakpoints = breakpoints,
         removeGaps = FALSE, # Lücken werden auf 1d-Basis entfernt, daher hier nicht
         latexOutPath = sprintf(
@@ -932,17 +776,17 @@ analysePriceDifferences <- function(pair, breakpoints)
         )
         
         # Daten auf einen Tag aggregieren
-        priceDifferences <- aggregatePriceDifferences(
+        aggregatedPriceDifferences <- aggregatePriceDifferences(
             comparablePrices,
             floorUnits = "1 day",
             interval = segmentInterval
         )
         
-        if (nrow(priceDifferences) > 50L) {
+        if (nrow(aggregatedPriceDifferences) > 50L) {
             
             # Variante 1: Aggregierte Liniengrafik: Nur sinnvoll, wenn keine/wenige Lücken
             plotAggregatedPriceDifferencesOverTime(
-                priceDifferences,
+                aggregatedPriceDifferences,
                 latexOutPath = sprintf(
                     "%s/Abbildungen/Empirie_Raumarbitrage_%s_Uebersicht_%d.tex",
                     latexOutPath, toupper(pair), segment
@@ -952,9 +796,9 @@ analysePriceDifferences <- function(pair, breakpoints)
         } else {
             
             # Variante 2: Punktgrafik: Sinnvoll auch bei vielen Lücken, nicht aber
-            # bei großen Datenmengen
+            # bei großen Datenmengen. Zeichnet *alle* Daten, nicht aggregierte Daten
             plotAggregatedPriceDifferencesOverTime(
-                priceDifferences = comparablePrices[Time %between% segmentInterval],
+                comparablePrices[Time %between% segmentInterval],
                 plotType = "point",
                 latexOutPath = sprintf(
                     "%s/Abbildungen/Empirie_Raumarbitrage_%s_Uebersicht_%d.tex",
@@ -985,8 +829,8 @@ analysePriceDifferences <- function(pair, breakpoints)
             )
         )
         
-        # Boxplot
-        plotPriceDifferencesByExchangePair(
+        # Boxplot mit allen Daten
+        plotPriceDifferencesBoxplotByExchangePair(
             comparablePrices[Time %between% segmentInterval],
             latexOutPath = sprintf(
                 "%s/Abbildungen/Empirie_Raumarbitrage_%s_UebersichtBoxplot_%d.tex",

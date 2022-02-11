@@ -110,7 +110,7 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
 #'                `Time`, `Price`, `Exchange` und `RowNum`
 #' @return `data.table` Wie `dataset`, nur mit gruppierten Zeitpunkten
 summariseMultipleTicksAtSameTime <- function(dataset) {
-    return(dataset[ 
+    return(dataset[
         j=.(
             IDLow = ID[which.min(Price)],
             PriceLow = min(Price),
@@ -511,24 +511,6 @@ compareTwoExchanges <- function(
         if (difftime(tick_b$Time, tick_a$Time, units="secs") > comparisonThreshold) {
             next
         }
-        
-        # TODO Bei doppeltem/häufigerem Wechsel der Börse nur einen Tick speichern?
-        # Beispiel:
-        # Börse     ID  Preis  Verglichen in Durchlauf Nummer...
-        #     A      1     10  1
-        #     B     10     11  1 + 2
-        #     A      2      9      2 + 3
-        #     B     11     12          3 + 4
-        #     A      3      8              4 + 5
-        #     B     12     13                  5 ...
-        #
-        # Ergäbe:
-        # Durchlauf  IDHigh  PriceHigh  ExchangeHigh  IDLow  PriceLow  ExchangeLow  Differenz
-        #         1      10         11             B      1        10            A          1
-        #         2      10         11             B      2         9            A          2
-        #         3      11         12             B      2         9            A          3
-        #         4      11         12             B      3         8            A          4
-        #         5      12         13             B      3         8            A          5
         
         # Set in Ergebnisvektor speichern
         # Anmerkung:
