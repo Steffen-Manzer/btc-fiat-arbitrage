@@ -30,6 +30,7 @@ library("data.table")
 library("lubridate") # floor_date
 library("ggplot2")
 library("ggthemes")
+library("gridExtra") # grid.arrange
 library("readr") # read_file
 library("stringr") # str_replace
 library("tictoc")
@@ -258,13 +259,10 @@ plotAggregatedPriceDifferencesOverTime <- function(
             height = 6 / 2.54, # cm -> Zoll
             sanitize = TRUE
         )
-        
-        plotTextPrefix <- "\\footnotesize "
-    } else {
-        plotTextPrefix <- ""
     }
     
-    # Einige Bezeichnungen
+    # Einige Bezeichnungen und Variablen
+    plotTextPrefix <- "\\footnotesize "
     plotXLab <- "Datum"
     plotYLab <- "Preisunterschied"
     
@@ -276,6 +274,7 @@ plotAggregatedPriceDifferencesOverTime <- function(
     } else {
         stop("Keine Quartile und keine Rohdaten gefunden!")
     }
+    
     plot <- ggplot(priceDifferences)
     
     # Bereiche zeichnen und Nummer anzeigen
@@ -338,12 +337,12 @@ plotAggregatedPriceDifferencesOverTime <- function(
     }
     
     
-    plot <- plot +
+    plot <- plot + 
         theme_minimal() +
         theme(
             legend.position = "none",
-            axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
-            axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
+            axis.title.x = element_text(margin=margin(t=10, r=0, b=0, l=0)),
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
         ) +
         scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
         coord_cartesian(ylim=c(0, maxValue)) +
@@ -351,20 +350,220 @@ plotAggregatedPriceDifferencesOverTime <- function(
             labels = function(x) paste(format.number(x * 100), "%")
         ) +
         scale_color_ptol() +
-        scale_fill_ptol() + 
+        scale_fill_ptol() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab)
         )
     
-    # Plot zeichnen
-    print(plot)
-    
     if (!is.null(latexOutPath)) {
+        # Plot zeichnen
+        print(plot)
         dev.off()
+        return(invisible(plot))
+    } else {
+        return(plot)
+    }
+}
+
+
+#' Zeichne Anzahl der Beobachtungen als Liniengrafik im Zeitverlauf
+#' 
+#' @param priceDifferences `data.table` mit den aggr. Preisen der verschiedenen Börsen
+#' @return Der Plot (unsichtbar)
+plotNumDifferencesOverTime <- function(
+    priceDifferences,
+    breakpoints = NULL,
+    timeHorizon = "Monatliche"
+) {
+    # Parameter validieren
+    stopifnot(
+        is.data.table(priceDifferences), nrow(priceDifferences) > 0L,
+        !is.null(priceDifferences$Time)
+    )
+    
+    # Einige Bezeichnungen und Variablen
+    plotXLab <- "Datum"
+    plotYLab <- paste0(timeHorizon, " Beobachtungen")
+    plotTextPrefix <- "\\footnotesize "
+    
+    # Achseneigenschaften
+    if (max(priceDifferences$n) > 1e6) {
+        roundedTo <- "Mio."
+        roundFac <- 1e6
+    } else {
+        roundedTo <- "Tsd."
+        roundFac <- 1e3
     }
     
-    return(invisible(plot))
+    plot <- ggplot(priceDifferences)
+    
+    # Bereiche zeichnen und Nummer anzeigen
+    if (!is.null(breakpoints)) {
+        
+        # Die hier bestimmten Intervalle der aggregierten Daten können
+        # von den Intervallen des gesamten Datensatzes abweichen
+        intervals <- calculateIntervals(priceDifferences$Time, breakpoints)
+        
+        # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
+        maxValue <- max(priceDifferences$n)
+        plot <- plot + 
+            geom_rect(
+                aes(
+                    xmin = From,
+                    xmax = To,
+                    ymin = 0,
+                    ymax = maxValue * 1.05,
+                    fill = Set
+                ),
+                data = intervals,
+                alpha = .25
+            ) +
+            geom_text(
+                aes(
+                    x = From+(To-From)/2,
+                    y = maxValue,
+                    label = paste0(plotTextPrefix, Set)
+                ),
+                data = intervals
+            )
+    }
+    
+    # Anzahl Datensätze zeichnen
+    plot <- plot +
+        geom_line(
+            aes(x=Time, y=n, color="1", linetype="1"),
+            size = .5
+        )  + 
+        theme_minimal() +
+        theme(
+            legend.position = "none",
+            axis.title.x = element_text(margin=margin(t=10, r=0, b=0, l=0)),
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
+        ) +
+        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
+        #coord_cartesian(ylim=c(0, maxValue)) +
+        scale_y_continuous(
+            labels = function(x) paste(format.number(x / roundFac))
+            #breaks = breaks_extended(4L)
+        ) +
+        scale_color_ptol() +
+        scale_fill_ptol() +
+            labs(
+                x = paste0(plotTextPrefix, plotXLab),
+                y = paste0(plotTextPrefix, plotYLab, " [", roundedTo, "]")
+            )
+    
+    return(plot)
+}
+
+
+#' Zeichne das gehandelte Volumen eines Kurspaares an allen Börsen für den
+#' angegebenen Zeitabschnitt.
+#' 
+#' @param pair Das gewünschte Kurspaar, bspw. btcusd
+#' @param timeframe POSIXct-Vektor der Länge 2 mit den Grenzen des Intervalls (inkl.)
+#' @return Plot
+plotTotalVolumeOverTime <- function(pair, timeframe, breakpoints = NULL)
+{
+    stopifnot(
+        is.character(pair), length(pair) == 1L,
+        length(timeframe) == 2L, is.POSIXct(timeframe)
+        # TODO Breakpoints (auch oben)
+    )
+    
+    plotXLab = "Datum"
+    plotYLab = "Handelsvolumen"
+    plotTextPrefix <- "\\footnotesize "
+    
+    # Handelsvolumen berechnen
+    exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
+    result <- data.table()
+    for (exchange in exchanges) {
+        sourceFile <- sprintf("Cache/%1$s/%2$s/%1$s-%2$s-monthly.fst", 
+                              tolower(exchange), tolower(pair))
+        
+        if (!file.exists(sourceFile)) {
+            # Dieses Paar wird an dieser Börse nicht gehandelt
+            next
+        }
+        
+        dataset <- read_fst(
+            sourceFile, 
+            columns = c("Time", "Amount"), 
+            as.data.table = TRUE
+        )
+        dataset$Time <- as.POSIXct(dataset$Time, tz="UTC")
+        result <- rbindlist(list(result, dataset[Time %between% timeframe]))
+    }
+    
+    result <- result[j=.(Amount=sum(Amount)), by=Time]
+    setorder(result, Time)
+    
+    # Achseneigenschaften
+    if (max(result$Amount) > 1e6) {
+        roundedTo <- " [Mio. BTC]"
+        roundFac <- 1e6
+    } else if (max(result$Amount) > 1e3) {
+        roundedTo <- " [Tsd. BTC]"
+        roundFac <- 1e3
+    } else {
+        roundedTo <- " [BTC]"
+        roundFac <- 1
+    }
+    
+    plot <- ggplot(result)
+    
+    # Bereiche zeichnen und Nummer anzeigen
+    if (!is.null(breakpoints)) {
+        
+        # Die hier bestimmten Intervalle der aggregierten Daten können
+        # von den Intervallen des gesamten Datensatzes abweichen
+        intervals <- calculateIntervals(result$Time, breakpoints)
+        
+        # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
+        maxValue <- max(result$Amount)
+        plot <- plot + 
+            geom_rect(
+                aes(
+                    xmin = From,
+                    xmax = To,
+                    ymin = 0,
+                    ymax = maxValue * 1.05,
+                    fill = Set
+                ),
+                data = intervals,
+                alpha = .25
+            ) +
+            geom_text(
+                aes(
+                    x = From+(To-From)/2,
+                    y = maxValue,
+                    label = paste0(plotTextPrefix, Set)
+                ),
+                data = intervals
+            )
+    }
+    
+    # Volumen zeichnen
+    plot <- plot +
+        geom_line(aes(x=Time, y=Amount, color="1", linetype="1"), size=.5) +
+        theme_minimal() +
+        theme(
+            legend.position = "none",
+            axis.title.x = element_text(margin=margin(t=10, r=0, b=0, l=0)),
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
+        ) +
+        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
+        scale_y_continuous(labels = function(x) format.number(x/roundFac)) +
+        scale_color_ptol() +
+        scale_fill_ptol() +
+        labs(
+            x = paste0(plotTextPrefix, plotXLab),
+            y = paste0(plotTextPrefix, plotYLab, roundedTo)
+        )
+    
+    return(plot)
 }
 
 
@@ -393,15 +592,12 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
             height = 6 / 2.54, # cm -> Zoll
             sanitize = TRUE
         )
-        
-        plotTextPrefix <- "\\footnotesize "
-    } else {
-        plotTextPrefix <- ""
     }
     
     # Achsenbeschriftung
     plotXLab <- "Börsenpaar"
     plotYLab <- "Preisunterschied"
+    plotTextPrefix <- "\\footnotesize "
     
     # Zeichnen
     if (!is.null(comparablePrices$Q3)) {
@@ -531,14 +727,14 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
             y = paste0(plotTextPrefix, plotYLab)
         )
     
-    # Plot zeichnen
-    print(plot)
-    
     if (!is.null(latexOutPath)) {
+        # Plot zeichnen
+        print(plot)
         dev.off()
+        return(invisible(plot))
+    } else {
+        return(plot)
     }
-    
-    return(invisible(plot))
 }
 
 
@@ -722,25 +918,58 @@ analysePriceDifferences <- function(pair, breakpoints)
     comparablePrices <- loadComparablePricesByCurrencyPair(pair)
     
     # Boxplot für gesamten Zeitraum erstellen
-    plotPriceDifferencesBoxplotByExchangePair(
-        comparablePrices,
-        latexOutPath = sprintf(
-            "%s/Abbildungen/Empirie_Raumarbitrage_%s_UebersichtBoxplot.tex",
-            latexOutPath, toupper(pair)
-        )
-    )
+    # plotPriceDifferencesBoxplotByExchangePair(
+    #     comparablePrices,
+    #     latexOutPath = sprintf(
+    #         "%s/Abbildungen/Empirie_Raumarbitrage_%s_UebersichtBoxplot.tex",
+    #         latexOutPath, toupper(pair)
+    #     )
+    # )
     
     # Liniengrafik für gesamten Zeitraum erstellen
     aggregatedPriceDifferences <- aggregatePriceDifferences(comparablePrices, "1 month")
-    plotAggregatedPriceDifferencesOverTime(
+    # plotAggregatedPriceDifferencesOverTime(
+    #     aggregatedPriceDifferences,
+    #     breakpoints = breakpoints,
+    #     removeGaps = FALSE, # Lücken werden auf 1d-Basis entfernt, daher hier nicht
+    #     latexOutPath = sprintf(
+    #         "%s/Abbildungen/Empirie_Raumarbitrage_%s_Uebersicht.tex",
+    #         latexOutPath, toupper(pair)
+    #     )
+    # )
+    
+    # Überblicksgrafik (Ganze Seite) erstellen
+    p_diff <- plotAggregatedPriceDifferencesOverTime(
         aggregatedPriceDifferences,
         breakpoints = breakpoints,
-        removeGaps = FALSE, # Lücken werden auf 1d-Basis entfernt, daher hier nicht
-        latexOutPath = sprintf(
-            "%s/Abbildungen/Empirie_Raumarbitrage_%s_Uebersicht.tex",
-            latexOutPath, toupper(pair)
-        )
+        removeGaps = FALSE # Lücken werden immer auf 1d-Basis entfernt, daher hier nicht
     )
+    p_nrow <- plotNumDifferencesOverTime(
+        aggregatedPriceDifferences,
+        breakpoints = breakpoints
+    )
+    p_volume <- plotTotalVolumeOverTime(
+        pair,
+        aggregatedPriceDifferences$Time[c(1,nrow(aggregatedPriceDifferences))],
+        breakpoints = breakpoints
+    )
+    p_boxplot <- plotPriceDifferencesBoxplotByExchangePair(comparablePrices)
+    
+    # Als LaTeX-Dokument ausgeben
+    source("Konfiguration/TikZ.r")
+    tikz(
+        file = sprintf("%s/Abbildungen/Empirie_Raumarbitrage_%s_Uebersicht.tex", 
+                       latexOutPath, toupper(pair)),
+        width = documentPageWidth,
+        height = 22 / 2.54,
+        sanitize = TRUE
+    )
+    grid.arrange(
+        p_diff, p_nrow, p_volume, p_boxplot,
+        layout_matrix = rbind(c(1),c(2),c(3),c(4))
+    )
+    dev.off()
+    
     
     # Beschreibende Statistiken
     summariseDatasetAsTable(
@@ -833,11 +1062,13 @@ analysePriceDifferences <- function(pair, breakpoints)
         plotPriceDifferencesBoxplotByExchangePair(
             comparablePrices[Time %between% segmentInterval],
             latexOutPath = sprintf(
-                "%s/Abbildungen/Empirie_Raumarbitrage_%s_UebersichtBoxplot_%d.tex",
+                "%s/Abbildungen/Empirie_Raumarbitrage_%s_Boxplot_%d.tex",
                 latexOutPath, toupper(pair), segment
             )
         )
     }
+    
+    return(invisible(NULL))
 }
 
 
