@@ -229,13 +229,15 @@ calculateIntervals <- function(timeBoundaries, breakpoints)
 #' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
 #' @param removeGaps Datenlücken nicht interpolieren/zeichnen
 #' @param plotType Plot-Typ: line oder point
+#' @param plotTitle Überschrift (optional)
 #' @return Der Plot (unsichtbar)
 plotAggregatedPriceDifferencesOverTime <- function(
     priceDifferences,
     latexOutPath = NULL,
     breakpoints = NULL,
     removeGaps = TRUE,
-    plotType = "line"
+    plotType = "line",
+    plotTitle = NULL
 ) {
     # Parameter validieren
     stopifnot(
@@ -337,7 +339,8 @@ plotAggregatedPriceDifferencesOverTime <- function(
         theme_minimal() +
         theme(
             legend.position = "none",
-            axis.title.x = element_text(margin=margin(t=10, r=0, b=0, l=0)),
+            plot.title.position = "plot",
+            axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
             axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
         ) +
         scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
@@ -349,8 +352,15 @@ plotAggregatedPriceDifferencesOverTime <- function(
         scale_fill_ptol() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
-            y = paste0(plotTextPrefix, plotYLab)
+            y = paste0(plotTextPrefix, plotYLab),
         )
+    
+    if (!is.null(plotTitle)) {
+        plot <- plot + ggtitle(
+            paste0("\\small ", plotTitle),
+            subtitle="\\small Median, 25\\,%- und 75\\,%-Quartil der Monatsdaten"
+        )
+    }
     
     if (!is.null(latexOutPath)) {
         # Plot zeichnen
@@ -370,7 +380,8 @@ plotAggregatedPriceDifferencesOverTime <- function(
 plotNumDifferencesOverTime <- function(
     priceDifferences,
     breakpoints = NULL,
-    timeHorizon = "Monatliche"
+    timeHorizon = "Monatliche",
+    plotTitle = NULL
 ) {
     # Parameter validieren
     stopifnot(
@@ -382,9 +393,10 @@ plotNumDifferencesOverTime <- function(
     plotXLab <- "Datum"
     plotYLab <- paste0(timeHorizon, " Beobachtungen")
     plotTextPrefix <- "\\footnotesize "
+    maxValue <- max(priceDifferences$n)
     
     # Achseneigenschaften
-    if (max(priceDifferences$n) > 1e6) {
+    if (maxValue > 1e6) {
         roundedTo <- "Mio."
         roundFac <- 1e6
     } else {
@@ -402,7 +414,6 @@ plotNumDifferencesOverTime <- function(
         intervals <- calculateIntervals(priceDifferences$Time, breakpoints)
         
         # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
-        maxValue <- max(priceDifferences$n)
         plot <- plot + 
             geom_rect(
                 aes(
@@ -434,11 +445,12 @@ plotNumDifferencesOverTime <- function(
         theme_minimal() +
         theme(
             legend.position = "none",
-            axis.title.x = element_text(margin=margin(t=10, r=0, b=0, l=0)),
+            plot.title.position = "plot",
+            axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
             axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
         ) +
         scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
-        #coord_cartesian(ylim=c(0, maxValue)) +
+        coord_cartesian(ylim=c(0, maxValue)) +
         scale_y_continuous(
             labels = function(x) paste(format.number(x / roundFac))
             #breaks = breaks_extended(4L)
@@ -450,6 +462,10 @@ plotNumDifferencesOverTime <- function(
                 y = paste0(plotTextPrefix, plotYLab, " [", roundedTo, "]")
             )
     
+    if (!is.null(plotTitle)) {
+        plot <- plot + ggtitle(paste0("\\small ", plotTitle))
+    }
+    
     return(plot)
 }
 
@@ -460,7 +476,12 @@ plotNumDifferencesOverTime <- function(
 #' @param pair Das gewünschte Kurspaar, bspw. btcusd
 #' @param timeframe POSIXct-Vektor der Länge 2 mit den Grenzen des Intervalls (inkl.)
 #' @return Plot
-plotTotalVolumeOverTime <- function(pair, timeframe, breakpoints = NULL)
+plotTotalVolumeOverTime <- function(
+    pair,
+    timeframe,
+    breakpoints = NULL,
+    plotTitle = NULL
+)
 {
     stopifnot(
         is.character(pair), length(pair) == 1L,
@@ -469,7 +490,7 @@ plotTotalVolumeOverTime <- function(pair, timeframe, breakpoints = NULL)
     )
     
     plotXLab = "Datum"
-    plotYLab = "Handelsvolumen"
+    plotYLab = "Volumen"
     plotTextPrefix <- "\\footnotesize "
     
     # Handelsvolumen berechnen
@@ -497,10 +518,11 @@ plotTotalVolumeOverTime <- function(pair, timeframe, breakpoints = NULL)
     setorder(result, Time)
     
     # Achseneigenschaften
-    if (max(result$Amount) > 1e6) {
+    maxValue <- max(result$Amount)
+    if (maxValue > 1e6) {
         roundedTo <- " [Mio. BTC]"
         roundFac <- 1e6
-    } else if (max(result$Amount) > 1e3) {
+    } else if (maxValue > 1e3) {
         roundedTo <- " [Tsd. BTC]"
         roundFac <- 1e3
     } else {
@@ -518,7 +540,6 @@ plotTotalVolumeOverTime <- function(pair, timeframe, breakpoints = NULL)
         intervals <- calculateIntervals(result$Time, breakpoints)
         
         # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
-        maxValue <- max(result$Amount)
         plot <- plot + 
             geom_rect(
                 aes(
@@ -547,10 +568,12 @@ plotTotalVolumeOverTime <- function(pair, timeframe, breakpoints = NULL)
         theme_minimal() +
         theme(
             legend.position = "none",
-            axis.title.x = element_text(margin=margin(t=10, r=0, b=0, l=0)),
+            plot.title.position = "plot",
+            axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
             axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
         ) +
         scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
+        coord_cartesian(ylim=c(0, maxValue)) +
         scale_y_continuous(labels = function(x) format.number(x/roundFac)) +
         scale_color_ptol() +
         scale_fill_ptol() +
@@ -558,6 +581,10 @@ plotTotalVolumeOverTime <- function(pair, timeframe, breakpoints = NULL)
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab, roundedTo)
         )
+    
+    if (!is.null(plotTitle)) {
+        plot <- plot + ggtitle(paste0("\\small ", plotTitle))
+    }
     
     return(plot)
 }
@@ -570,7 +597,8 @@ plotTotalVolumeOverTime <- function(pair, timeframe, breakpoints = NULL)
 #' @return Der Plot (unsichtbar)
 plotPriceDifferencesBoxplotByExchangePair <- function(
     comparablePrices,
-    latexOutPath = NULL
+    latexOutPath = NULL,
+    plotTitle = NULL
 ) {
     # Parameter validieren
     stopifnot(
@@ -713,6 +741,7 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
         theme_minimal() +
         theme(
             legend.position = "none",
+            plot.title.position = "plot",
             axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
             axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
         ) +
@@ -722,6 +751,10 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab)
         )
+    
+    if (!is.null(plotTitle)) {
+        plot <- plot + ggtitle(paste0("\\small ", plotTitle))
+    }
     
     if (!is.null(latexOutPath)) {
         # Plot zeichnen
@@ -938,18 +971,27 @@ analysePriceDifferences <- function(pair, breakpoints)
     p_diff <- plotAggregatedPriceDifferencesOverTime(
         aggregatedPriceDifferences,
         breakpoints = breakpoints,
-        removeGaps = FALSE # Lücken werden immer auf 1d-Basis entfernt, daher hier nicht
+        # Lücken werden immer auf 1d-Basis entfernt.
+        # Da es sich um Monatsdaten handelt, wäre der Plot leer...
+        removeGaps = FALSE,
+        plotTitle = "Preisabweichungen im Zeitverlauf"
     )
     p_nrow <- plotNumDifferencesOverTime(
         aggregatedPriceDifferences,
-        breakpoints = breakpoints
+        breakpoints = breakpoints,
+        timeHorizon = "",
+        plotTitle = "Anzahl monatlicher Beobachtungen im Zeitverlauf"
     )
     p_volume <- plotTotalVolumeOverTime(
         pair,
         aggregatedPriceDifferences$Time[c(1,nrow(aggregatedPriceDifferences))],
-        breakpoints = breakpoints
+        breakpoints = breakpoints,
+        plotTitle = "Handelsvolumen im Zeitverlauf"
     )
-    p_boxplot <- plotPriceDifferencesBoxplotByExchangePair(comparablePrices)
+    p_boxplot <- plotPriceDifferencesBoxplotByExchangePair(
+        comparablePrices,
+        plotTitle = "Lagemaße der Preisabweichungen nach Börsenpaar"
+    )
     
     # Als LaTeX-Dokument ausgeben
     source("Konfiguration/TikZ.r")
