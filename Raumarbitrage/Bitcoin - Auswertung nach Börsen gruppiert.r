@@ -1,10 +1,10 @@
-#' Auswertung der Preisunterschiede von Bitcoin-Börsen mit Blick auf
+#' Auswertung der Preisabweichungen von Bitcoin-Börsen mit Blick auf
 #' Möglichkeiten der Raumarbitrage.
 #'
 #' Notwendig ist die vorherige paarweise Berechnung und Speicherung relevanter
-#' Preisunterschiede unter
+#' Preisabweichungen unter
 #'   `Cache/Raumarbitrage/{Kurspaar}-{Börse 1}-{Börse 2}-{i}` mit `i = 1 ... n`.
-#' über die Datei `Preisunterschiede Bitcoin-Börsen berechnen.r`.
+#' über die Datei `Bitcoin - Abweichungen berechnen.r`.
 #'
 #' Stand Januar 2022 passen sämtliche Ergebnisse noch mit etwas Puffer in eine
 #' einzelne Ergebnisdatei, ohne dass diese jeweils mehr als 4 GB Arbeitsspeicher
@@ -57,7 +57,7 @@ summaryTableTemplateFile <-
 #' Lade alle vergleichbaren Preise für ein Kurspaar
 #' 
 #' @param currencyPair Kurspaar (z.B. BTCUSD)
-#' @return `data.table` mit den Preisunterschieden
+#' @return `data.table` mit den Preisabweichungenn
 loadComparablePricesByCurrencyPair <- function(currencyPair)
 {
     # Parameter validieren
@@ -226,7 +226,7 @@ calculateIntervals <- function(timeBoundaries, breakpoints)
 }
 
 
-#' Zeichne Preisunterschiede als Linien-/Punktgrafik im Zeitverlauf
+#' Zeichne Preisabweichungen als Linien-/Punktgrafik im Zeitverlauf
 #' 
 #' @param priceDifferences `data.table` mit den aggr. Preisen der verschiedenen Börsen
 #' @param latexOutPath Ausgabepfad als LaTeX-Datei
@@ -264,7 +264,7 @@ plotAggregatedPriceDifferencesOverTime <- function(
     # Einige Bezeichnungen und Variablen
     plotTextPrefix <- "\\footnotesize "
     plotXLab <- "Datum"
-    plotYLab <- "Preisunterschied"
+    plotYLab <- "Preisabweichung"
     
     # Zeichnen
     if (!is.null(priceDifferences$Q3)) {
@@ -567,7 +567,7 @@ plotTotalVolumeOverTime <- function(pair, timeframe, breakpoints = NULL)
 }
 
 
-#' Zeichne Preisunterschiede als Boxplot nach Börsenpaar gruppiert
+#' Zeichne Preisabweichungen als Boxplot nach Börsenpaar gruppiert
 #' 
 #' @param comparablePrices `data.table` mit den Preisen der verschiedenen Börsen
 #' @param latexOutPath Ausgabepfad als LaTeX-Datei
@@ -596,7 +596,7 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
     
     # Achsenbeschriftung
     plotXLab <- "Börsenpaar"
-    plotYLab <- "Preisunterschied"
+    plotYLab <- "Preisabweichung"
     plotTextPrefix <- "\\footnotesize "
     
     # Zeichnen
@@ -908,7 +908,7 @@ summariseDatasetAsTable <- function(
 
 
 # Haupt-Auswertungsfunktion ---------------------------------------------------
-#' Preisunterschiede auf Arbitragemöglichkeiten abklopfen
+#' Preisabweichungen auf Arbitragemöglichkeiten abklopfen
 analysePriceDifferences <- function(pair, breakpoints)
 {
     # Vorherige Berechnungen ggf. aus dem Speicher bereinigen
@@ -979,7 +979,7 @@ analysePriceDifferences <- function(pair, breakpoints)
             latexOutPath, toupper(pair)
         ),
         caption = sprintf(
-            "Zentrale Kenngrößen der Preisunterschiede für %s im Gesamtüberblick",
+            "Zentrale Kenngrößen der Preisabweichungen für %s im Gesamtüberblick",
             format.currencyPair(pair)
         ),
         label = sprintf("Empirie_Raumarbitrage_%s_Ueberblick", toupper(pair))
@@ -1047,7 +1047,7 @@ analysePriceDifferences <- function(pair, breakpoints)
                 latexOutPath, toupper(pair), segment
             ),
             caption = sprintf(
-                "Zentrale Kenngrößen der Preisunterschiede für %s von %s bis %s",
+                "Zentrale Kenngrößen der Preisabweichungen für %s von %s bis %s",
                 format.currencyPair(pair),
                 format(segmentInterval[1], "%d.%m.%Y"),
                 format(segmentInterval[2], "%d.%m.%Y")
