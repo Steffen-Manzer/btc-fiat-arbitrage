@@ -89,24 +89,22 @@ loadComparablePricesByCurrencyPair <- function(currencyPair)
         priceDifferences[,PriceDifference:=(PriceHigh/PriceLow)-1]
         
         # Statistiken ausgeben
-        if (exists("DEBUG_PRINT") && isTRUE(DEBUG_PRINT)) {
-            printf.debug(
-                "%s (%s) mit %s Datensätzen von %s bis %s.\n", 
-                basename(sourceFile),
-                format(object.size(priceDifferences), units="auto", standard="SI"),
-                format.number(nrow(priceDifferences)),
-                format(first(priceDifferences$Time), "%d.%m.%Y"),
-                format(last(priceDifferences$Time), "%d.%m.%Y")
-            )
-            maxDifference <- priceDifferences[which.max(PriceDifference)]
-            with(maxDifference, printf.debug(
-                "Höchstwert: %s (%s <-> %s) am %s\n",
-                format.number(PriceDifference),
-                format.money(PriceLow),
-                format.money(PriceHigh),
-                formatPOSIXctWithFractionalSeconds(Time, "%d.%m.%Y %H:%M:%OS")
-            ))
-        }
+        printf(
+            "%s (%s) mit %s Datensätzen von %s bis %s.\n", 
+            basename(sourceFile),
+            format(object.size(priceDifferences), units="auto", standard="SI"),
+            format.number(nrow(priceDifferences)),
+            format(first(priceDifferences$Time), "%d.%m.%Y"),
+            format(last(priceDifferences$Time), "%d.%m.%Y")
+        )
+        maxDifference <- priceDifferences[which.max(PriceDifference)]
+        with(maxDifference, printf(
+            "Höchstwert: %s (%s <-> %s) am %s\n",
+            format.number(PriceDifference),
+            format.money(PriceLow),
+            format.money(PriceHigh),
+            formatPOSIXctWithFractionalSeconds(Time, "%d.%m.%Y %H:%M:%OS")
+        ))
         
         if (!is.null(combinedPriceDifferences)) {
             # Ergebnisse anhängen
@@ -127,23 +125,21 @@ loadComparablePricesByCurrencyPair <- function(currencyPair)
     setorder(combinedPriceDifferences, Time)
     
     # Statistiken ausgeben
-    if (exists("DEBUG_PRINT") && isTRUE(DEBUG_PRINT)) {
-        printf.debug(
-            "\nKombination aller Börsen ergab %s Datensätze (%s) von %s bis %s.\n",
-            format.number(nrow(combinedPriceDifferences)),
-            format(object.size(combinedPriceDifferences), units="auto", standard="SI"),
-            format(first(combinedPriceDifferences$Time), "%d.%m.%Y"),
-            format(last(combinedPriceDifferences$Time), "%d.%m.%Y")
-        )
-        maxDifference <- combinedPriceDifferences[which.max(PriceDifference)]
-        with(maxDifference, printf.debug(
-            "Höchstwert: %s (%s <-> %s) am %s\n",
-            format.number(PriceDifference),
-            format.money(PriceLow),
-            format.money(PriceHigh),
-            formatPOSIXctWithFractionalSeconds(Time, "%d.%m.%Y %H:%M:%OS")
-        ))
-    }
+    printf(
+        "\nKombination aller Börsen ergab %s Datensätze (%s) von %s bis %s.\n",
+        format.number(nrow(combinedPriceDifferences)),
+        format(object.size(combinedPriceDifferences), units="auto", standard="SI"),
+        format(first(combinedPriceDifferences$Time), "%d.%m.%Y"),
+        format(last(combinedPriceDifferences$Time), "%d.%m.%Y")
+    )
+    maxDifference <- combinedPriceDifferences[which.max(PriceDifference)]
+    with(maxDifference, printf(
+        "Höchstwert: %s (%s <-> %s) am %s\n",
+        format.number(PriceDifference),
+        format.money(PriceLow),
+        format.money(PriceHigh),
+        formatPOSIXctWithFractionalSeconds(Time, "%d.%m.%Y %H:%M:%OS")
+    ))
     
     return(combinedPriceDifferences)
 }
