@@ -123,20 +123,25 @@ for (i in seq_len(nrow(result))) {
     priceDifference <- result[i]
     printf("%s%s &\n",
            tabIndentFirst, 
-           formatPOSIXctWithFractionalSeconds(priceDifference$Time, "%d.%m.%Y, %H:%M:%OS")
+           #formatPOSIXctWithFractionalSeconds(priceDifference$Time, "%d.%m.%Y, %H:%M:%OS")
+           formatPOSIXctWithFractionalSeconds(priceDifference$Time, "%H:%M:%OS")
     )
     
+    # Höchstkurs
     printf("%s%s &\n", tabIndent, priceDifference$ExchangeHigh)
     printf("%s%s\\,USD &\n", tabIndent, format.money(priceDifference$PriceHigh, digits=2))
     
+    # Tiefstkurs
     printf("%s%s &\n", tabIndent, priceDifference$ExchangeLow)
     printf("%s%s\\,USD &\n", tabIndent, format.money(priceDifference$PriceLow, digits=2))
     
+    # Absolute Differenz
     printf("%s%s\\,USD &\n", tabIndent, 
            format.money(priceDifference$PriceHigh - priceDifference$PriceLow, digits=2))
     
+    # Relative Abweichung
     printf("%s%s\\,\\%% \\\\\n", tabIndent, 
-           format.percentage(priceDifference$PriceHigh / priceDifference$PriceLow - 1, 2L))
+           format.percentage(priceDifference$PriceHigh / priceDifference$PriceLow - 1, 3L))
     
     printf("\n")
 }

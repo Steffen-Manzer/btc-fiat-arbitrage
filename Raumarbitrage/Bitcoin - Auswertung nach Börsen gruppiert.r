@@ -796,9 +796,9 @@ summariseDatasetAsTable <- function(
             as.double()
         numRowsPerHour <- numRows / intervalLengthHours
         numRowsPerDay <- numRows / (intervalLengthHours / 24)
-        numRowsLargerThan1_5Pct <- length(which(dataSubset$PriceDifference >= .015))
-        numRowsLargerThan2_5Pct <- length(which(dataSubset$PriceDifference >= .025))
-        numRowsLargerThan5Pct <- length(which(dataSubset$PriceDifference >= .05))
+        numRowsLargerThan_A <- length(which(dataSubset$PriceDifference >= .01))
+        numRowsLargerThan_B <- length(which(dataSubset$PriceDifference >= .02))
+        numRowsLargerThan_C <- length(which(dataSubset$PriceDifference >= .05))
         s <- strrep(" ", 12) # Einrückung in der Ergebnisdatei
         return(paste0(
             sprintf("%s%% %s Datensätze pro Tag\n", s,
@@ -808,14 +808,14 @@ summariseDatasetAsTable <- function(
                     format.percentage(numRows / numRowsTotal, 1L)),
             sprintf("%s%s &\n", s, format.numberWithFixedDigits(numRowsPerHour, 1)),
             sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
-                    format.number(numRowsLargerThan1_5Pct),
-                    format.percentage(numRowsLargerThan1_5Pct / numRows, 1L)),
+                    format.number(numRowsLargerThan_A),
+                    format.percentage(numRowsLargerThan_A / numRows, 1L)),
             sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
-                    format.number(numRowsLargerThan2_5Pct),
-                    format.percentage(numRowsLargerThan2_5Pct / numRows, 1L)),
+                    format.number(numRowsLargerThan_B),
+                    format.percentage(numRowsLargerThan_B / numRows, 1L)),
             sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
-                    format.number(numRowsLargerThan5Pct),
-                    format.percentage(numRowsLargerThan5Pct / numRows, 1L)),
+                    format.number(numRowsLargerThan_C),
+                    format.percentage(numRowsLargerThan_C / numRows, 1L)),
             sprintf("%s%s\\,\\%% ", s, 
                     format.percentage(max(dataSubset$PriceDifference), 1)),
             end
