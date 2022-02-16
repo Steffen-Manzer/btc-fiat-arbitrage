@@ -56,13 +56,13 @@ for (i in seq_len(nrow(ab))) {
            tabIndentFirst, 
            formatPOSIXctWithFractionalSeconds(tick$Time, "%d.%m.%Y, %H:%M:%OS")
     )
-    printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceLow, digits=2))
     printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceHigh, digits=2))
+    printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceLow, digits=2))
     printf("%s%d &\n", tabIndent, tick$n)
     printf("%s%s &\n", tabIndent, tick$Exchange)
     
     if (isTRUE(triplets[i])) {
-        printf("%sNicht relevant \\\\\n", tabIndent)
+        printf("%s* \\\\\n", tabIndent)
     } else {
         printf("%s\\\\\n", tabIndent)
     }

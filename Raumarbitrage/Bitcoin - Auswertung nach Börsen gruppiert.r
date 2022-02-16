@@ -974,19 +974,19 @@ analysePriceDifferences <- function(pair, breakpoints)
         # Lücken werden immer auf 1d-Basis entfernt.
         # Da es sich um Monatsdaten handelt, wäre der Plot leer...
         removeGaps = FALSE,
-        plotTitle = "Preisabweichungen im Zeitverlauf"
+        plotTitle = "Preisabweichungen"
     )
     p_nrow <- plotNumDifferencesOverTime(
         aggregatedPriceDifferences,
         breakpoints = breakpoints,
         timeHorizon = "",
-        plotTitle = "Anzahl monatlicher Beobachtungen im Zeitverlauf"
+        plotTitle = "Anzahl monatlicher Beobachtungen"
     )
     p_volume <- plotTotalVolumeOverTime(
         pair,
         aggregatedPriceDifferences$Time[c(1,nrow(aggregatedPriceDifferences))],
         breakpoints = breakpoints,
-        plotTitle = "Handelsvolumen im Zeitverlauf"
+        plotTitle = "Handelsvolumen"
     )
     p_boxplot <- plotPriceDifferencesBoxplotByExchangePair(
         comparablePrices,

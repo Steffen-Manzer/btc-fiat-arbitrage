@@ -58,8 +58,8 @@ for (i in seq_len(nrow(joined))) {
     if (is.na(tick$PriceLow)) {
         printf("%s& & \\\\\n", tabIndent)
     } else {
-        printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceLow, digits=2))
         printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceHigh, digits=2))
+        printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceLow, digits=2))
         printf("%s%s \\\\\n", tabIndent, format.number(tick$n))
     }
     

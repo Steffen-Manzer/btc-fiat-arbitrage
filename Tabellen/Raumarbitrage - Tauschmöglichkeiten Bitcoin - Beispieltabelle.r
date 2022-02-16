@@ -135,5 +135,8 @@ for (i in seq_len(nrow(result))) {
     printf("%s%s\\,USD \\\\\n", tabIndent, 
            format.money(priceDifference$PriceHigh - priceDifference$PriceLow, digits=2))
     
+    printf("%s%s\\,\\%% \\\\\n", tabIndent, 
+           format.percentage(priceDifference$PriceHigh / priceDifference$PriceLow - 1, 2L))
+    
     printf("\n")
 }
