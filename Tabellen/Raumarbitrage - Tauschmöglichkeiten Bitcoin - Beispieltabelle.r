@@ -132,7 +132,7 @@ for (i in seq_len(nrow(result))) {
     printf("%s%s &\n", tabIndent, priceDifference$ExchangeLow)
     printf("%s%s\\,USD &\n", tabIndent, format.money(priceDifference$PriceLow, digits=2))
     
-    printf("%s%s\\,USD \\\\\n", tabIndent, 
+    printf("%s%s\\,USD &\n", tabIndent, 
            format.money(priceDifference$PriceHigh - priceDifference$PriceLow, digits=2))
     
     printf("%s%s\\,\\%% \\\\\n", tabIndent, 
