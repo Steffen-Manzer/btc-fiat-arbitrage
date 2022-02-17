@@ -13,8 +13,8 @@ addOneMonth <- function(date)
     
     # Datum auf den ersten Tag des nächsten Monats setzen
     if (month(date) == 12) {
-        return(as.POSIXct(paste0(year(date) + 1, "-01-01")))
+        return(as.POSIXct(sprintf("%d-01-01", year(date) + 1)))
     } else {
-        return(as.POSIXct(paste0(year(date), "-", sprintf("%02d", month(date) + 1), "-01")))
+        return(as.POSIXct(sprintf("%d-%02d-01", year(date), month(date) + 1)))
     }
 }
