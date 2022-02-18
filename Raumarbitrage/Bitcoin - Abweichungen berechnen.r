@@ -36,6 +36,7 @@ source("Funktionen/FormatNumber.r")
 source("Funktionen/FormatPOSIXctWithFractionalSeconds.r")
 source("Funktionen/MergeSortAndFilter.r")
 source("Funktionen/ReadTickDataAsMovingWindow.r")
+source("Funktionen/SummariseMultipleTicksAtSameTime.r")
 source("Funktionen/printf.r")
 library("fst")
 library("data.table")
@@ -98,31 +99,6 @@ filterTwoDatasetsByCommonTimeInterval <- function(dataset_a, dataset_b) {
     }
     
     return(invisible(NULL))
-}
-
-
-#' Mehrfache Ticks mit der exakt selben Zeit zusammenfassen
-#' 
-#' Beim Einlesen der Daten muss zwingend darauf geachtet werden, dass sämtliche
-#' Ticks der exakt selben Zeit vollständig geladen werden.
-#' Diese Voraussetzung wird in `readDataFileChunked` sichergestellt.
-#' 
-#' @param dataset Eine `data.table` mit den Spalten
-#'                `Time`, `Price`, `Exchange` und `RowNum`
-#' @return `data.table` Wie `dataset`, nur mit gruppierten Zeitpunkten
-summariseMultipleTicksAtSameTime <- function(dataset) {
-    return(dataset[
-        j=.(
-            IDLow = ID[which.min(Price)],
-            PriceLow = min(Price),
-            IDHigh = ID[which.max(Price)],
-            PriceHigh = max(Price),
-            Exchange = last(Exchange),
-            RowNum = last(RowNum),
-            n = .N
-        ), 
-        by=Time
-    ])
 }
 
 
