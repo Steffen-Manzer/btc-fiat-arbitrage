@@ -52,8 +52,7 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
             # Es handelt sich um einen zu entfernenden Datenpunkt,
             # wenn die Börse im vorherigen, aktuellen und nächsten 
             # Tick identisch ist.
-            FUN = function(exchg)
-                (exchg[1] == exchg[2] && exchg[2] == exchg[3])
+            FUN = function(exchg) all(exchg == exchg[1])
         ),
         FALSE # Letzten Tick immer beibehalten
     )
