@@ -1,5 +1,5 @@
 # Benötigte Bibliotheken laden
-library("data.table") # rbindlist, setDT, setorder
+library("data.table") # rbindlist, setorder
 library("zoo") # rollapply
 
 #' Zwei Datensätze in eine gemeinsame Liste zusammenführen
@@ -21,9 +21,6 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b) {
         list(dataset_a, dataset_b),
         use.names = TRUE
     )
-    
-    # Sicherstellen, dass es sich um eine `data.table` handelt
-    setDT(dataset_ab)
     
     # Liste nach Zeit sortieren
     setorder(dataset_ab, Time)

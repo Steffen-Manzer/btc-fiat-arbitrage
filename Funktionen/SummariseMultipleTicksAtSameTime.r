@@ -8,14 +8,9 @@ library("data.table") # .[ (Gruppierungsfunktion)
 #' vorliegen.
 #' 
 #' @param dataset Eine `data.table` mit den Spalten
-#'                `Time`, `Price`, `Exchange` und `RowNum`
+#'                `ID`, `Time`, `Price`, `Exchange` und `RowNum`
 #' @return `data.table` Wie `dataset`, nur mit gruppierten Zeitpunkten
 summariseMultipleTicksAtSameTime <- function(dataset) {
-    
-    # Sicherstellen, dass es sich um eine `data.table` handelt
-    setDT(dataset)
-    
-    # Gruppiere Datensätze
     return(dataset[
         j=.(
             IDLow = ID[which.min(Price)],
