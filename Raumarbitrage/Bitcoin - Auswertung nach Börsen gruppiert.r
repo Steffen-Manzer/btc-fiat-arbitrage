@@ -1017,7 +1017,7 @@ analysePriceDifferences <- function(pair, breakpoints)
             latexOutPath, toupper(pair)
         ),
         caption = sprintf(
-            "Zentrale Kenngrößen der Preisabweichungen für %s im Gesamtüberblick",
+            "Zentrale Kenngrößen paarweiser Preisnotierungen für %s im Gesamtüberblick",
             format.currencyPair(pair)
         ),
         label = sprintf("Empirie_Raumarbitrage_%s_Ueberblick", toupper(pair))

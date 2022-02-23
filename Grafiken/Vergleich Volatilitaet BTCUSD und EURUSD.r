@@ -41,8 +41,8 @@
     
     
     # Bibliotheken laden ------------------------------------------------------
+    source("Funktionen/FormatNumber.r")
     library("data.table")
-    library("dplyr")
     library("ggplot2")
     library("ggthemes")
     library("scales") # breaks_log
@@ -77,19 +77,15 @@
     #     )
     # diffData$vClose.Diff <- diffData$vClose.BTCUSD / diffData$vClose.EURUSD
     
-    # Datensätze zusammenlegen
-    plotData <-
-        merge(
-            btcusd[, c("Time", "vClose")], eurusd[, c("Time", "vClose")],
-            by="Time",
-            suffixes=c(".BTCUSD", ".EURUSD")
-        ) %>% 
-        # Mengennotierung BTC/USD: 1 BTC = 10.871 USD
-        setnames("vClose.BTCUSD", "BTC/USD") %>%
-        # Mengennotierung EUR/USD: 1 EUR = 1,11 USD
-        setnames("vClose.EURUSD", "EUR/USD") %>%
-        reshape2::melt(id.vars="Time", variable.name="Datensatz", value.name="vClose")
+    # Auf relevante Spalten reduzieren, Datensatz ergänzen, Zeit vereinheitlichen
+    btcusd <- btcusd[, c("Time", "vClose")]
+    btcusd[,Datensatz:="BTC/USD"]
+    btcusd[,Time:=as.POSIXct(Time)]
     
+    eurusd <- eurusd[, c("Time", "vClose")]
+    eurusd[,Datensatz:="EUR/USD"]
+    
+    plotData <- rbindlist(list(btcusd, eurusd))
     
     # Grafiken erstellen ------------------------------------------------------
     if (plotAsLaTeX) {
@@ -103,34 +99,30 @@
         )
     }
     
-    plotAbsVola <- plotData %>%
-        ggplot(aes(x=Time, y=vClose, group=Datensatz)) +
+    plotAbsVola <- ggplot(plotData, aes(x=Time, y=vClose, group=Datensatz)) +
         geom_line(aes(color=Datensatz, linetype=Datensatz), size=1) +
         theme_minimal() +
         theme(
-            legend.position = "bottom",# c(.9, .88),
-            #legend.background = element_rect(fill = "white", size = 0.2, linetype = "solid"),
-            legend.margin = margin(l=-5),
-            # TODO Testen (aus: Energieverbrauch.r):
+            legend.position = "bottom",
+            legend.margin = margin(t=-5),
             legend.text = element_text(margin = margin(r = 15)),
             legend.title = element_blank(),
-            axis.title.x = element_blank(),#element_text(margin = margin(t = 5), size=9),
+            axis.title.x = element_text(margin = margin(t = 5), size=9),
             axis.title.y = element_text(size=9, margin=margin(r=10)),
             panel.grid.minor.y = element_line(size = .4),
             panel.grid.major.y = element_line(size = .4)
         )+
-        scale_x_date(
-            date_breaks="1 year",
-            minor_breaks=NULL,
-            date_labels="%Y",
+        scale_x_datetime(
+            date_breaks = "1 year",
+            minor_breaks = NULL,
+            date_labels = "%Y",
             expand = expansion(mult = c(0, 0))
         ) +
         scale_y_log10(
-            labels = function(x) { paste0(prettyNum(x*100, big.mark=".", decimal.mark=","), "\\,%") },
+            labels = function(x) { paste0(format.percentage(x, 0L), "\\,%") },
             limits = c(NA, 3e0),
             breaks = breaks_log(9),
             minor_breaks = breaks_log(19)
-            #expand = expansion(mult = c(.1, .1))
         ) + 
         scale_color_ptol() +
         labs(x="Datum", y="Annualisierte Volatilität")

@@ -23,16 +23,16 @@ mergeSortAndFilterTwoDatasets <- function(dataset_a, dataset_b)
     # |--------------------------------->   Zeitachse
     #  A A A A B B A B B B A A B B B B A    Ticks der Börsen A und B
     #         *   * *     *   *       *     Sinnvolle Preisvergleiche
-    #  * * *           *         * *        Nicht benötigte Ticks
-    #        A B B A B   B A A B     B A    Reduzierter Datensatz
+    #  ? * *           *         * *        Nicht benötigte Ticks
+    #  A     A B B A B   B A A B     B A    Reduzierter Datensatz
     triplets <- c(
         FALSE, # Ersten Tick immer beibehalten
         rollapply(
-            dataset_ab$Exchange,
-            width = 3,
+            data = dataset_ab$Exchange,
             # Es handelt sich um einen zu entfernenden Datenpunkt,
             # wenn die Börse im vorherigen, aktuellen und nächsten 
-            # Tick identisch ist.
+            # Tick identisch ist. Daher Fensterbreite: 3 Ticks.
+            width = 3,
             FUN = function(exchg) all(exchg == exchg[1])
         ),
         FALSE # Letzten Tick immer beibehalten
