@@ -32,8 +32,8 @@
     
     # Nur einmal pro Monat neu laden
     if (
-        fromLaTeX && plotAsLaTeX &&
-        file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 28
+        fromLaTeX && plotAsLaTeX && file.exists(texFile) &&
+        difftime(Sys.time(), file.mtime(texFile), units = "days") < 28
     ) {
         cat("Grafik Volatilitaetsvergleich noch aktuell, keine Aktualisierung.\n")
         return(invisible())
@@ -67,15 +67,6 @@
     #btcusd <- btcusd[365:nrow(btcusd)]
     
     source("Grafiken/Vergleich Volatilität BTCUSD und EURUSD.Standalone.r", local=TRUE)
-    
-    # Verhältnis beider Volatilitäten
-    # diffData <-
-    #     merge(
-    #         btcusd[, c("Time", "vClose")], eurusd[, c("Time", "vClose")],
-    #         by="Time",
-    #         suffixes=c(".BTCUSD", ".EURUSD")
-    #     )
-    # diffData$vClose.Diff <- diffData$vClose.BTCUSD / diffData$vClose.EURUSD
     
     # Auf relevante Spalten reduzieren, Datensatz ergänzen, Zeit vereinheitlichen
     btcusd <- btcusd[, c("Time", "vClose")]
@@ -111,7 +102,7 @@
             axis.title.y = element_text(size=9, margin=margin(r=10)),
             panel.grid.minor.y = element_line(size = .4),
             panel.grid.major.y = element_line(size = .4)
-        )+
+        ) +
         scale_x_datetime(
             date_breaks = "1 year",
             minor_breaks = NULL,

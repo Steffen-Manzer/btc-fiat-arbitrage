@@ -1,6 +1,6 @@
 #' Zahlenausgabe, wie sie in DE üblich ist: 123.456,789
 format.number <- function(...) {
-    prettyNum(..., big.mark=".", decimal.mark=",")
+    prettyNum(..., big.mark=".", decimal.mark=",", scientific=FALSE)
 }
 
 #' Ausgabe mit einer exakten Anzahl Nachkommastellen

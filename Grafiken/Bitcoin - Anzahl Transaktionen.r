@@ -10,23 +10,29 @@
     
     # Konfiguration -----------------------------------------------------------
     source("Konfiguration/FilePaths.r")
-    texFile <- sprintf("%s/Abbildungen/Krypto_Anzahl_BTC_Transaktionen.tex", latexOutPath)
-    outFileTimestamp <- sprintf("%s/Abbildungen/Krypto_Anzahl_BTC_Transaktionen_Stand.tex", latexOutPath)
-    apiSourceFile <- "https://api.blockchain.info/charts/n-transactions?timespan=all&sampled=false&format=csv"
+    texFile <- sprintf("%s/Abbildungen/Krypto_Anzahl_BTC_Transaktionen.tex",
+                       latexOutPath)
+    outFileTimestamp <- sprintf("%s/Abbildungen/Krypto_Anzahl_BTC_Transaktionen_Stand.tex",
+                                latexOutPath)
+    apiSourceFile <- 
+        "https://api.blockchain.info/charts/n-transactions?timespan=all&sampled=false&format=csv"
     plotAsLaTeX <- fromLaTeX || FALSE
     
     # Nur einmal pro Woche neu laden
-    if (fromLaTeX && plotAsLaTeX && file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 8) {
+    if (
+        fromLaTeX && plotAsLaTeX && file.exists(texFile) && 
+        difftime(Sys.time(), file.mtime(texFile), units = "days") < 8
+    ) {
         cat("Grafik Bitcoin-Transaktionen noch aktuell, keine Aktualisierung.\n")
         return()
     }
     
     
     # Bibliotheken laden ------------------------------------------------------
+    source("Funktionen/FormatNumber.r")
     library("data.table")
     library("lubridate") # floor_date
     library("fasttime") # fastPOSIXct
-    library("dplyr")
     library("ggplot2")
     library("ggthemes")
     
@@ -72,15 +78,13 @@
         ) +
         scale_fill_ptol() +
         scale_x_date(
-            date_breaks="1 year",
-            minor_breaks=NULL,
-            date_labels="%Y",
+            date_breaks = "1 year",
+            minor_breaks = NULL,
+            date_labels = "%Y",
             expand = expansion(mult = c(.02, .02))
         ) +
         scale_y_log10(
-            labels = function(x) { prettyNum(x, big.mark=".", decimal.mark=",", scientific=F) },
-            #breaks = c(10e2, 10e3, 10e4, 10e5, 10e6, 10e7),
-            #limits = c(5e3, 5e7),
+            labels = format.number,
             minor_breaks = NULL,
             expand = expansion(mult = c(.02, .02))
         ) +
