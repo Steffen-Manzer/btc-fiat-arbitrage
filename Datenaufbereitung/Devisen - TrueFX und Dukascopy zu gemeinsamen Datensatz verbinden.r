@@ -16,7 +16,9 @@ source("Funktionen/printf.r")
 
 # Zeitraum: 01.01.2010 bis einschließlich letzten Monat
 startDate <- as.POSIXct("2010-01-01")
-endDate <- ((Sys.Date() |> format("%Y-%m-01") |> as.POSIXct()) - 1) |> format("%Y-%m-01") |> as.POSIXct()
+endDate <- ((Sys.Date() |> format("%Y-%m-01") |> as.POSIXct()) - 1) |> 
+    format("%Y-%m-01") |>
+    as.POSIXct()
 currentDate <- startDate - 1
 
 # Zieldateien und Ergebnistabellen
@@ -62,10 +64,14 @@ while (currentDate < endDate) {
     
     
     # Zieldateien festlegen
-    targetFileTick <- sprintf("Cache/forex-combined/eurusd/tick/forex-combined-eurusd-tick-%d-%02d.fst",
-                              year(currentDate), month(currentDate))
-    targetFile60s <- sprintf("Cache/forex-combined/eurusd/60s/forex-combined-eurusd-60s-%d-%02d.fst",
-                             year(currentDate), month(currentDate))
+    targetFileTick <- sprintf(
+        "Cache/forex-combined/eurusd/tick/forex-combined-eurusd-tick-%d-%02d.fst",
+        year(currentDate), month(currentDate)
+    )
+    targetFile60s <- sprintf(
+        "Cache/forex-combined/eurusd/60s/forex-combined-eurusd-60s-%d-%02d.fst",
+        year(currentDate), month(currentDate)
+    )
     
     for (targetPath in c(targetFileTick, targetFile60s)) {
         if (!file.exists(dirname(targetPath))) {

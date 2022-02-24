@@ -21,9 +21,11 @@ parseTrueFXTickData <- function(srcFile) {
         cmd=paste0("unzip -cq ", srcFile),
         showProgress = FALSE,
         header = FALSE,
-        col.names = c("Pair", "Time", "Bid", "Ask"),
-        drop = c("Pair")
+        col.names = c("Pair", "Time", "Bid", "Ask")
     )
+    
+    # Pair nicht behalten
+    thisDataset$Pair <- NULL
     
     # Lese Datum
     # Originalformat: 20180101 22:01:01.051

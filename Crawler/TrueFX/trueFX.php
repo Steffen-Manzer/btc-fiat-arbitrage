@@ -152,6 +152,8 @@ while ($currentDate < $dateTo) {
 
 $cmdOut .= 'rm -i $0' . PHP_EOL;
 
+// Erstelle ein Shell-Skript für den Download aus historischen Gründen.
+// So ist eine Kontrolle vor dem Download aller Daten möglich.
 file_put_contents('truefx.sh', $cmdOut);
 
 echo PHP_EOL . "truefx.sh erstellt." . PHP_EOL;

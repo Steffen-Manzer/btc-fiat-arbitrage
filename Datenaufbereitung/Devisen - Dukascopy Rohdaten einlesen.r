@@ -43,7 +43,7 @@ summariseDukascopyTickData <- function() {
         CloseBid = last(Bid),
         CloseAsk = last(Ask),
         CloseMittel = last(Mittel),
-        numDatasets = .N,
+        numDatasets = .N
     )))
 }
 

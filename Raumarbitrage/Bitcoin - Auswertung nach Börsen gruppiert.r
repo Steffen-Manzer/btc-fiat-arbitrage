@@ -357,8 +357,8 @@ plotAggregatedPriceDifferencesOverTime <- function(
     
     if (!is.null(plotTitle)) {
         plot <- plot + ggtitle(
-            paste0("\\small ", plotTitle),
-            subtitle="\\small Median, 25\\,%- und 75\\,%-Quartil der Monatsdaten"
+            paste0("\\small ", plotTitle)#,
+            #subtitle="\\small Median, 25\\,%- und 75\\,%-Quartil der Monatsdaten"
         )
     }
     
@@ -946,26 +946,8 @@ analysePriceDifferences <- function(pair, breakpoints)
     # Daten laden
     comparablePrices <- loadComparablePricesByCurrencyPair(pair)
     
-    # Boxplot für gesamten Zeitraum erstellen
-    # plotPriceDifferencesBoxplotByExchangePair(
-    #     comparablePrices,
-    #     latexOutPath = sprintf(
-    #         "%s/Abbildungen/Empirie_Raumarbitrage_%s_UebersichtBoxplot.tex",
-    #         latexOutPath, toupper(pair)
-    #     )
-    # )
-    
-    # Liniengrafik für gesamten Zeitraum erstellen
+    # Monatsdaten berechnen
     aggregatedPriceDifferences <- aggregatePriceDifferences(comparablePrices, "1 month")
-    # plotAggregatedPriceDifferencesOverTime(
-    #     aggregatedPriceDifferences,
-    #     breakpoints = breakpoints,
-    #     removeGaps = FALSE, # Lücken werden auf 1d-Basis entfernt, daher hier nicht
-    #     latexOutPath = sprintf(
-    #         "%s/Abbildungen/Empirie_Raumarbitrage_%s_Uebersicht.tex",
-    #         latexOutPath, toupper(pair)
-    #     )
-    # )
     
     # Überblicksgrafik (Ganze Seite) erstellen
     p_diff <- plotAggregatedPriceDifferencesOverTime(
@@ -1007,7 +989,6 @@ analysePriceDifferences <- function(pair, breakpoints)
         layout_matrix = rbind(c(1),c(2),c(3),c(4))
     )
     dev.off()
-    
     
     # Beschreibende Statistiken
     summariseDatasetAsTable(

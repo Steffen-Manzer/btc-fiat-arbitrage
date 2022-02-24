@@ -20,7 +20,7 @@ from urllib import request
 out_path = "../../Daten/dukascopy/"
 
 # Gewünschte Wechselpaare
-symbols = ["eurusd", "gbpusd", "usdchf", "usdcad", "usdjpy", "audusd"]
+symbols = ["eurusd"] #, "gbpusd", "usdchf", "usdcad", "usdjpy", "audusd"]
 
 # Alle Daten ab 01.01.2010 bis letzten Monat abfragen
 now = datetime.now()
