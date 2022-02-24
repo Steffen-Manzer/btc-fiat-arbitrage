@@ -7,7 +7,8 @@
 # Bibliotheken und Funktionen laden ---------------------------------------
 library("fst")
 library("data.table")
-library("lubridate")
+library("lubridate") # floor_date
+library("tictoc")
 source("Funktionen/AddOneMonth.r")
 source("Funktionen/printf.r")
 
@@ -22,11 +23,14 @@ endDate <- ((Sys.Date() |> format("%Y-%m-01") |> as.POSIXct()) - 1) |>
 currentDate <- startDate - 1
 
 # Zieldateien und Ergebnistabellen
+# Gegenüber Bitcoin-Daten auch Stundendaten berechnen, um für die Auswertung
+# die Bestimmung von handelsfreien Zeiten zu vereinfachen
+targetFileHourly <- "Cache/forex-combined/eurusd/forex-combined-eurusd-hourly.fst"
 targetFileDaily <- "Cache/forex-combined/eurusd/forex-combined-eurusd-daily.fst"
 targetFileMonthly <- "Cache/forex-combined/eurusd/forex-combined-eurusd-monthly.fst"
+dataset_hourly <- data.table()
 dataset_daily <- data.table()
 dataset_monthly <- data.table()
-
 
 # Hilfsfunktionen ---------------------------------------------------------
 
@@ -62,6 +66,7 @@ while (currentDate < endDate) {
         next
     }
     
+    tic()
     
     # Zieldateien festlegen
     targetFileTick <- sprintf(
@@ -75,16 +80,16 @@ while (currentDate < endDate) {
     
     for (targetPath in c(targetFileTick, targetFile60s)) {
         if (!file.exists(dirname(targetPath))) {
-            dir.create(dirname(targetPath), recursive = TRUE)
+            dir.create(dirname(targetPath), recursive=TRUE)
         }
     }
     
     
     # TrueFX einlesen
-    truefx <- read_fst(sourceFileTrueFX, as.data.table = TRUE)
+    truefx <- read_fst(sourceFileTrueFX, as.data.table=TRUE)
     truefx[, Source:="TrueFX"]
     
-    dukascopy <- read_fst(sourceFileDukascopy, as.data.table = TRUE)
+    dukascopy <- read_fst(sourceFileDukascopy, as.data.table=TRUE)
     dukascopy[, Source:="Dukascopy"]
     
     combined <- rbindlist(list(truefx, dukascopy))
@@ -99,40 +104,47 @@ while (currentDate < endDate) {
     
     # Auf 60s aggregieren
     if (!file.exists(targetFile60s)) {
-        printf(", 60s")
+        printf("60s, ")
         thisDataset_60s <- combined[
-            j=eval(summariseTickData()),
-            by=floor_date(Time, unit = "minute")
+            j = eval(summariseTickData()),
+            by = .(Time=floor_date(Time, unit="minute"))
         ]
-        setnames(thisDataset_60s, 1, "Time")
         write_fst(thisDataset_60s, targetFile60s, compress=100)
         
         # Speicher freigeben
         rm(thisDataset_60s)
     }
     
-    # Auf 1d aggregieren (einzelne Datei für gesamten Datensatz)
-    printf(", 1d ")
-    thisDataset_daily <- combined[
-        j=eval(summariseTickData()),
-        by=floor_date(Time, unit = "1 day")
+    # Auf 1h aggregieren (einzelne Datei für gesamten Datensatz)
+    printf("1h, ")
+    thisDataset_hourly <- combined[
+        j = eval(summariseTickData()),
+        by = .(Time=floor_date(Time, unit="1 hour"))
     ]
-    setnames(thisDataset_daily, 1, "Time")
+    dataset_hourly <- rbindlist(list(dataset_hourly, thisDataset_hourly))
+    write_fst(dataset_hourly, targetFileHourly, compress=100)
+    rm(thisDataset_hourly)
+    
+    # Auf 1d aggregieren (einzelne Datei für gesamten Datensatz)
+    printf("1d, ")
+    thisDataset_daily <- combined[
+        j = eval(summariseTickData()),
+        by = .(Time=floor_date(Time, unit="1 day"))
+    ]
     dataset_daily <- rbindlist(list(dataset_daily, thisDataset_daily))
     write_fst(dataset_daily, targetFileDaily, compress=100)
     rm(thisDataset_daily)
     
     # Auf 1 Monat aggregieren (einzelne Datei für gesamten Datensatz)
-    printf(", 1mo ")
+    printf("1mo ")
     thisDataset_monthly <- combined[
-        j=eval(summariseTickData()),
-        by=floor_date(Time, unit = "1 month")
+        j = eval(summariseTickData()),
+        by = .(Time=floor_date(Time, unit="1 month"))
     ]
-    setnames(thisDataset_monthly, 1, "Time")
     dataset_monthly <- rbindlist(list(dataset_monthly, thisDataset_monthly))
     write_fst(dataset_monthly, targetFileMonthly, compress=100)
     
     rm(thisDataset_monthly, combined)
-    printf("\n")
     gc()
+    toc()
 }
