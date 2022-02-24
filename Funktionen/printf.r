@@ -7,5 +7,7 @@ printf <- function(...) cat(sprintf(...))
 if (exists("DEBUG_PRINT") && isTRUE(DEBUG_PRINT)) {
     printf.debug <- printf
 } else {
-    printf.debug <- function(...){}
+    printf.debug <- function(...) {
+        return(invisible(NULL))
+    }
 }

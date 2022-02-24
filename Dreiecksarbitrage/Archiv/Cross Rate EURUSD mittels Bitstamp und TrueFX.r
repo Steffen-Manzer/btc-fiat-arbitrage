@@ -44,45 +44,36 @@
     
     # Daten laden
     cat("Lade Daten...\n")
-    cat("** TODO ** Rewrite für nicht-aggregierte Bitcoin-Daten.\n")
-    return()
-    bitstampEUR <- read_fst("Cache/bitstamp-bcc/bitstamp-bcc-tick-btceur.fst", as.data.table = TRUE)
-    bitstampUSD <- read_fst("Cache/bitstamp-bcc/bitstamp-bcc-tick-btcusd.fst", as.data.table = TRUE)
-    truefxEURUSD <- read_fst("Cache/TrueFX/truefx-60s-eurusd.fst", as.data.table = TRUE)
+    
+    bitstampEUR <- read_fst("Cache/bitstamp/btceur/bitstamp-btceur-daily.fst",
+                            as.data.table = TRUE)
+    bitstampUSD <- read_fst("Cache/bitstamp/btcusd/bitstamp-btcusd-daily.fst",
+                            as.data.table = TRUE)
+    EURUSD <- read_fst("Cache/forex-combined/eurusd/forex-combined-eurusd-daily.fst",
+                             as.data.table = TRUE)
     
     cat("Anzahl Datensätze:\n")
     cat("   BTC/EUR:", nrow(bitstampEUR), "\n")
     cat("   BTC/USD:", nrow(bitstampUSD), "\n")
-    cat("   EUR/USD:", nrow(truefxEURUSD), "\n")
-    
-    # Filtere Liquidität: Mindestens 5x pro Minute gehandelt
-    # Sinnvoll??
-    cat("Reduziere um wenig liquide Datensätze (Handel weniger als 5x pro Minute)\n")
-    bitstampEUR <- bitstampEUR[bitstampEUR$NumDatasets >= 5,]
-    bitstampUSD <- bitstampUSD[bitstampUSD$NumDatasets >= 5,]
-    truefxEURUSD <- truefxEURUSD[truefxEURUSD$NumDatasets >= 5,]
-    cat("Anzahl Datensätze:\n")
-    cat("   BTC/EUR:", nrow(bitstampEUR), "\n")
-    cat("   BTC/USD:", nrow(bitstampUSD), "\n")
-    cat("   EUR/USD:", nrow(truefxEURUSD), "\n")
+    cat("   EUR/USD:", nrow(EURUSD), "\n")
     
     # Auf gemeinsame Daten beschränken
-    minDate <- max(min(bitstampEUR$Time), min(bitstampUSD$Time), min(truefxEURUSD$Time))
-    maxDate <- min(max(bitstampEUR$Time), max(bitstampUSD$Time), max(truefxEURUSD$Time))
+    minDate <- max(min(bitstampEUR$Time), min(bitstampUSD$Time), min(EURUSD$Time))
+    maxDate <- min(max(bitstampEUR$Time), max(bitstampUSD$Time), max(EURUSD$Time))
     
     cat("Reduziere auf gemeinsamen Datensatz: von", format(minDate), "bis", format(maxDate), "\n")
-    bitstampEUR <- bitstampEUR[bitstampEUR$Time >= minDate & bitstampEUR$Time <= maxDate,]
-    bitstampUSD <- bitstampUSD[bitstampUSD$Time >= minDate & bitstampUSD$Time <= maxDate,]
-    truefxEURUSD <- truefxEURUSD[truefxEURUSD$Time >= minDate & truefxEURUSD$Time <= maxDate,]
+    bitstampEUR <- bitstampEUR[bitstampEUR$Time %between% c(minDate, maxDate)]
+    bitstampUSD <- bitstampUSD[bitstampUSD$Time %between% c(minDate, maxDate)]
+    EURUSD <- EURUSD[EURUSD$Time %between% c(minDate, maxDate)]
     
-    bitstampUSD <- bitstampUSD[bitstampUSD$Time %nin% setdiff(bitstampUSD$Time, bitstampEUR$Time),]
-    bitstampUSD <- bitstampUSD[bitstampUSD$Time %nin% setdiff(bitstampUSD$Time, truefxEURUSD$Time),]
+    bitstampUSD <- bitstampUSD[bitstampUSD$Time %nin% setdiff(bitstampUSD$Time, bitstampEUR$Time)]
+    bitstampUSD <- bitstampUSD[bitstampUSD$Time %nin% setdiff(bitstampUSD$Time, EURUSD$Time)]
     
-    bitstampEUR <- bitstampEUR[bitstampEUR$Time %nin% setdiff(bitstampEUR$Time, bitstampUSD$Time),]
-    bitstampEUR <- bitstampEUR[bitstampEUR$Time %nin% setdiff(bitstampEUR$Time, truefxEURUSD$Time),]
+    bitstampEUR <- bitstampEUR[bitstampEUR$Time %nin% setdiff(bitstampEUR$Time, bitstampUSD$Time)]
+    bitstampEUR <- bitstampEUR[bitstampEUR$Time %nin% setdiff(bitstampEUR$Time, EURUSD$Time)]
     
-    truefxEURUSD <- truefxEURUSD[truefxEURUSD$Time %nin% setdiff(truefxEURUSD$Time, bitstampUSD$Time),]
-    truefxEURUSD <- truefxEURUSD[truefxEURUSD$Time %nin% setdiff(truefxEURUSD$Time, bitstampEUR$Time),]
+    EURUSD <- EURUSD[EURUSD$Time %nin% setdiff(EURUSD$Time, bitstampUSD$Time),]
+    EURUSD <- EURUSD[EURUSD$Time %nin% setdiff(EURUSD$Time, bitstampEUR$Time),]
     cat("Anzahl gemeinsamer Datensätze:", nrow(bitstampEUR), "\n")
     
     # Berechne Näherung für Bid/Ask
@@ -110,21 +101,21 @@
         bitstampUSD_Ask = bitstampUSD$CloseAsk,
         
         # Verkauf EUR gegen USD (Kauf USD gegen EUR)
-        truefxEURUSD_Bid = truefxEURUSD$CloseBid,
+        EURUSD_Bid = EURUSD$CloseBid,
         # Kauf EUR gegen USD (Verkauf USD gegen EUR)
-        truefxEURUSD_Ask = truefxEURUSD$CloseAsk
+        EURUSD_Ask = EURUSD$CloseAsk
     )
     
     # Kauf BTC gegen EUR, Kauf USD gegen BTC, Kauf EUR gegen USD
     # EUR -> BTC -> USD -> EUR
     # Ergebnis in Prozent
     result_close$EUR_BTC_USD_EUR <- 
-        (result_close$bitstampUSD_Bid / result_close$bitstampEUR_Ask / result_close$truefxEURUSD_Ask) - 1
+        (result_close$bitstampUSD_Bid / result_close$bitstampEUR_Ask / result_close$EURUSD_Ask) - 1
     
     # Kauf BTC gegen USD, Kauf EUR gegen BTC, Kauf USD gegen EUR
     # USD -> BTC -> EUR -> USD
     result_close$USD_BTC_EUR_USD <- 
-        (result_close$bitstampEUR_Bid / result_close$bitstampUSD_Ask * result_close$truefxEURUSD_Bid) - 1
+        (result_close$bitstampEUR_Bid / result_close$bitstampUSD_Ask * result_close$EURUSD_Bid) - 1
     
     
     plot <- 

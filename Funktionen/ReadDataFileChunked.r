@@ -14,12 +14,14 @@ library("data.table")
 #' @param endDate Zieldatum, bis zu dem mindestens gelesen werden soll
 #' @param numDatasetsPerRead Datensätze, die an einem Stück gelesen werden,
 #'   bevor geprüft wird, ob ein Abbruchkriterium erreicht wurde
+#' @param columns Liste der einzulesenden Spalten
 #' @return `data.table` mit den gelesenen Daten (`Time`, `Price`, `RowNum`)
 readDataFileChunked <- function(
     dataFile,
     startRow,
     endDate,
-    numDatasetsPerRead = 10000L
+    numDatasetsPerRead = 10000L,
+    columns = c("ID", "Time", "Price")
 ) {
     
     # Umgebungsbedingungen prüfen
@@ -33,7 +35,6 @@ readDataFileChunked <- function(
     
     # Metadaten der Datei lesen
     numRowsInFile <- metadata_fst(dataFile)$nrOfRows
-    columns <- c("ID", "Time", "Price")
     
     # Keine weiteren Daten in dieser Datei: Abbruch
     if (startRow == numRowsInFile) {
