@@ -122,7 +122,6 @@ while (currentDate < endDate) {
         by = .(Time=floor_date(Time, unit="1 hour"))
     ]
     dataset_hourly <- rbindlist(list(dataset_hourly, thisDataset_hourly))
-    write_fst(dataset_hourly, targetFileHourly, compress=100)
     rm(thisDataset_hourly)
     
     # Auf 1d aggregieren (einzelne Datei für gesamten Datensatz)
@@ -132,7 +131,6 @@ while (currentDate < endDate) {
         by = .(Time=floor_date(Time, unit="1 day"))
     ]
     dataset_daily <- rbindlist(list(dataset_daily, thisDataset_daily))
-    write_fst(dataset_daily, targetFileDaily, compress=100)
     rm(thisDataset_daily)
     
     # Auf 1 Monat aggregieren (einzelne Datei für gesamten Datensatz)
@@ -142,9 +140,13 @@ while (currentDate < endDate) {
         by = .(Time=floor_date(Time, unit="1 month"))
     ]
     dataset_monthly <- rbindlist(list(dataset_monthly, thisDataset_monthly))
-    write_fst(dataset_monthly, targetFileMonthly, compress=100)
     
     rm(thisDataset_monthly, combined)
     gc()
     toc()
 }
+
+# Daten speichern
+write_fst(dataset_hourly, targetFileHourly, compress=100)
+write_fst(dataset_daily, targetFileDaily, compress=100)
+write_fst(dataset_monthly, targetFileMonthly, compress=100)
