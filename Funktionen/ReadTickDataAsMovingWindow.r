@@ -3,7 +3,6 @@ source("Funktionen/AddOneMonth.r")
 source("Funktionen/ReadDataFileChunked.r")
 library("data.table")
 library("lubridate") # is.POSIXct
-library("rjson")
 
 
 #' Lade Tickdaten für Auswertungen, die ein gleitendes Fenster verwenden.

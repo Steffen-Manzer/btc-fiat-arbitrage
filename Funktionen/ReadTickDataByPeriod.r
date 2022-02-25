@@ -1,9 +1,9 @@
 # Benötigte Funktionen und Pakete laden
 source("Funktionen/AddOneMonth.r")
+source("Funktionen/LoadSuspicousBitcoinPeriods.r")
 source("Funktionen/ReadDataFileChunked.r")
 library("data.table")
 library("lubridate") # is.POSIXct
-library("rjson")
 
 
 #' Lade Tickdaten für das gesamte angegebene Intervall, ggf. über
@@ -36,22 +36,7 @@ readTickDataByPeriod <- function(
     
     # Anomalien aus diesem Datensatz filtern
     if (filterSuspiciousPeriods == TRUE) {
-        allExchangeMetadata <- fromJSON(file="Daten/bitcoin-metadata.json")
-        exchangeMetadata <- allExchangeMetadata[[exchange]]
-        stopifnot(!is.null(exchangeMetadata))
-        pairMetadata <- exchangeMetadata[[currencyPair]]
-        stopifnot(!is.null(pairMetadata))
-        suspiciousPeriods <- data.table()
-        for (i in seq_along(pairMetadata$suspiciousPeriods)) {
-            period <- pairMetadata$suspiciousPeriods[[i]]
-            if (isFALSE(period$filter)) {
-                next
-            }
-            suspiciousPeriods <- rbind(suspiciousPeriods, data.table(
-                startDate = as.POSIXct(period$startDate, tz="UTC"),
-                endDate = as.POSIXct(period$endDate, tz="UTC")
-            ))
-        }
+        suspiciousPeriods <- loadSuspiciousPeriods(exchange, currencyPair)
     }
     
     # Beginne bei aktuellem Monat
