@@ -223,13 +223,15 @@ findPriceAnomalies <- function(
     # Datenobjekte initialisieren, die später per Referenz übergeben
     # werden können. So kann direkt an den Daten gearbeitet werden,
     # ohne dass immer eine Kopie angelegt werden muss.
-    dataset <- new("Dataset",
-                   Exchange = exchange,
-                   CurrencyPair = currencyPair,
-                   PathPrefix = sprintf("Cache/%s/%s/tick/%1$s-%2$s-tick",
-                                        exchange, tolower(currencyPair)),
-                   EndDate = endDate,
-                   data = data.table()
+    dataset <- new(
+        "Dataset",
+        Exchange = exchange,
+        CurrencyPair = currencyPair,
+        PathPrefix = sprintf("Cache/%s/%s/tick/%1$s-%2$s-tick",
+                             exchange, tolower(currencyPair)),
+        EndDate = endDate,
+        data = data.table()
+        # Keine Ausreißer entfernen
     )
     
     # Schwellwert bestimmen
@@ -253,7 +255,8 @@ findPriceAnomalies <- function(
     
     # Analyse beginnen
     printf("\n  Beginne Anomalie-Analyse für %s der Börse %s ab %s.\n", 
-           format.currencyPair(currencyPair), exchange, format(startDate, "%d.%m.%Y %H:%M:%S"))
+           format.currencyPair(currencyPair), exchange, 
+           format(startDate, "%d.%m.%Y %H:%M:%S"))
     printf("  % 13s   % 11s   %-26s   % 10s   % 10s\n",
            "Laufzeit", "Verarbeitet", "Aktueller Datensatz",
            "Auffällig", "Geschw.")
@@ -270,8 +273,7 @@ findPriceAnomalies <- function(
             printf.debug("Datenende erreicht, Stop nach aktuellem Monat.\n")
         }
         
-        readTickDataAsMovingWindow(dataset, startDate, loadUntil, 
-                                 filterSuspiciousPeriods = FALSE, numDatasetsPerRead = 20000L)
+        readTickDataAsMovingWindow(dataset, startDate, loadUntil, numDatasetsPerRead = 20000L)
         runtime <- as.integer(proc.time()["elapsed"] - now)
         #           Runtime nInput  Time    nResult Speed  
         printf("\r  % 13s   % 11s   % 26s   % 10s   % 6s T/s",

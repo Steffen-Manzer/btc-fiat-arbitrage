@@ -28,13 +28,13 @@
 
 # Bibliotheken und externe Hilfsfunktionen laden ------------------------------
 source("Klassen/Dataset.r")
-source("Funktionen/AddOneMonth.r")
 source("Funktionen/AppendToDataTable.r")
 source("Funktionen/FilterTwoDatasetsByCommonInterval.r")
 source("Funktionen/FormatCurrencyPair.r")
 source("Funktionen/FormatDuration.r")
 source("Funktionen/FormatNumber.r")
 source("Funktionen/FormatPOSIXctWithFractionalSeconds.r")
+source("Funktionen/LoadSuspicousBitcoinPeriods.r")
 source("Funktionen/MergeSortAndFilter.r")
 source("Funktionen/ReadTickDataAsMovingWindow.r")
 source("Funktionen/SummariseMultipleTicksAtSameTime.r")
@@ -146,7 +146,8 @@ compareTwoExchanges <- function(
         PathPrefix = sprintf("Cache/%s/%s/tick/%1$s-%2$s-tick",
                              exchange_a, tolower(currencyPair)),
         EndDate = endDate,
-        data = data.table()
+        data = data.table(),
+        SuspiciousPeriods = loadSuspiciousPeriods(exchange_a, currencyPair)
     )
     
     dataset_b <- new("Dataset",
@@ -155,7 +156,8 @@ compareTwoExchanges <- function(
         PathPrefix = sprintf("Cache/%s/%s/tick/%1$s-%2$s-tick",
                              exchange_b, tolower(currencyPair)),
         EndDate = endDate,
-        data = data.table()
+        data = data.table(),
+        SuspiciousPeriods = loadSuspiciousPeriods(exchange_b, currencyPair)
     )
     
     # -- Diese Schritte werden regelmäßig wiederholt, um sequentiell weitere Daten zu laden --

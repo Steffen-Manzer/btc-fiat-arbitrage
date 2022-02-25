@@ -15,23 +15,15 @@ library("rjson")
 #' @param dataset Eine Instanz der Klasse `Dataset` (als Referenz)
 #' @param currentTime Zeitpunkt des aktuellen (zuletzt verwendeten) Ticks
 #' @param endDate Zieldatum, bis zu dem mindestens gelesen werden soll
-#' @param filterSuspiciousPeriods Auffällige Datensätze herausfiltern
 #' @param ... Weitere Parameter, die an `readDataFileChunked` übergeben werden
 #' @return `NULL` (Verändert den angegebenen Datensatz per Referenz.)
-readTickDataAsMovingWindow <- function(
-    dataset,
-    currentTime,
-    endDate,
-    filterSuspiciousPeriods = TRUE,
-    ...
-) {
-    
+readTickDataAsMovingWindow <- function(dataset, currentTime, endDate, ...)
+{
     # Parameter validieren
     stopifnot(
         inherits(dataset, "Dataset"),
         is.POSIXct(currentTime), length(currentTime) == 1L,
-        is.POSIXct(endDate), length(endDate) == 1L,
-        is.logical(filterSuspiciousPeriods), length(filterSuspiciousPeriods) == 1L
+        is.POSIXct(endDate), length(endDate) == 1L
     )
     
     numNewRows <- 0L
@@ -61,26 +53,6 @@ readTickDataAsMovingWindow <- function(
         
     }
     
-    # Anomalien aus diesem Datensatz filtern
-    if (filterSuspiciousPeriods == TRUE) {
-        allExchangeMetadata <- fromJSON(file="Daten/bitcoin-metadata.json")
-        exchangeMetadata <- allExchangeMetadata[[dataset$Exchange]]
-        stopifnot(!is.null(exchangeMetadata))
-        pairMetadata <- exchangeMetadata[[dataset$CurrencyPair]]
-        stopifnot(!is.null(pairMetadata))
-        suspiciousPeriods <- data.table()
-        for (i in seq_along(pairMetadata$suspiciousPeriods)) {
-            period <- pairMetadata$suspiciousPeriods[[i]]
-            if (isFALSE(period$filter)) {
-                next
-            }
-            suspiciousPeriods <- rbind(suspiciousPeriods, data.table(
-                startDate = as.POSIXct(period$startDate, tz="UTC"),
-                endDate = as.POSIXct(period$endDate, tz="UTC")
-            ))
-        }
-    }
-    
     while (TRUE) {
         
         # Beginne immer bei aktuellem Monat
@@ -96,10 +68,13 @@ readTickDataAsMovingWindow <- function(
         newData <- readDataFileChunked(dataFile, startRow, endDate, ...)
         
         # Filtern
-        if (nrow(newData) > 0 && filterSuspiciousPeriods == TRUE) {
-            for (i in seq_len(nrow(suspiciousPeriods))) {
+        if (nrow(newData) > 0 && !is.null(dataset$SuspiciousPeriods)) {
+            for (i in seq_len(nrow(dataset$SuspiciousPeriods))) {
                 filtered <- newData[
-                    Time %between% c(suspiciousPeriods$startDate[i], suspiciousPeriods$endDate[i]),
+                    Time %between% c(
+                        dataset$SuspiciousPeriods$startDate[i],
+                        dataset$SuspiciousPeriods$endDate[i]
+                    ),
                     which=TRUE
                 ]
                 if (length(filtered) > 0) {

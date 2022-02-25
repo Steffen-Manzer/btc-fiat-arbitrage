@@ -25,7 +25,11 @@ setRefClass(
         EndDate = "POSIXct",
         
         # Eingelesene Daten
-        data = "data.table"
+        data = "data.table",
+        
+        # Zeiträume mit Ausreißern. Nur nötig, falls diese beim
+        # Laden neuer Daten ausgelassen werden sollen.
+        SuspiciousPeriods = "data.table"
         
     )
 )
