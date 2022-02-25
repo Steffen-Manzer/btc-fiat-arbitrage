@@ -29,7 +29,12 @@ setRefClass(
         
         # Zeiträume mit Ausreißern. Nur nötig, falls diese beim
         # Laden neuer Daten ausgelassen werden sollen.
-        SuspiciousPeriods = "data.table"
+        SuspiciousPeriods = "data.table",
+        
+        # Handelsstunden eines Devisendatensatzes (z.B. BTC/USD)
+        # Genutzt, um Bitcoin-Daten für Dreiecksarbitrage auf
+        # gemeinsame Zeiträume zu begrenzen
+        TradingHours = "POSIXct"
         
     )
 )

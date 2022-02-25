@@ -63,7 +63,10 @@ readTickDataByPeriod <- function(
             if (filterSuspiciousPeriods == TRUE) {
                 for (i in seq_len(nrow(suspiciousPeriods))) {
                     filtered <- newData[
-                        Time %between% c(suspiciousPeriods$startDate[i], suspiciousPeriods$endDate[i]),
+                        Time %between% c(
+                            suspiciousPeriods$startDate[i],
+                            suspiciousPeriods$endDate[i]
+                        ),
                         which=TRUE
                     ]
                     if (length(filtered) > 0) {

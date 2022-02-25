@@ -2,7 +2,7 @@
 source("Funktionen/AddOneMonth.r")
 source("Funktionen/ReadDataFileChunked.r")
 library("data.table")
-library("lubridate") # is.POSIXct
+library("lubridate") # is.POSIXct, floor_date
 
 
 #' Lade Tickdaten für Auswertungen, die ein gleitendes Fenster verwenden.
@@ -52,6 +52,30 @@ readTickDataAsMovingWindow <- function(dataset, currentTime, endDate, ...)
         
     }
     
+    # Falls relevant: Handelszeiten eines "verknüpften"
+    # Wechselkursdatensatzes berücksichtigen und auf diese
+    # Zeiten begrenzen
+    if (!is.null(dataset$TradingHours)) {
+        
+        # Ende bestimmen
+        endHour <- floor_date(endDate, unit="1 hour")
+        
+        # Gewünschtes Ende liegt außerhalb der Handelszeiten -> Nächsten
+        # Zeitpunkt innerhalb der Handelszeiten bestimmen.
+        # Das verhindert, dass lediglich solche neue Daten geladen werden,
+        # die letztlich verworfen werden
+        if (!(endHour %in% dataset$TradingHours)) {
+            tradingHoursAfterEndDate <- which(dataset$TradingHours > endDate)
+            
+            # Enddatum nur anpassen, wenn weitere Daten innerhalb der
+            # Handelszeiten verfügbar sind, sonst einfach Rest lesen
+            if (length(tradingHoursAfterEndDate) > 0L) {
+                endHour <- dataset$TradingHours[tradingHoursAfterEndDate[1]]
+            }
+        }
+        
+    }
+    
     while (TRUE) {
         
         # Beginne immer bei aktuellem Monat
@@ -67,7 +91,7 @@ readTickDataAsMovingWindow <- function(dataset, currentTime, endDate, ...)
         newData <- readDataFileChunked(dataFile, startRow, endDate, ...)
         
         # Filtern
-        if (nrow(newData) > 0 && !is.null(dataset$SuspiciousPeriods)) {
+        if (!is.null(dataset$SuspiciousPeriods) && nrow(newData) > 0L) {
             for (i in seq_len(nrow(dataset$SuspiciousPeriods))) {
                 filtered <- newData[
                     Time %between% c(
@@ -80,6 +104,11 @@ readTickDataAsMovingWindow <- function(dataset, currentTime, endDate, ...)
                     newData <- newData[!filtered]
                 }
             }
+        }
+        
+        # Auf Handelszeiten beschränken
+        if (!is.null(dataset$TradingHours) && nrow(newData) > 0L) {
+            newData <- newData[floor_date(Time, unit="1 hour") %in% dataset$TradingHours]
         }
         
         numNewRows <- numNewRows + nrow(newData)

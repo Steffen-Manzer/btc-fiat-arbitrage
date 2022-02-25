@@ -22,8 +22,8 @@ readDataFileChunked <- function(
     endDate,
     numDatasetsPerRead = 10000L,
     columns = c("ID", "Time", "Price")
-) {
-    
+)
+{
     # Umgebungsbedingungen prüfen
     stopifnot(
         is.integer(numDatasetsPerRead), length(numDatasetsPerRead) == 1L,
