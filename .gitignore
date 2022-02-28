@@ -6,6 +6,6 @@
 .Rprofile
 
 # Konfiguration
-Konfiguration/CoinMarketCap_API_Key.r
-Konfiguration/Filepaths.r
-Konfiguration/TikZ.r
+Konfiguration/CoinMarketCap_API_Key.R
+Konfiguration/FilePaths.R
+Konfiguration/TikZ.R
