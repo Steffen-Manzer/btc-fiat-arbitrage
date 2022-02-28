@@ -11,8 +11,8 @@
 # Derzeit nicht verwendet.
 
 # Minimalpakete laden ---------------------------------------------------------
-source("Funktionen/printf.r")
-source("Konfiguration/FilePaths.r")
+source("Funktionen/printf.R")
+source("Konfiguration/FilePaths.R")
 
 # Aufruf durch LaTeX, sonst direkt aus RStudio
 fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
@@ -90,7 +90,7 @@ for (pair in currencyPairs) {
 
 # Grafiken erstellen ----------------------------------------------------------
 if (asTeX) {
-    source("Konfiguration/TikZ.r")
+    source("Konfiguration/TikZ.R")
     cat("Ausgabe in Datei ", texFile, "\n")
     tikz(
         file = texFile,
