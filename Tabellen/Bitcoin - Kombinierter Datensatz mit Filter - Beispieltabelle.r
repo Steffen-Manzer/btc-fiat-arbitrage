@@ -1,9 +1,9 @@
 library("fst")
 library("data.table")
 library("zoo") # rollapply
-source("Funktionen/FormatNumber.r")
-source("Funktionen/FormatPOSIXctWithFractionalSeconds.r")
-source("Funktionen/printf.r")
+source("Funktionen/FormatNumber.R")
+source("Funktionen/FormatPOSIXctWithFractionalSeconds.R")
+source("Funktionen/printf.R")
 
 # Betrachtetes Zeitfenster
 timeframe <- c("2021-12-05 19:35:12.097997", "2021-12-05 19:35:14.505134")

@@ -7,7 +7,7 @@
 (function() {
     
     # Konfiguration -----------------------------------------------------------
-    source("Konfiguration/FilePaths.r")
+    source("Konfiguration/FilePaths.R")
     outFile <- sprintf("%s/Daten/Bitcoin_Blockchain_Groesse.tex", latexOutPath)
     outFileTimestamp <- sprintf("%s/Daten/Bitcoin_Blockchain_Groesse_Stand.tex", latexOutPath)
     
@@ -27,7 +27,7 @@
     
     
     # Bibliotheken und Hilfsfunktionen laden ----------------------------------
-    source("Funktionen/R_in_LaTeX_Warning.r")
+    source("Funktionen/R_in_LaTeX_Warning.R")
     library("data.table")
     
     

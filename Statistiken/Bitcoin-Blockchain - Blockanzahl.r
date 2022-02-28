@@ -8,7 +8,7 @@
     stop("Derzeit nicht verwendet.")
     
     # Konfiguration -----------------------------------------------------------
-    source("Konfiguration/FilePaths.r")
+    source("Konfiguration/FilePaths.R")
     outFile <- sprintf("%s/Daten/Bitcoin_Blockchain_Blockcount.tex", latexOutPath)
     outFileTimestamp <- sprintf("%s/Daten/Bitcoin_Blockchain_Blockcount_Stand.tex", latexOutPath)
     sourceURL <- "https://blockchain.info/q/getblockcount"
@@ -23,7 +23,7 @@
     }
     
     # Arbeitsverzeichnis und Pakete
-    source("Funktionen/R_in_LaTeX_Warning.r")
+    source("Funktionen/R_in_LaTeX_Warning.R")
     library("data.table")
     
     # Mögliche Daten:

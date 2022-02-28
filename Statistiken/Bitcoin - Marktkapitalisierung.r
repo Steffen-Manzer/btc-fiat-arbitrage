@@ -6,7 +6,7 @@
 (function() {
     
     # Konfiguration -----------------------------------------------------------
-    source("Konfiguration/FilePaths.r")
+    source("Konfiguration/FilePaths.R")
     outFile <- sprintf("%s/Daten/Bitcoin_Marktkapitalisierung.tex", latexOutPath)
     outFileTimestamp <- sprintf("%s/Daten/Bitcoin_Marktkapitalisierung_Stand.tex", latexOutPath)
     
@@ -26,8 +26,8 @@
     }
     
     # Bibliotheken und Hilfsfunktionen laden ----------------------------------
-    source("Funktionen/R_in_LaTeX_Warning.r")
-    source("Konfiguration/CoinMarketCap_API_KEY.r")
+    source("Funktionen/R_in_LaTeX_Warning.R")
+    source("Konfiguration/CoinMarketCap_API_KEY.R")
     library("data.table")
     library("rjson")
     

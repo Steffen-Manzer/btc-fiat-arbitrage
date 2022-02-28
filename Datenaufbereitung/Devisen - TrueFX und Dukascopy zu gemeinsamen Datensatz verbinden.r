@@ -9,8 +9,8 @@ library("fst")
 library("data.table")
 library("lubridate") # floor_date
 library("tictoc")
-source("Funktionen/AddOneMonth.r")
-source("Funktionen/printf.r")
+source("Funktionen/AddOneMonth.R")
+source("Funktionen/printf.R")
 
 
 # Variablen initialisieren ------------------------------------------------

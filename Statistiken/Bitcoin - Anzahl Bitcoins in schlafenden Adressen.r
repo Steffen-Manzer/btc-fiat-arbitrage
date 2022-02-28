@@ -6,7 +6,7 @@
 (function() {
     
     # Konfiguration -----------------------------------------------------------
-    source("Konfiguration/FilePaths.r")
+    source("Konfiguration/FilePaths.R")
     outFile <- sprintf("%s/Daten/Bitcoin_Schlafend.tex", latexOutPath)
     outFileTimestamp <- sprintf("%s/Daten/Bitcoin_Schlafend_Stand.tex", latexOutPath)
     sourceURL <- "https://bitinfocharts.com/top-100-dormant_1y-bitcoin-addresses.html"
@@ -22,7 +22,7 @@
     
     
     # Bibliotheken und Hilfsfunktionen laden ----------------------------------
-    source("Funktionen/R_in_LaTeX_Warning.r")
+    source("Funktionen/R_in_LaTeX_Warning.R")
     library("curl")
     library("stringr")
     library("data.table")

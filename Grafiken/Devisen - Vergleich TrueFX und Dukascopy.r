@@ -11,10 +11,10 @@ library("lubridate")
 library("ggplot2")
 library("ggthemes")
 library("tictoc")
-source("Funktionen/AddOneMonth.r")
-source("Funktionen/AppendToDataTable.r")
-source("Funktionen/printf.r")
-source("Konfiguration/FilePaths.r")
+source("Funktionen/AddOneMonth.R")
+source("Funktionen/AppendToDataTable.R")
+source("Funktionen/printf.R")
+source("Konfiguration/FilePaths.R")
 
 
 # Konfiguration und Variablen -------------------------------------------------
@@ -182,7 +182,7 @@ if (file.exists("Cache/stats/forex-comparison-spread.fst")) {
 
 # Spread
 if (plotAsLaTeX) {
-    source("Konfiguration/TikZ.r")
+    source("Konfiguration/TikZ.R")
     cat("Ausgabe in Datei", texFileSpread, "\n")
     tikz(
         file = texFileSpread,

@@ -8,7 +8,7 @@
 
 
 # Bibliotheken laden ----------------------------------------------------------
-source("Konfiguration/FilePaths.r")
+source("Konfiguration/FilePaths.R")
 library("data.table")
 library("dplyr")
 library("ggplot2")
@@ -35,7 +35,7 @@ counterparties[,Kategorie:=factor(Kategorie, levels=unique(Kategorie))]
 
 # Grafiken erstellen ----------------------------------------------------------
 if (asTeX) {
-    source("Konfiguration/TikZ.r")
+    source("Konfiguration/TikZ.R")
     cat("Ausgabe in Datei ", texFile, "\n")
     tikz(
         file = texFile,

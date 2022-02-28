@@ -1,7 +1,7 @@
 # Benötigte Funktionen und Pakete laden
-source("Funktionen/AddOneMonth.r")
-source("Funktionen/LoadSuspicousBitcoinPeriods.r")
-source("Funktionen/ReadDataFileChunked.r")
+source("Funktionen/AddOneMonth.R")
+source("Funktionen/LoadSuspicousBitcoinPeriods.R")
+source("Funktionen/ReadDataFileChunked.R")
 library("data.table")
 library("lubridate") # is.POSIXct
 

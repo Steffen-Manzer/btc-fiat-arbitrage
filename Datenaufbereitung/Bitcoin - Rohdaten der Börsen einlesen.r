@@ -3,10 +3,10 @@
 
 
 # Bibliotheken und externe Hilfsfunktionen laden ------------------------------
-source("Funktionen/AddOneMonth.r")
-source("Funktionen/ReadMonthlyDividedDataset.r")
-source("Funktionen/printf.r")
-source("Funktionen/FormatCurrencyPair.r")
+source("Funktionen/AddOneMonth.R")
+source("Funktionen/ReadMonthlyDividedDataset.R")
+source("Funktionen/printf.R")
+source("Funktionen/FormatCurrencyPair.R")
 library("data.table") # fread
 library("fasttime")
 library("lubridate") # floor_date

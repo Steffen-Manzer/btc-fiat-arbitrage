@@ -3,7 +3,7 @@
 # - 60s/1d/1mon: Schlusskurse für Bid-, Ask- und Mittelkurs
 # Diese Auswahl erfolgt, um die Dateigröße zu gering wie möglich zu halten.
 
-source("Funktionen/ReadMonthlyDividedDataset.r")
+source("Funktionen/ReadMonthlyDividedDataset.R")
 
 # Bibliotheken laden
 library("data.table")

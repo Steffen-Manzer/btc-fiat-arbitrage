@@ -17,7 +17,7 @@
     fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
     # Konfiguration -----------------------------------------------------------
-    source("Konfiguration/FilePaths.r")
+    source("Konfiguration/FilePaths.R")
     texFile <- sprintf("%s/Abbildungen/Markteffizienz_Bitcoin_HistorischeKurse.tex", latexOutPath)
     outFileTimestamp <- sprintf("%s/Abbildungen/Markteffizienz_Bitcoin_HistorischeKurse_Stand.tex",
                                 latexOutPath)
@@ -48,7 +48,7 @@
         summarise(Close=last(Close))
     
     if (plotAsLaTeX) {
-        source("Konfiguration/TikZ.r")
+        source("Konfiguration/TikZ.R")
         cat("Ausgabe in Datei ", texFile, "\n")
         tikz(
             file = texFile,

@@ -20,11 +20,11 @@
 
 
 # Bibliotheken und externe Hilfsfunktionen laden ------------------------------
-source("Funktionen/FormatCurrencyPair.r")
-source("Funktionen/FormatNumber.r")
-source("Funktionen/FormatPOSIXctWithFractionalSeconds.r")
-DEBUG_PRINT <- TRUE; source("Funktionen/printf.r")
-source("Konfiguration/FilePaths.r")
+source("Funktionen/FormatCurrencyPair.R")
+source("Funktionen/FormatNumber.R")
+source("Funktionen/FormatPOSIXctWithFractionalSeconds.R")
+DEBUG_PRINT <- TRUE; source("Funktionen/printf.R")
+source("Konfiguration/FilePaths.R")
 library("fst")
 library("data.table")
 library("lubridate") # floor_date
@@ -249,7 +249,7 @@ plotAggregatedPriceDifferencesOverTime <- function(
     
     # Ausgabeoptionen
     if (!is.null(latexOutPath)) {
-        source("Konfiguration/TikZ.r")
+        source("Konfiguration/TikZ.R")
         printf.debug("Ausgabe als LaTeX in Datei %s\n", basename(latexOutPath))
         tikz(
             file = latexOutPath,
@@ -608,7 +608,7 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
     
     # Ausgabeoptionen
     if (!is.null(latexOutPath)) {
-        source("Konfiguration/TikZ.r")
+        source("Konfiguration/TikZ.R")
         printf.debug("Ausgabe als LaTeX in Datei %s\n", basename(latexOutPath))
         tikz(
             file = latexOutPath,
@@ -976,7 +976,7 @@ analysePriceDifferences <- function(pair, breakpoints)
     )
     
     # Als LaTeX-Dokument ausgeben
-    source("Konfiguration/TikZ.r")
+    source("Konfiguration/TikZ.R")
     tikz(
         file = sprintf("%s/Abbildungen/Empirie_Raumarbitrage_%s_Uebersicht.tex", 
                        latexOutPath, toupper(pair)),

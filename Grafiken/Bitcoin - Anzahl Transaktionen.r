@@ -9,7 +9,7 @@
     fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
     # Konfiguration -----------------------------------------------------------
-    source("Konfiguration/FilePaths.r")
+    source("Konfiguration/FilePaths.R")
     texFile <- sprintf("%s/Abbildungen/Krypto_Anzahl_BTC_Transaktionen.tex",
                        latexOutPath)
     outFileTimestamp <- sprintf("%s/Abbildungen/Krypto_Anzahl_BTC_Transaktionen_Stand.tex",
@@ -29,7 +29,7 @@
     
     
     # Bibliotheken laden ------------------------------------------------------
-    source("Funktionen/FormatNumber.r")
+    source("Funktionen/FormatNumber.R")
     library("data.table")
     library("lubridate") # floor_date
     library("fasttime") # fastPOSIXct
@@ -57,7 +57,7 @@
     
     # Grafiken erstellen
     if (plotAsLaTeX) {
-        source("Konfiguration/TikZ.r")
+        source("Konfiguration/TikZ.R")
         cat("Ausgabe in Datei", texFile, "\n")
         tikz(
             file = texFile,

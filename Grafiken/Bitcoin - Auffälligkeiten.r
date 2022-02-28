@@ -9,10 +9,10 @@ library("lubridate") # floor_date
 library("ggplot2")
 library("ggthemes")
 library("gridExtra") # grid.arrange
-source("Konfiguration/FilePaths.r")
-source("Funktionen/FormatCurrencyPair.r")
-source("Funktionen/FormatNumber.r")
-source("Funktionen/printf.r")
+source("Konfiguration/FilePaths.R")
+source("Funktionen/FormatCurrencyPair.R")
+source("Funktionen/FormatNumber.R")
+source("Funktionen/printf.R")
 
 
 # Konfiguration ---------------------------------------------------------------
@@ -249,7 +249,7 @@ p_coinbase <- ggplot(c_combined, aes(x=Time, y=Price)) +
 # Plot erstellen --------------------------------------------------------------
 
 if (plotAsLaTeX) {
-    source("Konfiguration/TikZ.r")
+    source("Konfiguration/TikZ.R")
     tikz(
         file = texFile,
         width = documentPageWidth,

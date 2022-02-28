@@ -5,14 +5,14 @@
 
 
 # Bibliotheken und Funktionen laden -------------------------------------------
-source("Klassen/Dataset.r")
-source("Funktionen/AppendToDataTable.r")
-source("Funktionen/FormatCurrencyPair.r")
-source("Funktionen/FormatDuration.r")
-source("Funktionen/FormatNumber.r")
-source("Funktionen/FormatPOSIXctWithFractionalSeconds.r")
-source("Funktionen/ReadTickDataAsMovingWindow.r")
-source("Funktionen/printf.r")
+source("Klassen/Dataset.R")
+source("Funktionen/AppendToDataTable.R")
+source("Funktionen/FormatCurrencyPair.R")
+source("Funktionen/FormatDuration.R")
+source("Funktionen/FormatNumber.R")
+source("Funktionen/FormatPOSIXctWithFractionalSeconds.R")
+source("Funktionen/ReadTickDataAsMovingWindow.R")
+source("Funktionen/printf.R")
 library("fst")
 library("data.table")
 library("ggplot2")

@@ -1,8 +1,8 @@
 library("fst")
 library("data.table")
-source("Funktionen/FormatNumber.r")
-source("Funktionen/FormatPOSIXctWithFractionalSeconds.r")
-source("Funktionen/printf.r")
+source("Funktionen/FormatNumber.R")
+source("Funktionen/FormatPOSIXctWithFractionalSeconds.R")
+source("Funktionen/printf.R")
 
 # Beispieldaten laden
 d <- read_fst(

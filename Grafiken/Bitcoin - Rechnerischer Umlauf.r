@@ -12,7 +12,7 @@
     library("ggthemes")
     
     # Konfiguration -----------------------------------------------------------
-    source("Konfiguration/FilePaths.r")
+    source("Konfiguration/FilePaths.R")
     texFile <- sprintf("%s/Abbildungen/Krypto_Rechnerische_Anzahl_Bitcoins_im_Umlauf.tex", latexOutPath)
     plotAsLaTeX <- TRUE
     
@@ -59,7 +59,7 @@
     
     # Grafiken erstellen ------------------------------------------------------
     if (plotAsLaTeX) {
-        source("Konfiguration/TikZ.r")
+        source("Konfiguration/TikZ.R")
         cat("Ausgabe in Datei", texFile, "\n")
         tikz(
             file = paste0(texFile),

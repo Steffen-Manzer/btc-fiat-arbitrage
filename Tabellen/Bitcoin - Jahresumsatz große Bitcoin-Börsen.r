@@ -9,7 +9,7 @@ if (fromLaTeX) {
 
 
 # Konfiguration -----------------------------------------------------------
-source("Konfiguration/FilePaths.r")
+source("Konfiguration/FilePaths.R")
 
 # Grafik (texFile) derzeit nicht genutzt
 texFile <- sprintf("%s/Abbildungen/Krypto_Jahresumsatz_nach_Boerse_und_Waehrungspaar.tex",
@@ -51,7 +51,7 @@ library("readr")
 library("stringr")
 library("ggplot2")
 library("ggthemes")
-source("Funktionen/FormatNumber.r")
+source("Funktionen/FormatNumber.R")
 
 # Quelldaten
 srcsets <- fread("
@@ -252,7 +252,7 @@ for (template in templateFiles) {
 # Plot ausgeben
 if (asTeX) {
     stop("Code-Segment veraltet, Prüfung nötig.")
-    source("Konfiguration/TikZ.r")
+    source("Konfiguration/TikZ.R")
     cat("Ausgabe in Datei ", texFile, "\n")
     tikz(
         file = texFile,

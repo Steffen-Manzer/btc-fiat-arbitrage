@@ -21,7 +21,7 @@
     
     
     # Konfiguration -----------------------------------------------------------
-    source("Konfiguration/FilePaths.r")
+    source("Konfiguration/FilePaths.R")
     texFile <- sprintf("%s/Abbildungen/Krypto_Volatilitaet_BPI.tex", latexOutPath)
     outFileVolaRangeBTCUSD <- sprintf("%s/Daten/Volatilitaet_BTCUSD_Bereich.tex", latexOutPath)
     outFileVolaRangeEURUSD <- sprintf("%s/Daten/Volatilitaet_EURUSD_Bereich.tex", latexOutPath)
@@ -41,7 +41,7 @@
     
     
     # Bibliotheken laden ------------------------------------------------------
-    source("Funktionen/FormatNumber.r")
+    source("Funktionen/FormatNumber.R")
     library("data.table")
     library("ggplot2")
     library("ggthemes")
@@ -80,7 +80,7 @@
     
     # Grafiken erstellen ------------------------------------------------------
     if (plotAsLaTeX) {
-        source("Konfiguration/TikZ.r")
+        source("Konfiguration/TikZ.R")
         cat("Ausgabe in Datei ", texFile, "\n")
         tikz(
             file = texFile,

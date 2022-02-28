@@ -11,7 +11,7 @@
     fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
     # Konfiguration -----------------------------------------------------------
-    source("Konfiguration/FilePaths.r")
+    source("Konfiguration/FilePaths.R")
     texFile <- sprintf("%s/Abbildungen/Bitcoin_Energieverbrauch.tex", latexOutPath)
     outFileTimestamp <- sprintf("%s/Abbildungen/Bitcoin_Energieverbrauch_Stand.tex", latexOutPath)
     asTeX <- fromLaTeX || FALSE
@@ -38,7 +38,7 @@
     
     
     # Bibliotheken und Hilfsfunktionen laden ----------------------------------
-    source("Funktionen/R_in_LaTeX_Warning.r")
+    source("Funktionen/R_in_LaTeX_Warning.R")
     library("data.table")
     #library("rjson") # Für Destatis
     #library("stringr") # Destatis-Datum einlesen
@@ -143,7 +143,7 @@
     
     # Grafiken erstellen
     if (asTeX) {
-        source("Konfiguration/TikZ.r")
+        source("Konfiguration/TikZ.R")
         cat("Ausgabe in Datei", texFile, "\n")
         tikz(
             file = texFile,

@@ -15,7 +15,7 @@
     fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
     # Konfiguration -----------------------------------------------------------
-    source("Konfiguration/FilePaths.r")
+    source("Konfiguration/FilePaths.R")
     texFile <- sprintf("%s/Abbildungen/Krypto_Bitcoin_Preis_BPI.tex", latexOutPath)
     outFileTimestamp <- sprintf("%s/Abbildungen/Krypto_Bitcoin_Preis_BPI_Stand.tex", latexOutPath)
     plotAsLaTeX <- fromLaTeX || FALSE
@@ -38,7 +38,7 @@
     btcusd <- read_fst("Cache/coindesk/bpi-daily-btcusd.fst", as.data.table = TRUE)
     
     if (plotAsLaTeX) {
-        source("Konfiguration/TikZ.r")
+        source("Konfiguration/TikZ.R")
         cat("Ausgabe in Datei ", texFile, "\n")
         tikz(
             file = texFile,

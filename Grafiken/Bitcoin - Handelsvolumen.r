@@ -12,7 +12,7 @@
     
     
     # Konfiguration -----------------------------------------------------------
-    source("Konfiguration/FilePaths.r")
+    source("Konfiguration/FilePaths.R")
     texFile <- sprintf("%s/Abbildungen/Krypto_Tagesumsatz_BTC.tex", latexOutPath)
     outFileTimestamp <- sprintf("%s/Abbildungen/Krypto_Tagesumsatz_BTC_Stand.tex", latexOutPath)
     dataSource <- "http://data.bitcoinity.org/export_data.csv?c=e&currency=USD&data_type=volume&r=day&t=b&timespan=all"
@@ -65,7 +65,7 @@
     
     # Grafiken erstellen ------------------------------------------------------
     if (plotAsLaTeX) {
-        source("Konfiguration/TikZ.r")
+        source("Konfiguration/TikZ.R")
         cat("Ausgabe in Datei", texFile, "\n")
         tikz(
             file = texFile,

@@ -8,7 +8,7 @@
 # Datenanalyse/Daten/Dukascopy/dukascopy-monthly|daily.js
 
 # Notwendige Pakete laden
-source("Konfiguration/FilePaths.r")
+source("Konfiguration/FilePaths.R")
 
 
 # Konfiguration -----------------------------------------------------------
@@ -28,7 +28,7 @@ library("ggplot2")
 library("ggthemes")
 library("gridExtra")
 library("TTR") # Technical Trading Rules -> volatility
-source("Funktionen/printf.r")
+source("Funktionen/printf.R")
 
 
 # Daten aufbereiten -------------------------------------------------------
@@ -103,7 +103,7 @@ for (pair in pairs) {
 
 # Grafiken erstellen ------------------------------------------------------
 if (asTeX) {
-    source("Konfiguration/TikZ.r")
+    source("Konfiguration/TikZ.R")
     cat("Ausgabe in Datei ", texFile, "\n")
     tikz(
         file = texFile,

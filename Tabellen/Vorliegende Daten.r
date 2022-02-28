@@ -6,9 +6,9 @@
 library("fst")
 library("readr") # read_file
 library("stringr") # str_replace
-source("Funktionen/FormatCurrencyPair.r")
-source("Funktionen/FormatNumber.r")
-source("Konfiguration/FilePaths.r")
+source("Funktionen/FormatCurrencyPair.R")
+source("Funktionen/FormatNumber.R")
+source("Konfiguration/FilePaths.R")
 
 
 # Konfiguration ---------------------------------------------------------------

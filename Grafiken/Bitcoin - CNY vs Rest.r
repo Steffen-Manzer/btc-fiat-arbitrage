@@ -9,7 +9,7 @@ library("ggthemes")
 (function() {
     
     # Konfiguration -----------------------------------------------------------
-    source("Konfiguration/FilePaths.r")
+    source("Konfiguration/FilePaths.R")
     texFile <- sprintf("%s/Abbildungen/Krypto_Handelsvolumen_BTCCNY_vs_Rest.tex", latexOutPath)
     dataSource <- "http://data.bitcoinity.org/export_data.csv?c=c&data_type=volume&t=b&timespan=all"
     plotAsLaTeX <- FALSE
@@ -51,7 +51,7 @@ library("ggthemes")
     
     # Grafiken erstellen
     if (plotAsLaTeX) {
-        source("Konfiguration/TikZ.r")
+        source("Konfiguration/TikZ.R")
         cat("Ausgabe in Datei", texFile, "\n")
         tikz(
             file = texFile,

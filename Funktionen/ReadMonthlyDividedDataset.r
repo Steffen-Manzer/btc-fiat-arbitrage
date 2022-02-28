@@ -56,8 +56,8 @@ readMonthlyDividedDataset <- function(
     library("data.table")
     library("tictoc")
     library("lubridate") # floor_date
-    source("Funktionen/FormatCurrencyPair.r")
-    source("Funktionen/printf.r")
+    source("Funktionen/FormatCurrencyPair.R")
+    source("Funktionen/printf.R")
     
     
     # Parameter verarbeiten ---------------------------------------------------
