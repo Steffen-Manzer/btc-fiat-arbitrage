@@ -212,11 +212,12 @@ compareTwoExchanges <- function(
     now <- proc.time()["elapsed"]
     
     # Hauptschleife: Paarweise vergleichen
-    printf("\n  Beginne Auswertung für %s der Börsen %s und %s ab %s.\n\n", 
+    printf("\n  Beginne Auswertung für %s der Börsen %s und %s ab %s (Threshold: %d s).\n\n", 
            format.currencyPair(currencyPair),
            exchange_a,
            exchange_b,
-           format(startDate, "%d.%m.%Y %H:%M:%S")
+           format(startDate, "%d.%m.%Y %H:%M:%S"),
+           comparisonThreshold
     )
     printf("  % 13s   % 11s   %-26s   % 10s   % 10s   % 10s   % 3s\n",
            "Laufzeit", "Verarbeitet", "Aktueller Datensatz",
