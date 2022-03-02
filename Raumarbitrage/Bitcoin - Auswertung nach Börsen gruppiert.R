@@ -48,7 +48,7 @@ exchangeNames <- list(
 #' Tabellen-Template mit `{tableContent}`, `{tableCaption` und `{tableLabel}` 
 #' als Platzhalter
 summaryTableTemplateFile <- 
-    sprintf("%s/Tabellen/Templates/Empirie_Raumarbitrage_Uebersicht_nach_Boerse.tex",
+    sprintf("%s/Tabellen/Templates/Raumarbitrage_Uebersicht_nach_Boerse.tex",
             latexOutPath)
 
 
@@ -58,17 +58,18 @@ summaryTableTemplateFile <-
 #' 
 #' @param currencyPair Kurspaar (z.B. BTCUSD)
 #' @return `data.table` mit den Preisabweichungenn
-loadComparablePricesByCurrencyPair <- function(currencyPair)
+loadComparablePricesByCurrencyPair <- function(currencyPair, threshold)
 {
     # Parameter validieren
     stopifnot(
         is.character(currencyPair), length(currencyPair) == 1L,
-        nchar(currencyPair) == 6L
+        nchar(currencyPair) == 6L,
+        is.integer(threshold), length(threshold) == 1L
     )
     
     # Nur jeweils erste Datei einlesen, siehe oben.
     sourceFiles <- list.files(
-        "Cache/Raumarbitrage",
+        sprintf("Cache/Raumarbitrage %ds", threshold),
         pattern=sprintf("^%s-.*-1\\.fst$", currencyPair),
         full.names = TRUE
     )
@@ -126,7 +127,8 @@ loadComparablePricesByCurrencyPair <- function(currencyPair)
     
     # Statistiken ausgeben
     printf(
-        "\nKombination aller Börsen ergab %s Datensätze (%s) von %s bis %s.\n",
+        "\nKombination aller Börsen (%d) ergab %s Datensätze (%s) von %s bis %s.\n",
+        threshold,
         format.number(nrow(combinedPriceDifferences)),
         format(object.size(combinedPriceDifferences), units="auto", standard="SI"),
         format(first(combinedPriceDifferences$Time), "%d.%m.%Y"),
@@ -938,13 +940,35 @@ summariseDatasetAsTable <- function(
 
 # Haupt-Auswertungsfunktion ---------------------------------------------------
 #' Preisabweichungen auf Arbitragemöglichkeiten abklopfen
-analysePriceDifferences <- function(pair, breakpoints)
+analysePriceDifferences <- function(pair, breakpoints, threshold = 5L)
 {
+    # Parameter validieren
+    stopifnot(
+        length(breakpoints) >= 1L,
+        is.character(pair), length(pair) == 1L, nchar(pair) == 6L,
+        is.integer(threshold), length(threshold) == 1L
+    )
+    
     # Vorherige Berechnungen ggf. aus dem Speicher bereinigen
     gc()
     
+    # Verzeichnisse anlegen
+    tableOutPath <- sprintf(
+        "%s/Tabellen/Raumarbitrage %ds/%s", 
+        latexOutPath, threshold, pair
+    )
+    plotOutPath <- sprintf(
+        "%s/Abbildungen/Raumarbitrage %ds/%s", 
+        latexOutPath, threshold, pair
+    )
+    for (d in c(tableOutPath, plotOutPath)) {
+        if (!dir.exists(d)) {
+            dir.create(d, recursive=TRUE)
+        }
+    }
+    
     # Daten laden
-    comparablePrices <- loadComparablePricesByCurrencyPair(pair)
+    comparablePrices <- loadComparablePricesByCurrencyPair(pair, threshold)
     
     # Monatsdaten berechnen
     aggregatedPriceDifferences <- aggregatePriceDifferences(comparablePrices, "1 month")
@@ -978,8 +1002,7 @@ analysePriceDifferences <- function(pair, breakpoints)
     # Als LaTeX-Dokument ausgeben
     source("Konfiguration/TikZ.R")
     tikz(
-        file = sprintf("%s/Abbildungen/Empirie_Raumarbitrage_%s_Uebersicht.tex", 
-                       latexOutPath, toupper(pair)),
+        file = sprintf("%s/Uebersicht.tex", plotOutPath),
         width = documentPageWidth,
         height = 22 / 2.54,
         sanitize = TRUE
@@ -994,20 +1017,15 @@ analysePriceDifferences <- function(pair, breakpoints)
     summariseDatasetAsTable(
         comparablePrices,
         outFile = sprintf(
-            "%s/Tabellen/Empirie_Raumarbitrage_%s_Uebersicht.tex",
+            file = sprintf("%s/Uebersicht.tex", tableOutPath),
             latexOutPath, toupper(pair)
         ),
         caption = sprintf(
             "Zentrale Kenngrößen paarweiser Preisnotierungen für %s im Gesamtüberblick",
             format.currencyPair(pair)
         ),
-        label = sprintf("Empirie_Raumarbitrage_%s_Ueberblick", toupper(pair))
+        label = sprintf("Raumarbitrage_%s_Ueberblick", toupper(pair))
     )
-    
-    # TODO
-    # - Anzahl Tauschmöglichkeiten (pro Tag / Stunde / Minute?)
-    # - Anzahl lukrativer Tauschmöglichkeiten (größer als x Prozent?)
-    # - Darstellung Preis / Volumen / sonstige Aktivität / Events?
     
     # Intervalle bestimmen
     intervals <- calculateIntervals(comparablePrices$Time, breakpoints)
@@ -1035,10 +1053,7 @@ analysePriceDifferences <- function(pair, breakpoints)
             # Variante 1: Aggregierte Liniengrafik: Nur sinnvoll, wenn keine/wenige Lücken
             plotAggregatedPriceDifferencesOverTime(
                 aggregatedPriceDifferences,
-                latexOutPath = sprintf(
-                    "%s/Abbildungen/Empirie_Raumarbitrage_%s_Uebersicht_%d.tex",
-                    latexOutPath, toupper(pair), segment
-                )
+                latexOutPath = sprintf("%s/Abschnitt_%d.tex", plotOutPath, segment)
             )
             
         } else {
@@ -1048,10 +1063,7 @@ analysePriceDifferences <- function(pair, breakpoints)
             plotAggregatedPriceDifferencesOverTime(
                 comparablePrices[Time %between% segmentInterval],
                 plotType = "point",
-                latexOutPath = sprintf(
-                    "%s/Abbildungen/Empirie_Raumarbitrage_%s_Uebersicht_%d.tex",
-                    latexOutPath, toupper(pair), segment
-                )
+                latexOutPath = sprintf("%s/Abschnitt_%d.tex", plotOutPath, segment)
             )
             
         }
@@ -1061,10 +1073,7 @@ analysePriceDifferences <- function(pair, breakpoints)
         # ...
         summariseDatasetAsTable(
             comparablePrices[Time %between% segmentInterval],
-            outFile = sprintf(
-                "%s/Tabellen/Empirie_Raumarbitrage_%s_Uebersicht_%d.tex",
-                latexOutPath, toupper(pair), segment
-            ),
+            outFile = sprintf("%s/Abschnitt_%d.tex", tableOutPath, segment),
             caption = sprintf(
                 "Zentrale Kenngrößen der Preisabweichungen für %s von %s bis %s",
                 format.currencyPair(pair),
@@ -1072,7 +1081,7 @@ analysePriceDifferences <- function(pair, breakpoints)
                 format(segmentInterval[2], "%d.%m.%Y")
             ),
             label = sprintf(
-                "Empirie_Raumarbitrage_%s_Ueberblick_%d",
+                "Raumarbitrage_%s_Ueberblick_%d",
                 toupper(pair), segment
             )
         )
@@ -1080,10 +1089,7 @@ analysePriceDifferences <- function(pair, breakpoints)
         # Boxplot mit allen Daten
         plotPriceDifferencesBoxplotByExchangePair(
             comparablePrices[Time %between% segmentInterval],
-            latexOutPath = sprintf(
-                "%s/Abbildungen/Empirie_Raumarbitrage_%s_Boxplot_%d.tex",
-                latexOutPath, toupper(pair), segment
-            )
+            latexOutPath = sprintf("%s/Boxplot_%d.tex", plotOutPath, segment)
         )
     }
     

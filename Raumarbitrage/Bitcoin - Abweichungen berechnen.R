@@ -53,20 +53,31 @@ library("lubridate") # floor_date
 #' @param exchange_a Name der ersten Börse
 #' @param exchange_b Name der zweiten Börse
 #' @param currencyPair Name des Kurspaares
-saveInterimResult <- function(result, index, exchange_a, exchange_b, currencyPair)
-{
+#' @param comparisonThreshold Zeitliche Differenz zweier Ticks in Sekunden,
+#'                            ab der das Tick-Paar verworfen wird.
+savePartialResult <- function(
+    result,
+    index,
+    exchange_a,
+    exchange_b,
+    currencyPair,
+    comparisonThreshold
+) {
     # Parameter validieren
     stopifnot(
         is.data.table(result), nrow(result) >= 1L,
         is.integer(index), length(index) == 1L,
         is.character(exchange_a), length(exchange_a) == 1L,
         is.character(exchange_b), length(exchange_b) == 1L,
-        is.character(currencyPair), length(currencyPair) == 1L
+        is.character(currencyPair), length(currencyPair) == 1L,
+        is.integer(comparisonThreshold), length(comparisonThreshold) == 1L
     )
     
     # Zieldatei bestimmen
-    outFile <- sprintf("Cache/Raumarbitrage/%s-%s-%s-%d.fst",
-                       tolower(currencyPair), exchange_a, exchange_b, index)
+    outFile <- sprintf(
+        "Cache/Raumarbitrage %ds/%s-%s-%s-%d.fst",
+        comparisonThreshold, tolower(currencyPair), exchange_a, exchange_b, index
+    )
     stopifnot(!file.exists(outFile))
     
     # Ergebnis um zwischenzeitlich eingefügte `NA`s bereinigen
@@ -105,7 +116,7 @@ saveInterimResult <- function(result, index, exchange_a, exchange_b, currencyPai
 #'                            ab der das Tick-Paar verworfen wird.
 #' @return `NULL` Ergebnisse werden in mehreren Dateien (i = 1...n) unter
 #'   Cache/Raumarbitrage/`currencyPair`-`exchange_a`-`exchange_b`-`i`.fst
-#'   gespeichert (siehe `saveInterimResult`).
+#'   gespeichert (siehe `savePartialResult`).
 compareTwoExchanges <- function(
     exchange_a,
     exchange_b,
@@ -130,8 +141,10 @@ compareTwoExchanges <- function(
     )
     
     # Ergebnisdatei existiert bereits
-    firstOutputFile <- sprintf("Cache/Raumarbitrage/%s-%s-%s-1.fst",
-                            tolower(currencyPair), exchange_a, exchange_b)
+    firstOutputFile <- sprintf(
+        "Cache/Raumarbitrage %ds/%s-%s-%s-1.fst",
+        comparisonThreshold, tolower(currencyPair), exchange_a, exchange_b
+    )
     if (file.exists(firstOutputFile)) {
         printf("Zieldatei %s bereits vorhanden!\n", firstOutputFile)
         return(invisible(NULL))
@@ -422,7 +435,14 @@ compareTwoExchanges <- function(
             )
             
             # Ergebnis speichern
-            saveInterimResult(result, result_set_index, exchange_a, exchange_b, currencyPair)
+            savePartialResult(
+                result, 
+                result_set_index, 
+                exchange_a, 
+                exchange_b, 
+                currencyPair,
+                comparisonThreshold
+            )
             result_set_index <- result_set_index + 1L
             
             # Ergebnisspeicher leeren
@@ -432,7 +452,7 @@ compareTwoExchanges <- function(
     }
     
     # Rest speichern
-    saveInterimResult(result, result_set_index, exchange_a, exchange_b, currencyPair)
+    savePartialResult(result, result_set_index, exchange_a, exchange_b, currencyPair)
     
     printf("\n\n  Abgeschlossen.\n")
     
