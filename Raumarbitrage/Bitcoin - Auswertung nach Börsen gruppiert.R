@@ -23,7 +23,7 @@
 source("Funktionen/FormatCurrencyPair.R")
 source("Funktionen/FormatNumber.R")
 source("Funktionen/FormatPOSIXctWithFractionalSeconds.R")
-DEBUG_PRINT <- TRUE; source("Funktionen/printf.R")
+source("Funktionen/printf.R")
 source("Konfiguration/FilePaths.R")
 library("fst")
 library("data.table")
@@ -57,6 +57,8 @@ summaryTableTemplateFile <-
 #' Lade alle vergleichbaren Preise für ein Kurspaar
 #' 
 #' @param currencyPair Kurspaar (z.B. BTCUSD)
+#' @param threshold Zeitliche Differenz zweier Ticks in Sekunden,
+#'                  ab der das Tick-Paar verworfen wird.
 #' @return `data.table` mit den Preisabweichungenn
 loadComparablePricesByCurrencyPair <- function(currencyPair, threshold)
 {
@@ -68,6 +70,7 @@ loadComparablePricesByCurrencyPair <- function(currencyPair, threshold)
     )
     
     # Nur jeweils erste Datei einlesen, siehe oben.
+    printf("Lade alle paarweisen Preise für %s (Schwellwert: %ds).\n", currencyPair, threshold)
     sourceFiles <- list.files(
         sprintf("Cache/Raumarbitrage %ds", threshold),
         pattern=sprintf("^%s-.*-1\\.fst$", currencyPair),
@@ -127,7 +130,7 @@ loadComparablePricesByCurrencyPair <- function(currencyPair, threshold)
     
     # Statistiken ausgeben
     printf(
-        "\nKombination aller Börsen (%d) ergab %s Datensätze (%s) von %s bis %s.\n",
+        "\nKombination aller Börsen (%ds) ergab %s Datensätze (%s) von %s bis %s.\n",
         threshold,
         format.number(nrow(combinedPriceDifferences)),
         format(object.size(combinedPriceDifferences), units="auto", standard="SI"),
@@ -167,9 +170,7 @@ aggregatePriceDifferences <- function(
         is.null(interval) || length(interval) == 2L
     )
     
-    if (exists("DEBUG_PRINT") && isTRUE(DEBUG_PRINT)) {
-        tic()
-    }
+    tic()
     
     # Zeitraum eingrenzen
     if (!is.null(interval)) {
@@ -188,11 +189,9 @@ aggregatePriceDifferences <- function(
         ),
         by=.(Time=floor_date(Time, unit=floorUnits))
     ]
-    printf.debug("Aggregation auf '%s' ergab %s Datensätze. ",
+    printf("Aggregation auf '%s' ergab %s Datensätze. ",
                  floorUnits, format.number(nrow(priceDifferences)))
-    if (exists("DEBUG_PRINT") && isTRUE(DEBUG_PRINT)) {
-        toc()
-    }
+    toc()
     
     return(priceDifferences)
 }
@@ -939,8 +938,21 @@ summariseDatasetAsTable <- function(
 
 
 # Haupt-Auswertungsfunktion ---------------------------------------------------
-#' Preisabweichungen auf Arbitragemöglichkeiten abklopfen
-analysePriceDifferences <- function(pair, breakpoints, threshold = 5L)
+
+#' Preisabweichungen grafisch und tabellarisch darstellen
+#' 
+#' @param pair Das betrachtete Handelspaar, z.B. btcusd
+#' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
+#' @param threshold Zeitliche Differenz zweier Ticks in Sekunden,
+#'                  ab der das Tick-Paar verworfen wird.
+#' @param plotTradingVolume Plot des Handelsvolumens erzeugen
+#' @param analysePartialIntervals Grafiken und Tabellen für 
+#'                                Teil-Intervalle erstellen
+analysePriceDifferences <- function(
+    pair,
+    breakpoints,
+    threshold = 5L
+)
 {
     # Parameter validieren
     stopifnot(
@@ -1016,10 +1028,7 @@ analysePriceDifferences <- function(pair, breakpoints, threshold = 5L)
     # Beschreibende Statistiken
     summariseDatasetAsTable(
         comparablePrices,
-        outFile = sprintf(
-            file = sprintf("%s/Uebersicht.tex", tableOutPath),
-            latexOutPath, toupper(pair)
-        ),
+        outFile = sprintf("%s/Uebersicht.tex", tableOutPath),
         caption = sprintf(
             "Zentrale Kenngrößen paarweiser Preisnotierungen für %s im Gesamtüberblick",
             format.currencyPair(pair)
@@ -1034,7 +1043,7 @@ analysePriceDifferences <- function(pair, breakpoints, threshold = 5L)
     for (segment in seq_len(nrow(intervals))) {
         segmentInterval <- c(intervals$From[segment], intervals$To[segment])
         
-        printf.debug(
+        printf(
             "%s Datenpunkte im Intervall von %s bis %s.\n",
             format.number(nrow(comparablePrices[Time %between% segmentInterval])),
             format(segmentInterval[1], "%d.%m.%Y"),
@@ -1106,30 +1115,26 @@ if (FALSE) {
     # Die Breakpoints selbst werden immer dem letzten der beiden entstehenden
     # Intervalle zugerechnet
     
-    # BTC/USD
-    # Datenmenge: ~11,5 GB
+    # BTC/USD: ~11,5 GB
     analysePriceDifferences(
         pair = "btcusd",
         breakpoints = 
             c("2014-03-01", "2017-01-01", "2018-06-01", "2019-07-01", "2020-05-01")
     ) ; invisible(gc())
     
-    # BTC/EUR
-    # Datenmenge: ~4,5 GB
+    # BTC/EUR: ~4,5 GB
     analysePriceDifferences(
         pair = "btceur",
         breakpoints = c("2016-04-01", "2017-01-01", "2018-03-01")
     ) ; invisible(gc())
     
-    # BTC/GBP
-    # Datenmenge: ~450 MB
+    # BTC/GBP: ~450 MB
     analysePriceDifferences(
         pair = "btcgbp",
         breakpoints = c("2016-01-01", "2017-06-01", "2018-03-29", "2019-06-01")
     ) ; invisible(gc())
     
-    # BTC/JPY
-    # Datenmenge: < 10 MB
+    # BTC/JPY: < 10 MB
     analysePriceDifferences(
         pair = "btcjpy",
         breakpoints = c("2019-06-01", "2019-11-01")
