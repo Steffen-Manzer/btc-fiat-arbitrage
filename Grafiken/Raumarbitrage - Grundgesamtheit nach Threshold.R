@@ -29,13 +29,15 @@ exchangeNames <- list(
     "coinbase" = "Coinbase Pro",
     "kraken" = "Kraken"
 )
-metadata <- data.table()
 
 # Übersicht einlesen ----------------------------------------------------------
+metadata <- data.table()
+
 # Mögliche zeitliche Limits durchgehen
 for (t in c(2, 5, 10, 30)) {
     
     # Börsenpaare durchgehen
+    # ACHTUNG: Annahme, dass es nur eine Teildatei gibt!
     files <- list.files(
         sprintf("Cache/Raumarbitrage %ds/", t),
         pattern = ".+-1\\.fst",
@@ -76,13 +78,14 @@ for (t in c(2, 5, 10, 30)) {
 
 # Daten aufbereiten -----------------------------------------------------------
 
-# Kurspaare nicht alphabetisch, sondern nach Bedeutung sortieren
-metadata[,currencyPair:=factor(currencyPair, levels = c("btcusd", "btceur", "btcgbp", "btcjpy"))]
+# Börsenpaare nach Währung gruppieren
+metadata <- metadata[
+    j = .(numRows = sum(numRows)),
+    by = .(threshold, currencyPair)
+]
 
-# Prozentuale Anteile berechnen
-# Minimum = Basis = 2s - Alles weitere kommt "on top" dazu
-metadata[, additionalRows := numRows - metadata[threshold=="2s"]$numRows]
-metadata[threshold=="2s", additionalRows := numRows]
+# Kurspaare nicht alphabetisch, sondern nach ihrer Bedeutung sortieren
+metadata[,currencyPair:=factor(currencyPair, levels = c("btcusd", "btceur", "btcgbp", "btcjpy"))]
 
 
 # Plot erzeugen ---------------------------------------------------------------
@@ -98,9 +101,9 @@ p1 <- ggplot(metadata[currencyPair != "btcjpy"]) +
     ) +
     scale_x_discrete(labels=format.currencyPair, expand=c(.15,.15)) +
     scale_y_continuous(
-        breaks = seq(0, 70e6, by=10e6),
+        breaks = seq(0, 225e6, by=50e6),
         labels = function(x) format.number(x/1e6),
-        limits = c(0, 70e6)
+        limits = c(0, 225e6)
     ) +
     scale_fill_ptol(labels=function(x) paste0(x, "\\,s")) +
     theme_minimal() +
@@ -119,9 +122,9 @@ p2 <- ggplot(metadata[currencyPair == "btcjpy"]) +
     ) +
     scale_x_discrete(labels=format.currencyPair, expand=c(.15,.15)) +
     scale_y_continuous(
-        breaks = seq(0, 175e3, by=25e3),
+        breaks = seq(0, 225e3, by=50e3),
         labels = function(x) format.number(x/1e3),
-        limits = c(0, 175e3)
+        limits = c(0, 225e3)
     ) +
     scale_fill_ptol(labels=function(x) paste0(x, "\\,s")) +
     theme_minimal() +

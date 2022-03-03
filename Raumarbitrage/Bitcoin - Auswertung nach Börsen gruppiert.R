@@ -899,7 +899,7 @@ summariseDatasetAsTable <- function(
                     if (numRows_withOtherExchange > 0L) {
                         tableContent <- paste0(
                             tableContent,
-                            sprintf("        \\quad davon mit %s &\n", exchangeNames[[j]]),
+                            sprintf("        ~davon mit %s &\n", exchangeNames[[j]]),
                             createRow(
                                 numRows_withOtherExchange, 
                                 dataset[
@@ -979,11 +979,11 @@ analysePriceDifferences <- function(
     
     # Verzeichnisse anlegen
     tableOutPath <- sprintf(
-        "%s/Tabellen/Raumarbitrage/%ds/%s", 
+        "%s/Tabellen/Raumarbitrage/%ds/%s",
         latexOutPath, threshold, pair
     )
     plotOutPath <- sprintf(
-        "%s/Abbildungen/Raumarbitrage/%ds/%s", 
+        "%s/Abbildungen/Raumarbitrage/%ds/%s",
         latexOutPath, threshold, pair
     )
     for (d in c(tableOutPath, plotOutPath)) {
@@ -1028,24 +1028,34 @@ analysePriceDifferences <- function(
     
     # Als LaTeX-Dokument ausgeben
     source("Konfiguration/TikZ.R")
-    tikz(
-        file = sprintf("%s/Uebersicht.tex", plotOutPath),
-        width = documentPageWidth,
-        height = 22 / 2.54,
-        sanitize = TRUE
-    )
     if (plotTradingVolume) {
+        tikz(
+            file = sprintf("%s/Uebersicht.tex", plotOutPath),
+            width = documentPageWidth,
+            height = 22 / 2.54,
+            sanitize = TRUE
+        )
         grid.arrange(
             p_diff, p_nrow, p_volume, p_boxplot,
             layout_matrix = rbind(c(1),c(2),c(3),c(4))
         )
     } else {
+        tikz(
+            file = sprintf("%s/Uebersicht.tex", plotOutPath),
+            width = documentPageWidth,
+            height = 16.5 / 2.54,
+            sanitize = TRUE
+        )
         grid.arrange(
             p_diff, p_nrow, p_boxplot,
             layout_matrix = rbind(c(1),c(2),c(3))
         )
     }
     dev.off()
+    
+    # Speicherdruck reduzieren
+    rm(aggregatedPriceDifferences)
+    gc()
     
     # Beschreibende Statistiken
     summariseDatasetAsTable(
@@ -1058,13 +1068,13 @@ analysePriceDifferences <- function(
         label = sprintf("Raumarbitrage_%s_Ueberblick_%ds", toupper(pair), threshold)
     )
     
-    # Intervalle bestimmen
-    intervals <- calculateIntervals(comparablePrices$Time, breakpoints)
-    
     # Einzelne Segmente auswerten
     if (!analysePartialIntervals) {
         return(invisible(NULL))
     }
+    
+    # Intervalle bestimmen
+    intervals <- calculateIntervals(comparablePrices$Time, breakpoints)
     for (segment in seq_len(nrow(intervals))) {
         segmentInterval <- c(intervals$From[segment], intervals$To[segment])
         
@@ -1103,8 +1113,6 @@ analysePriceDifferences <- function(
         }
         
         # Statistiken in Tabelle ausgeben
-        # -> Wie für gesamten Datensatz
-        # ...
         summariseDatasetAsTable(
             comparablePrices[Time %between% segmentInterval],
             outFile = sprintf("%s/Abschnitt_%d.tex", tableOutPath, segment),
@@ -1120,7 +1128,7 @@ analysePriceDifferences <- function(
             )
         )
         
-        # Boxplot mit allen Daten
+        # Boxplot mit Daten des Intervalls
         plotPriceDifferencesBoxplotByExchangePair(
             comparablePrices[Time %between% segmentInterval],
             latexOutPath = sprintf("%s/Boxplot_%d.tex", plotOutPath, segment)
@@ -1138,31 +1146,15 @@ analysePriceDifferences <- function(
 if (FALSE) {
     
     # BTC/USD: ~11,5 GB
-    analysePriceDifferences(
-        pair = "btcusd",
-        breakpoints = breakpoints[["btcusd"]]
-    )
-    
     # BTC/EUR: ~4,5 GB
-    analysePriceDifferences(
-        pair = "btceur",
-        breakpoints = breakpoints[["btceur"]]
-    )
-    
     # BTC/GBP: ~450 MB
-    analysePriceDifferences(
-        pair = "btcgbp",
-        breakpoints = breakpoints[["btcgbp"]]
-    )
-    
     # BTC/JPY: < 10 MB
-    analysePriceDifferences(
-        pair = "btcjpy",
-        breakpoints = breakpoints[["btcjpy"]]
-    )
-    
+    for (pair in c("btcusd", "btceur", "btcgbp", "btcjpy")) {
+        analysePriceDifferences(pair, breakpoints[[pair]])
+    }
     
     # Zusätzliche Intervalle für Anhang erstellen
+    # Achtung: Immenser Bedarf an Arbeitsspeicher!!! (> 20 GB)
     for (threshold in c(2L, 10L, 30L)) {
         for (pair in c("btcusd", "btceur", "btcgbp", "btcjpy")) {
             printf("\n\nBetrachte %s für den Schwellwert %ds...\n", pair, threshold)
