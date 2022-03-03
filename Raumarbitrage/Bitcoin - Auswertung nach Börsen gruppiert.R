@@ -979,11 +979,11 @@ analysePriceDifferences <- function(
     
     # Verzeichnisse anlegen
     tableOutPath <- sprintf(
-        "%s/Tabellen/Raumarbitrage %ds/%s", 
+        "%s/Tabellen/Raumarbitrage/%ds/%s", 
         latexOutPath, threshold, pair
     )
     plotOutPath <- sprintf(
-        "%s/Abbildungen/Raumarbitrage %ds/%s", 
+        "%s/Abbildungen/Raumarbitrage/%ds/%s", 
         latexOutPath, threshold, pair
     )
     for (d in c(tableOutPath, plotOutPath)) {
@@ -1055,7 +1055,7 @@ analysePriceDifferences <- function(
             "Zentrale Kenngrößen paarweiser Preisnotierungen für %s im Gesamtüberblick",
             format.currencyPair(pair)
         ),
-        label = sprintf("Raumarbitrage_%s_Ueberblick", toupper(pair))
+        label = sprintf("Raumarbitrage_%s_Ueberblick_%ds", toupper(pair), threshold)
     )
     
     # Intervalle bestimmen
@@ -1115,8 +1115,8 @@ analysePriceDifferences <- function(
                 format(segmentInterval[2], "%d.%m.%Y")
             ),
             label = sprintf(
-                "Raumarbitrage_%s_Ueberblick_%d",
-                toupper(pair), segment
+                "Raumarbitrage_%s_Ueberblick_%ds_%d",
+                toupper(pair), threshold, segment
             )
         )
         
