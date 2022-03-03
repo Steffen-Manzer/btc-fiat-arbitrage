@@ -45,6 +45,15 @@ exchangeNames <- list(
     "kraken" = "Kraken"
 )
 
+# Die Breakpoints selbst werden immer dem letzten der beiden entstehenden
+# Intervalle zugerechnet
+breakpoints <- list(
+    "btcusd" = c("2014-03-01", "2017-01-01", "2018-06-01", "2019-07-01", "2020-05-01"),
+    "btceur" = c("2016-04-01", "2017-01-01", "2018-03-01"),
+    "btcgbp" = c("2016-01-01", "2017-06-01", "2018-03-29", "2019-06-01"),
+    "btcjpy" = c("2019-06-01", "2019-11-01")
+)
+
 #' Tabellen-Template mit `{tableContent}`, `{tableCaption` und `{tableLabel}` 
 #' als Platzhalter
 summaryTableTemplateFile <- 
@@ -951,14 +960,18 @@ summariseDatasetAsTable <- function(
 analysePriceDifferences <- function(
     pair,
     breakpoints,
-    threshold = 5L
+    threshold = 5L,
+    plotTradingVolume = TRUE,
+    analysePartialIntervals = TRUE
 )
 {
     # Parameter validieren
     stopifnot(
         length(breakpoints) >= 1L,
         is.character(pair), length(pair) == 1L, nchar(pair) == 6L,
-        is.integer(threshold), length(threshold) == 1L
+        is.integer(threshold), length(threshold) == 1L,
+        is.logical(plotTradingVolume), length(plotTradingVolume) == 1L,
+        is.logical(analysePartialIntervals), length(analysePartialIntervals) == 1L
     )
     
     # Vorherige Berechnungen ggf. aus dem Speicher bereinigen
@@ -1000,12 +1013,14 @@ analysePriceDifferences <- function(
         timeHorizon = "",
         plotTitle = "Anzahl monatlicher Beobachtungen"
     )
-    p_volume <- plotTotalVolumeOverTime(
-        pair,
-        aggregatedPriceDifferences$Time[c(1,nrow(aggregatedPriceDifferences))],
-        breakpoints = breakpoints,
-        plotTitle = "Handelsvolumen"
-    )
+    if (plotTradingVolume) {
+        p_volume <- plotTotalVolumeOverTime(
+            pair,
+            aggregatedPriceDifferences$Time[c(1,nrow(aggregatedPriceDifferences))],
+            breakpoints = breakpoints,
+            plotTitle = "Handelsvolumen"
+        )
+    }
     p_boxplot <- plotPriceDifferencesBoxplotByExchangePair(
         comparablePrices,
         plotTitle = "Lagemaße der Preisabweichungen nach Börsenpaar"
@@ -1019,10 +1034,17 @@ analysePriceDifferences <- function(
         height = 22 / 2.54,
         sanitize = TRUE
     )
-    grid.arrange(
-        p_diff, p_nrow, p_volume, p_boxplot,
-        layout_matrix = rbind(c(1),c(2),c(3),c(4))
-    )
+    if (plotTradingVolume) {
+        grid.arrange(
+            p_diff, p_nrow, p_volume, p_boxplot,
+            layout_matrix = rbind(c(1),c(2),c(3),c(4))
+        )
+    } else {
+        grid.arrange(
+            p_diff, p_nrow, p_boxplot,
+            layout_matrix = rbind(c(1),c(2),c(3))
+        )
+    }
     dev.off()
     
     # Beschreibende Statistiken
@@ -1040,6 +1062,9 @@ analysePriceDifferences <- function(
     intervals <- calculateIntervals(comparablePrices$Time, breakpoints)
     
     # Einzelne Segmente auswerten
+    if (!analysePartialIntervals) {
+        return(invisible(NULL))
+    }
     for (segment in seq_len(nrow(intervals))) {
         segmentInterval <- c(intervals$From[segment], intervals$To[segment])
         
@@ -1112,31 +1137,42 @@ analysePriceDifferences <- function(
 # und die Verarbeitung viel Zeit in Anspruch nimmt.
 if (FALSE) {
     
-    # Die Breakpoints selbst werden immer dem letzten der beiden entstehenden
-    # Intervalle zugerechnet
-    
     # BTC/USD: ~11,5 GB
     analysePriceDifferences(
         pair = "btcusd",
-        breakpoints = 
-            c("2014-03-01", "2017-01-01", "2018-06-01", "2019-07-01", "2020-05-01")
-    ) ; invisible(gc())
+        breakpoints = breakpoints[["btcusd"]]
+    )
     
     # BTC/EUR: ~4,5 GB
     analysePriceDifferences(
         pair = "btceur",
-        breakpoints = c("2016-04-01", "2017-01-01", "2018-03-01")
-    ) ; invisible(gc())
+        breakpoints = breakpoints[["btceur"]]
+    )
     
     # BTC/GBP: ~450 MB
     analysePriceDifferences(
         pair = "btcgbp",
-        breakpoints = c("2016-01-01", "2017-06-01", "2018-03-29", "2019-06-01")
-    ) ; invisible(gc())
+        breakpoints = breakpoints[["btcgbp"]]
+    )
     
     # BTC/JPY: < 10 MB
     analysePriceDifferences(
         pair = "btcjpy",
-        breakpoints = c("2019-06-01", "2019-11-01")
-    ) ; invisible(gc())
+        breakpoints = breakpoints[["btcjpy"]]
+    )
+    
+    
+    # Zusätzliche Intervalle für Anhang erstellen
+    for (threshold in c(2L, 10L, 30L)) {
+        for (pair in c("btcusd", "btceur", "btcgbp", "btcjpy")) {
+            printf("\n\nBetrachte %s für den Schwellwert %ds...\n", pair, threshold)
+            analysePriceDifferences(
+                pair,
+                breakpoints[[pair]],
+                threshold,
+                plotTradingVolume = FALSE,
+                analysePartialIntervals = FALSE
+            )
+        }
+    }
 }
