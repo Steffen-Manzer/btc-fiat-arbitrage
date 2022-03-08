@@ -75,7 +75,7 @@ loadComparablePricesByCurrencyPair <- function(currencyPair, threshold)
     stopifnot(
         is.character(currencyPair), length(currencyPair) == 1L,
         nchar(currencyPair) == 6L,
-        is.integer(threshold), length(threshold) == 1L
+        is.numeric(threshold), length(threshold) == 1L
     )
     
     # Nur jeweils erste Datei einlesen, siehe oben.
@@ -270,7 +270,13 @@ plotAggregatedPriceDifferencesOverTime <- function(
     }
     
     # Einige Bezeichnungen und Variablen
-    plotTextPrefix <- "\\footnotesize "
+    if (is.null(latexOutPath)) {
+        plotTextPrefix <- ""
+        plotSmallPrefix <- ""
+    } else {
+        plotTextPrefix <- "\\footnotesize "
+        plotSmallPrefix <- "\\small "
+    }
     plotXLab <- "Datum"
     plotYLab <- "Preisabweichung"
     
@@ -362,12 +368,12 @@ plotAggregatedPriceDifferencesOverTime <- function(
         scale_fill_ptol() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
-            y = paste0(plotTextPrefix, plotYLab),
+            y = paste0(plotTextPrefix, plotYLab)
         )
     
     if (!is.null(plotTitle)) {
         plot <- plot + ggtitle(
-            paste0("\\small ", plotTitle)#,
+            paste0(plotSmallPrefix, plotTitle)#,
             #subtitle="\\small Median, 25\\,%- und 75\\,%-Quartil der Monatsdaten"
         )
     }
@@ -380,6 +386,74 @@ plotAggregatedPriceDifferencesOverTime <- function(
     } else {
         return(plot)
     }
+    
+    
+    
+    ## NOT RUN
+    # Grafische Darstellung mit Min/Max/Mean, genutzt für Erläuterungen
+    # oder Doktorandenkolloquium
+    maxValue <- max(priceDifferences$Max)
+    intervals <- calculateIntervals(priceDifferences$Time, breakpoints)
+    ggplot(priceDifferences) + 
+        geom_rect(
+            aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
+            data = intervals,
+            alpha = .25
+        ) +
+        geom_text(
+            aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
+            data = intervals
+        ) +
+        geom_ribbon(aes(x=Time, ymin=0,ymax=Max),fill="grey70") +
+        geom_line(aes(x=Time, y=Mean,color="1",linetype="1"),size=.5) + 
+        theme_minimal() +
+        theme(
+            legend.position = "none",
+            plot.title.position = "plot",
+            axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
+        ) +
+        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
+        scale_y_continuous(labels=function(x) paste(format.number(x * 100), "%")) +
+        scale_color_ptol() +
+        scale_fill_ptol() +
+        labs(
+            x = paste0(plotTextPrefix, plotXLab),
+            y = paste0(plotTextPrefix, plotYLab),
+            title = paste0(plotSmallPrefix, plotTitle)
+        )
+    
+    # Auswertung mit Mean
+    plotTitle <- "Preisabweichungen BTC/USD (arith. Mittel)"
+    maxValue <- max(priceDifferences$Mean)
+    intervals <- calculateIntervals(priceDifferences$Time, breakpoints)
+    ggplot(priceDifferences) + 
+        geom_rect(
+            aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
+            data = intervals,
+            alpha = .25
+        ) +
+        geom_text(
+            aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
+            data = intervals
+        ) +
+        geom_line(aes(x=Time, y=Mean,color="1",linetype="1"),size=.5) + 
+        theme_minimal() +
+        theme(
+            legend.position = "none",
+            plot.title.position = "plot",
+            axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
+        ) +
+        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
+        scale_y_continuous(labels=function(x) paste(format.number(x * 100), "%")) +
+        scale_color_ptol() +
+        scale_fill_ptol() +
+        labs(
+            x = paste0(plotTextPrefix, plotXLab),
+            y = paste0(plotTextPrefix, plotYLab),
+            title = paste0(plotSmallPrefix, plotTitle)
+        )
 }
 
 
@@ -969,7 +1043,7 @@ analysePriceDifferences <- function(
     stopifnot(
         length(breakpoints) >= 1L,
         is.character(pair), length(pair) == 1L, nchar(pair) == 6L,
-        is.integer(threshold), length(threshold) == 1L,
+        is.numeric(threshold), length(threshold) == 1L,
         is.logical(plotTradingVolume), length(plotTradingVolume) == 1L,
         is.logical(analysePartialIntervals), length(analysePartialIntervals) == 1L
     )
