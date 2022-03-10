@@ -408,20 +408,16 @@ compareTwoExchanges <- function(
         ) {
             result <- appendDT(result, list(
                 Time = as.double(tick_b$Time),
-                IDHigh = as.integer(tick_a$IDHigh),
                 PriceHigh = tick_a$PriceHigh,
                 ExchangeHigh = tick_a$Exchange,
-                IDLow = as.integer(tick_b$IDLow),
                 PriceLow = tick_b$PriceLow,
                 ExchangeLow = tick_b$Exchange
             ))
         } else {
             result <- appendDT(result, list(
                 Time = as.double(tick_b$Time),
-                IDHigh = as.integer(tick_b$IDHigh),
                 PriceHigh = tick_b$PriceHigh,
                 ExchangeHigh = tick_b$Exchange,
-                IDLow = as.integer(tick_a$IDLow),
                 PriceLow = tick_a$PriceLow,
                 ExchangeLow = tick_a$Exchange
             ))
