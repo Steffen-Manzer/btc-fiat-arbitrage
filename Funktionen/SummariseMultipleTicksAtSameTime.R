@@ -8,32 +8,33 @@ library("data.table") # .[ (Gruppierungsfunktion)
 #' 
 #' @param dataset Eine `data.table` mit den Spalten `Time`, `Price`,
 #'                `Exchange` oder `CurrencyPair` sowie `RowNum`
-#' @param idColumn Name der Spalte, die diesen Datensatz identifiziert
 #' @return `data.table` Wie `dataset`, nur mit gruppierten Zeitpunkten
-summariseMultipleTicksAtSameTime <- function(dataset, idColumn = "Exchange") {
-    if (idColumn == "Exchange") {
+summariseMultipleTicksAtSameTime <- function(dataset) {
+    if (!is.null(dataset$Exchange)) {
         return(dataset[
             j = .(
-                PriceLow = min(Price),
-                PriceHigh = max(Price),
+                PriceLow = min(Price), PriceHigh = max(Price),
                 Exchange = last(Exchange),
-                RowNum = last(RowNum),
-                n = .N
+                RowNum = last(RowNum), n = .N
             ),
             by = Time
         ])
-    } else if (idColumn == "CurrencyPair") {
+    } else if (!is.null(dataset$CurrencyPair)) {
         return(dataset[
             j = .(
-                PriceLow = min(Price),
-                PriceHigh = max(Price),
+                PriceLow = min(Price), PriceHigh = max(Price),
                 CurrencyPair = last(CurrencyPair),
-                RowNum = last(RowNum),
-                n = .N
+                RowNum = last(RowNum), n = .N
             ),
             by = Time
         ])
     } else {
-        stop("Unbekannte ID-Spalte.")
+        return(dataset[
+            j = .(
+                PriceLow = min(Price), PriceHigh = max(Price),
+                RowNum = last(RowNum), n = .N
+            ),
+            by = Time
+        ])
     }
 }
