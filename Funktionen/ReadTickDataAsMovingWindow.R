@@ -122,8 +122,13 @@ readTickDataAsMovingWindow <- function(dataset, currentTime, endDate, ...)
         }
         
         if (numNewRows > 0L) {
-            # Börse hinterlegen und an bestehende Daten anfügen
-            newData[, Exchange:=dataset$Exchange]
+            # Börse und Kurs hinterlegen und an bestehende Daten anfügen
+            if (length(dataset$Exchange) == 1L) {
+                newData[, Exchange:=dataset$Exchange]
+            }
+            if (length(dataset$CurrencyPair) == 1L) {
+                newData[, CurrencyPair:=dataset$CurrencyPair]
+            }
             printf.debug("%s (von %s): %s Datensätze.\n",
                          lastRowNumber |> format.number(),
                          metadata_fst(dataFile)$nrOfRows |> format.number(),
