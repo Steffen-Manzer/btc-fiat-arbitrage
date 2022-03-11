@@ -2,6 +2,7 @@
 #' 
 #' @param d Eine `data.table` mit mind. der Spalte `Time`
 #' @param after Ein POSIXct der Länge 1
+#' @return Die Zeile aus `d`, die zeitlich am nächsten nach `after` liegt
 findFirstDatasetAfterTimestamp <- function(d, after)
 {
     # "safeWhichMax" aus https://stackoverflow.com/a/71052939/3238708
