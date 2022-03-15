@@ -88,9 +88,14 @@ readTickDataAsMovingWindow <- function(dataset, currentTime, endDate, ...)
         if (!file.exists(dataFile)) {
             stop(sprintf("Datei nicht gefunden: %s", dataFile))
         }
+        numRowsInFile <- metadata_fst(dataFile)$nrOfRows
         
         printf.debug("Lese %s ab Zeile %s bis ", basename(dataFile), startRow |> format.number())
         newData <- readDataFileChunked(dataFile, startRow, endDate, ...)
+        lastRowNumber <- last(newData$RowNum)
+        if (is.null(lastRowNumber)) {
+            lastRowNumber <- startRow
+        }
         
         # Filtern
         if (!is.null(dataset$SuspiciousPeriods) && nrow(newData) > 0L) {
@@ -115,14 +120,6 @@ readTickDataAsMovingWindow <- function(dataset, currentTime, endDate, ...)
         
         numNewRows <- numNewRows + nrow(newData)
         
-        # Letzte Zeile nur für Debug-Zwecke speichern
-        if (exists("DEBUG_PRINT") && isTRUE(DEBUG_PRINT)) {
-            lastRowNumber <- last(newData$RowNum)
-            if (is.null(lastRowNumber)) {
-                lastRowNumber <- startRow
-            }
-        }
-        
         if (numNewRows > 0L) {
             # Börse und Kurs hinterlegen und an bestehende Daten anfügen
             if (length(dataset$Exchange) == 1L) {
@@ -131,10 +128,11 @@ readTickDataAsMovingWindow <- function(dataset, currentTime, endDate, ...)
             if (length(dataset$CurrencyPair) == 1L) {
                 newData[, CurrencyPair:=dataset$CurrencyPair]
             }
-            printf.debug("%s (von %s): %s Datensätze.\n",
-                         lastRowNumber |> format.number(),
-                         metadata_fst(dataFile)$nrOfRows |> format.number(),
-                         numNewRows |> format.number()
+            printf.debug(
+                "%s (von %s): %s Datensätze.\n",
+                lastRowNumber |> format.number(),
+                numRowsInFile |> format.number(),
+                numNewRows |> format.number()
             )
             dataset$data <- rbindlist(list(dataset$data, newData), use.names=TRUE)
         } else {
@@ -148,6 +146,12 @@ readTickDataAsMovingWindow <- function(dataset, currentTime, endDate, ...)
             numNewRows > 100L
         ) {
             break
+        }
+        
+        # Noch weitere Daten im aktuellen Monat
+        if (numRowsInFile > lastRowNumber) {
+            startRow <- lastRowNumber + 1L
+            next
         }
         
         # Lese zusätzlich nächsten Monat

@@ -333,7 +333,7 @@ calculateTriangularArbitragePriceTriples <- function(
         
         # Laufzeit und aktuellen Fortschritt periodisch ausgeben
         processedDatasets <- processedDatasets + 1L
-        if (processedDatasets %% 2000 == 0 || currentRow == numRows) {
+        if (processedDatasets %% 5000 == 0 || currentRow == numRows) {
             runtime <- as.integer(proc.time()["elapsed"] - now)
             #           Runtime nInput  Time    nResult Size    Speed      Set
             printf("\r  % 13s   % 11s   % 26s   % 10s   % 8s   % 6s T/s   % 3d",
@@ -621,24 +621,20 @@ calculateTriangularArbitragePriceTriples <- function(
 # Coinbase  01.12.2014  23.04.2015  21.04.2015  -           -           -
 # Kraken    06.10.2013  10.09.2013  06.11.2014  05.11.2014  06.12.2019  16.06.2020  29.06.2015
 
-# Abarbeitung händisch parallelisieren, da CPU- und RAM-limitiert
+# Abarbeitung händisch parallelisieren, da CPU-limitiert
 if (FALSE) {
     endDate <- as.POSIXct("2022-01-01 00:00:00") - .000001
     
     # Bitfinex
     calculateTriangularArbitragePriceTriples("bitfinex", "usd", "eur", "2019-09-01", endDate)
-    #calculateTriangularArbitragePriceTriples("bitfinex", "eur", "usd", "2019-09-01", endDate)
     
     # Bitstamp
     calculateTriangularArbitragePriceTriples("bitstamp", "usd", "eur", "2016-04-16", endDate)
-    #calculateTriangularArbitragePriceTriples("bitstamp", "eur", "usd", "2016-04-16", endDate)
     
     # Coinbase Pro
     calculateTriangularArbitragePriceTriples("coinbase", "usd", "eur", "2015-04-23", endDate)
-    #calculateTriangularArbitragePriceTriples("coinbase", "eur", "usd", "2015-04-23", endDate)
     
     # Kraken
     calculateTriangularArbitragePriceTriples("kraken",   "usd", "eur", "2013-10-06", endDate)
-    #calculateTriangularArbitragePriceTriples("kraken",   "eur", "usd", "2013-10-06", endDate)
 }
 
