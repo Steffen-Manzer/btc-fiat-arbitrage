@@ -27,6 +27,17 @@
 #'   um Arbeitsspeicher freizugeben.
 
 
+# Variablen für Entwicklung und Test
+# exchange <- "bitfinex"
+# currency_a <- "usd"
+# currency_b <- "eur"
+# startDate <- as.POSIXct("2019-09-01")
+# endDate <- as.POSIXct("2022-01-01 00:00:00") - .000001
+# bitcoinComparisonThresholdSeconds <- 5L
+# forexComparisonThresholdHours <- 1L
+# DEBUG_PRINT <- TRUE
+
+
 # Bibliotheken und externe Hilfsfunktionen laden ------------------------------
 source("Klassen/Dataset.R")
 source("Funktionen/AppendToDataTable.R")
@@ -425,11 +436,11 @@ calculateTriangularArbitragePriceTriples <- function(
                 !endAfterCurrentDataset &&
                 (nrow(dataset_btc_a$data) < 500 || nrow(dataset_btc_b$data) < 500)
             ) {
-                printf.debug("Weniger als 500 gemeinsame Daten (Datenlücke!), lade weitere.\n")
-                loadUntil <- min(
-                    last(dataset_btc_a$data$Time),
-                    last(dataset_btc_b$data$Time)
-                ) + 60*60
+                loadUntil <- loadUntil + 60*60
+                printf.debug(
+                    "< 500 gemeinsame Daten (Lücke!), lade weitere bis %s.\n",
+                    format(loadUntil)
+                )
                 
                 # Ende erreicht
                 if (loadUntil > endDate) {
@@ -438,8 +449,12 @@ calculateTriangularArbitragePriceTriples <- function(
                     printf.debug("Datenende erreicht, Stop nach aktuellem Monat.\n")
                 }
                 
-                readTickDataAsMovingWindow(dataset_btc_a, baseDate, loadUntil)
-                readTickDataAsMovingWindow(dataset_btc_b, baseDate, loadUntil)
+                if (last(dataset_btc_a$data$Time < loadUntil)) {
+                    readTickDataAsMovingWindow(dataset_btc_a, baseDate, loadUntil)
+                }
+                if (last(dataset_btc_b$data$Time < loadUntil)) {
+                    readTickDataAsMovingWindow(dataset_btc_b, baseDate, loadUntil)
+                }
                 
                 # Begrenze auf gemeinsamen Zeitraum
                 filterTwoDatasetsByCommonTimeInterval(dataset_btc_a, dataset_btc_b)
