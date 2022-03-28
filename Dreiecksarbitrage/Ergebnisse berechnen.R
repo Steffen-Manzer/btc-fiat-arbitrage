@@ -41,6 +41,7 @@
 # Bibliotheken und externe Hilfsfunktionen laden ------------------------------
 source("Klassen/Dataset.R")
 source("Funktionen/AppendToDataTable.R")
+source("Funktionen/DetermineCurrencyPairOrder.R")
 source("Funktionen/FilterTwoDatasetsByCommonInterval.R")
 source("Funktionen/FindLastDatasetBeforeTimestamp.R")
 source("Funktionen/FormatCurrencyPair.R")
@@ -102,28 +103,6 @@ saveInterimResult <- function(result, index, exchange, currency_a, currency_b)
     write_fst(result, outFile, compress=100)
     
     return(invisible(NULL))
-}
-
-
-#' Richtige Kurspaar-Benennung aus zwei Währungen bestimmen
-#' 
-#' @param currency_a Währung 1 (z.B. btc)
-#' @param currency_a Währung 2 (z.B. usd)
-#' @return Korrekte Kurspaar-Bezeichnung, z.B. btcusd
-determineCurrencyPairOrder <- function(currency_a, currency_b)
-{
-    # Für die bis dato genutzten Datensätze ist die alphabetische
-    # Richtung stets korrekt:
-    # BTCEUR, BTCUSD, EURUSD
-    # Potentiell, aber derzeit nicht genutzt:
-    # BTCUSD, BTCGBP, GBPUSD
-    # BTCEUR, BTCGBP, EURGBP
-    # BTCJPY, BTCGBP, GBPJPY
-    if (currency_a < currency_b) {
-        return(paste0(currency_a, currency_b))
-    } else {
-        return(paste0(currency_b, currency_a))
-    }
 }
 
 
