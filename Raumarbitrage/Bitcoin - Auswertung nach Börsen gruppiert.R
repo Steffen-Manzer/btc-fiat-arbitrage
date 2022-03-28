@@ -394,7 +394,7 @@ plotAggregatedPriceDifferencesOverTime <- function(
     # oder Doktorandenkolloquium
     maxValue <- max(priceDifferences$Max)
     intervals <- calculateIntervals(priceDifferences$Time, breakpoints)
-    ggplot(priceDifferences) + 
+    ggplot(priceDifferences) +
         geom_rect(
             aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
             data = intervals,

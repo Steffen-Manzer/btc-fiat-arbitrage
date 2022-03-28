@@ -12,12 +12,12 @@ timeframe <- c("2021-12-05 19:35:12.097997", "2021-12-05 19:35:14.505134")
 a <- read_fst(
     "Cache/coinbase/btcusd/tick/coinbase-btcusd-tick-2021-12.fst",
     columns = c("Time", "Price"), 
-    as.data.table = T
+    as.data.table = TRUE
 )
 b <- read_fst(
     "Cache/bitfinex/btcusd/tick/bitfinex-btcusd-tick-2021-12.fst",
     columns = c("Time", "Price"), 
-    as.data.table = T
+    as.data.table = TRUE
 )
 
 # Auf Beispiel-Zeitfenster beschränken
@@ -30,20 +30,17 @@ a[, Exchange:="Coinbase Pro"]
 b <- b[j=.(PriceLow=min(Price),PriceHigh=max(Price),n=.N),by=Time]
 b[, Exchange:="Bitfinex"]
 
-# Beide Tabellen zusammenführen.
-# Dokumentation: Siehe `Preisunterschiede Bitcoin-Börsen berechnen.r`
-ab <- rbindlist(list(a, b), use.names=TRUE)
+# Beide Tabellen zusammenführen, hier nach Börse.
+# Dokumentation: Siehe `Funktionen/MergeSortAndFilter.R`
+ab <- rbindlist(list(a, b))
 setorder(ab, Time)
-triplets <- c(
-    FALSE,
-    rollapply(
-        ab$Exchange,
-        width = 3,
-        # Es handelt sich um ein zu entfernendes Tripel, wenn  die
-        # Börse im vorherigen, aktuellen und nächsten Tick identisch ist
-        FUN = function(exchg) (exchg[1] == exchg[2] && exchg[2] == exchg[3])
-    ),
-    FALSE
+triplets <- rollapply(
+    ab$Exchange,
+    width = 3,
+    # Es handelt sich um ein zu entfernendes Tripel, wenn  die
+    # Börse im vorherigen, aktuellen und nächsten Tick identisch ist
+    FUN = function(x) all(x == x[1]),
+    fill = FALSE
 )
 
 
