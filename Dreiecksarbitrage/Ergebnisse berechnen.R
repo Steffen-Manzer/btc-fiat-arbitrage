@@ -13,10 +13,10 @@
 #' - Erste x Daten der Börse und des Wechselkurses laden = 
 #'   "Betrachtungsfenster" initialisieren:
 #'   [t = 0, ..., t = 1h], mindestens jedoch je 10.000 Datenpunkte.
-#' - Filtere beide Datensätze auf gemeinsamen Zeitraum.
-#' - Liste beider Kurse in eine einzelne Liste vereinen, nach Datum sortieren
-#'   und filtern (siehe unten).
-#' - Solange Daten für beide Börsen vorhanden sind:
+#' - Filtere die Datensätze auf einen gemeinsamen Zeitraum.
+#' - Liste beider BTC-Kurse in eine einzelne Liste vereinen,
+#'   nach Datum sortieren und filtern (siehe unten).
+#' - Solange Daten für beide BTC-Börsen vorhanden sind:
 #'   - Nächsten Datensatz vergleichen und Ergebnis speichern
 #'   - Prüfen, ob noch genug Daten beider Börsen für Vergleich vorhanden sind, sonst:
 #'       - neues Datenfenster laden: [t = 1h, ..., t = 2h]
@@ -305,6 +305,10 @@ calculateTriangularArbitragePriceTriples <- function(
     processedDatasets <- 0L
     now <- proc.time()["elapsed"]
     
+    # Statistiken
+    numDatasetsOutOfBitcoinThreshold <- 0L
+    numDatasetsOutOfForexThreshold <- 0L
+    
     # Hauptschleife: Paarweise vergleichen
     printf("\n  Beginne Auswertung für %s und %s an der Börse %s ab %s.\n\n", 
            format.currencyPair(pair_btc_a),
@@ -323,7 +327,7 @@ calculateTriangularArbitragePriceTriples <- function(
         
         # Laufzeit und aktuellen Fortschritt periodisch ausgeben
         processedDatasets <- processedDatasets + 1L
-        if (processedDatasets %% 5000 == 0 || currentRow == numRows) {
+        if (processedDatasets %% 10000 == 0 || currentRow == numRows) {
             runtime <- as.integer(proc.time()["elapsed"] - now)
             #           Runtime nInput  Time    nResult Size    Speed      Set
             printf("\r  % 13s   % 11s   % 26s   % 10s   % 8s   % 6s T/s   % 3d",
@@ -510,6 +514,7 @@ calculateTriangularArbitragePriceTriples <- function(
             difftime(tick_btc_2$Time, tick_btc_1$Time, units="secs") > 
             bitcoinComparisonThresholdSeconds
         ) {
+            numDatasetsOutOfBitcoinThreshold <- numDatasetsOutOfBitcoinThreshold + 1L
             next
         }
         
@@ -536,6 +541,7 @@ calculateTriangularArbitragePriceTriples <- function(
             difftime(tick_ab$Time, tick_btc_2$Time, units="hours") >
             forexComparisonThresholdHours
         ) {
+            numDatasetsOutOfForexThreshold <- numDatasetsOutOfForexThreshold + 1L
             next
         }
         
@@ -601,6 +607,17 @@ calculateTriangularArbitragePriceTriples <- function(
     saveInterimResult(result, result_set_index, exchange, currency_a, currency_b)
     
     printf("\n\n  Abgeschlossen.\n")
+    printf("===============\n")
+    printf("Statistiken:\n")
+    printf(
+        "%s Ticks verworfen, da außerhalb des Bitcoin-Zeitfensters von %ds\n", 
+        format.number(numDatasetsOutOfBitcoinThreshold), bitcoinComparisonThresholdSeconds
+    )
+    printf(
+        "%s Ticks verworfen, da außerhalb des Wechselkurs-Zeitfensters von %ds\n", 
+        format.number(numDatasetsOutOfForexThreshold), forexComparisonThresholdHours
+    )
+    printf("===============\n")
     
     return(invisible(NULL))
 }
@@ -620,15 +637,19 @@ if (FALSE) {
     endDate <- as.POSIXct("2022-01-01 00:00:00") - .000001
     
     # Bitfinex
+    # 1h50min. 16.397.229 Datensätze in 1 GB (unkomprimiert).
     calculateTriangularArbitragePriceTriples("bitfinex", "usd", "eur", "2019-09-01", endDate)
     
     # Bitstamp
+    # 1h25min. 11.993.583 Datensätze in 767.6 MB (unkomprimiert).
     calculateTriangularArbitragePriceTriples("bitstamp", "usd", "eur", "2016-04-16", endDate)
     
     # Coinbase Pro
+    # 5h. 39.202.133 Datensätze in 2.5 GB (unkomprimiert).
     calculateTriangularArbitragePriceTriples("coinbase", "usd", "eur", "2015-04-23", endDate)
     
     # Kraken
+    # 2h. 15.121.927 Datensätze in 967.8 MB (unkomprimiert).
     calculateTriangularArbitragePriceTriples("kraken",   "usd", "eur", "2013-10-06", endDate)
 }
 
