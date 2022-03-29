@@ -298,7 +298,6 @@ calculateTriangularArbitragePriceTriples <- function(
     # Statistiken
     numDatasetsOutOfBitcoinThreshold <- 0L
     numDatasetsOutOfForexThreshold <- 0L
-    forexAgeSummary <- c()
     
     # Hauptschleife: Paarweise vergleichen
     printf("\n  Beginne Auswertung für %s und %s an der Börse %s ab %s.\n\n", 
@@ -496,10 +495,8 @@ calculateTriangularArbitragePriceTriples <- function(
         }
         
         # Zeitdifferenz zwischen den Bitcoin-Ticks zu groß, überspringe.
-        if (
-            difftime(tick_btc_2$Time, tick_btc_1$Time, units="secs") > 
-            bitcoinComparisonThresholdSeconds
-        ) {
+        bitcoinTimeDifference <- difftime(tick_btc_2$Time, tick_btc_1$Time, units="secs")
+        if (bitcoinTimeDifference > bitcoinComparisonThresholdSeconds) {
             numDatasetsOutOfBitcoinThreshold <- numDatasetsOutOfBitcoinThreshold + 1L
             next
         }
@@ -522,9 +519,8 @@ calculateTriangularArbitragePriceTriples <- function(
         }
         
         # Zeitliche Differenz dennoch sehr groß - zu groß?
-        forexAge <- difftime(tick_btc_2$Time, tick_ab$Time, units="secs")
-        forexAgeSummary <- c(forexAgeSummary, forexAge)
-        if (forexAge > forexComparisonThresholdHours * 60**2) {
+        forexTickAge <- difftime(tick_btc_2$Time, tick_ab$Time, units="secs")
+        if (forexTickAge > forexComparisonThresholdHours * 60**2) {
             numDatasetsOutOfForexThreshold <- numDatasetsOutOfForexThreshold + 1L
             next
         }
@@ -548,7 +544,9 @@ calculateTriangularArbitragePriceTriples <- function(
                 b_PriceLow = tick_btc_2$PriceLow,
                 b_PriceHigh = tick_btc_2$PriceHigh,
                 ab_Bid = tick_ab$Bid,
-                ab_Ask = tick_ab$Ask
+                ab_Ask = tick_ab$Ask,
+                bitcoinTimeDifference = as.numeric(bitcoinTimeDifference),
+                forexTickAge = as.numeric(forexTickAge)
             ))
             
         } else {
@@ -564,7 +562,9 @@ calculateTriangularArbitragePriceTriples <- function(
                 b_PriceLow = tick_btc_1$PriceLow,
                 b_PriceHigh = tick_btc_1$PriceHigh,
                 ab_Bid = tick_ab$Bid,
-                ab_Ask = tick_ab$Ask
+                ab_Ask = tick_ab$Ask,
+                bitcoinTimeDifference = as.numeric(bitcoinTimeDifference),
+                forexTickAge = as.numeric(forexTickAge)
             ))
             
         }
@@ -600,22 +600,22 @@ calculateTriangularArbitragePriceTriples <- function(
         "%s Ticks verworfen, da Wechselkurs älter als %d h.\n", 
         format.number(numDatasetsOutOfForexThreshold), forexComparisonThresholdHours
     )
-    printf("Alter des letzten Wechselkurses (in Sekunden):\n")
-    print(summary(forexAgeSummary))
     printf("===============\n")
     
     # Statistiken speichern
     statFile <- sprintf(
-        "Cache/Dreiecksarbitrage/%s-%s-%s-stats.fst",
+        "Cache/Dreiecksarbitrage/%s-%s-%s.stats.fst",
         exchange, currency_a, currency_b
     )
+    if (file.exists(statFile)) {
+        unlink(statFile)
+    }
     write_fst(
         data.table(
             bitcoinComparisonThresholdSeconds = bitcoinComparisonThresholdSeconds,
             numDatasetsOutOfBitcoinThreshold = numDatasetsOutOfBitcoinThreshold,
             forexComparisonThresholdHours = forexComparisonThresholdHours,
-            numDatasetsOutOfForexThreshold = numDatasetsOutOfForexThreshold,
-            forexAgeSummary = list(forexAgeSummary)
+            numDatasetsOutOfForexThreshold = numDatasetsOutOfForexThreshold
         ),
         path = statFile,
         compress = 100L
