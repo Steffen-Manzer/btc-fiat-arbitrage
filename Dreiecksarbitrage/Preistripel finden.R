@@ -364,10 +364,6 @@ calculateTriangularArbitragePriceTriples <- function(
             
             readTickDataAsMovingWindow(dataset_btc_a, baseDate, loadUntil)
             readTickDataAsMovingWindow(dataset_btc_b, baseDate, loadUntil)
-            forexLoadUntil <- min(last(dataset_btc_a$data$Time), last(dataset_btc_b$data$Time))
-            readTickDataAsMovingWindow(
-                dataset_a_b, baseDate, forexLoadUntil, columns = c("Time", "Bid", "Ask")
-            )
             
             printf.debug(
                 "%s: %s Tickdaten von %s bis %s\n",
@@ -382,13 +378,6 @@ calculateTriangularArbitragePriceTriples <- function(
                 format.number(nrow(dataset_btc_b$data)),
                 first(dataset_btc_b$data$Time),
                 last(dataset_btc_b$data$Time)
-            )
-            printf.debug(
-                "%s: %s Tickdaten von %s bis %s\n",
-                format.currencyPair(pair_a_b),
-                format.number(nrow(dataset_a_b$data)),
-                first(dataset_a_b$data$Time),
-                last(dataset_a_b$data$Time)
             )
             
             # Begrenze auf gemeinsamen Zeitraum
@@ -427,6 +416,19 @@ calculateTriangularArbitragePriceTriples <- function(
                 # Begrenze auf gemeinsamen Zeitraum
                 filterTwoDatasetsByCommonTimeInterval(dataset_btc_a, dataset_btc_b)
             }
+            
+            # Erst dann Wechselkurs-Daten nachladen, wenn Bitcoin-Daten vollständig sind
+            forexLoadUntil <- min(last(dataset_btc_a$data$Time), last(dataset_btc_b$data$Time))
+            readTickDataAsMovingWindow(
+                dataset_a_b, baseDate, forexLoadUntil, columns = c("Time", "Bid", "Ask")
+            )
+            printf.debug(
+                "%s: %s Tickdaten von %s bis %s\n",
+                format.currencyPair(pair_a_b),
+                format.number(nrow(dataset_a_b$data)),
+                first(dataset_a_b$data$Time),
+                last(dataset_a_b$data$Time)
+            )
             
             printf.debug(
                 "%s: %s gemeinsame Tickdaten von %s bis %s\n",
@@ -518,7 +520,10 @@ calculateTriangularArbitragePriceTriples <- function(
             next
         }
         
-        # Zeitliche Differenz dennoch sehr groß - zu groß?
+        # Zeitliche Differenz zu groß
+        # Dieser Fall kann nach einer handelsfreien Zeit eintreffen, wenn
+        # bereits ein Bitcoin-Paar gefunden wurde, aber noch kein neuer Wechselkurs
+        # notiert ist.
         forexTickAge <- difftime(tick_btc_2$Time, tick_ab$Time, units="secs")
         if (forexTickAge > forexComparisonThresholdHours * 60**2) {
             numDatasetsOutOfForexThreshold <- numDatasetsOutOfForexThreshold + 1L
