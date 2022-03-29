@@ -27,17 +27,6 @@
 #'   um Arbeitsspeicher freizugeben.
 
 
-# Variablen für Entwicklung und Test
-# exchange <- "bitfinex"
-# currency_a <- "usd"
-# currency_b <- "eur"
-# startDate <- as.POSIXct("2019-09-01")
-# endDate <- as.POSIXct("2022-01-01 00:00:00") - .000001
-# bitcoinComparisonThresholdSeconds <- 5L
-# forexComparisonThresholdHours <- 1L
-# DEBUG_PRINT <- TRUE
-
-
 # Bibliotheken und externe Hilfsfunktionen laden ------------------------------
 source("Klassen/Dataset.R")
 source("Funktionen/AppendToDataTable.R")
@@ -217,8 +206,9 @@ calculateTriangularArbitragePriceTriples <- function(
     loadUntil <- startDate + 60 * 60
     readTickDataAsMovingWindow(dataset_btc_a, startDate, loadUntil)
     readTickDataAsMovingWindow(dataset_btc_b, startDate, loadUntil)
+    forexLoadUntil <- min(last(dataset_btc_a$data$Time), last(dataset_btc_b$data$Time))
     readTickDataAsMovingWindow(
-        dataset_a_b, startDate, loadUntil, columns = c("Time", "Bid", "Ask")
+        dataset_a_b, startDate, forexLoadUntil, columns = c("Time", "Bid", "Ask")
     )
     printf.debug(
         "%s: %s Tickdaten von %s bis %s\n",
@@ -308,6 +298,7 @@ calculateTriangularArbitragePriceTriples <- function(
     # Statistiken
     numDatasetsOutOfBitcoinThreshold <- 0L
     numDatasetsOutOfForexThreshold <- 0L
+    forexAgeSummary <- c()
     
     # Hauptschleife: Paarweise vergleichen
     printf("\n  Beginne Auswertung für %s und %s an der Börse %s ab %s.\n\n", 
@@ -343,12 +334,6 @@ calculateTriangularArbitragePriceTriples <- function(
             )
         }
         
-        # Nur für Benchmark-/Entwicklungszwecke: Abbruch nach 500.000 Ticks
-        # if (processedDatasets >= 500000) {
-        #     printf("\nBenchmark beendet.")
-        #     break
-        # }
-        
         # Ende des Datensatzes erreicht
         if (currentRow == numRows) {
             if (!endAfterCurrentDataset) {
@@ -380,8 +365,9 @@ calculateTriangularArbitragePriceTriples <- function(
             
             readTickDataAsMovingWindow(dataset_btc_a, baseDate, loadUntil)
             readTickDataAsMovingWindow(dataset_btc_b, baseDate, loadUntil)
+            forexLoadUntil <- min(last(dataset_btc_a$data$Time), last(dataset_btc_b$data$Time))
             readTickDataAsMovingWindow(
-                dataset_a_b, baseDate, loadUntil, columns = c("Time", "Bid", "Ask")
+                dataset_a_b, baseDate, forexLoadUntil, columns = c("Time", "Bid", "Ask")
             )
             
             printf.debug(
@@ -518,13 +504,12 @@ calculateTriangularArbitragePriceTriples <- function(
             next
         }
         
-        # Wechselkurs A/B heraussuchen
-        # Anmerkung: Da die in dieser Arbeit betrachteten Wechselkurse
+        # Letzten gültigen Wechselkurs heraussuchen
+        # Da die hier betrachteten Wechselkurse
         #   a) eine hervorragende Liquidität aufweisen und
         #   b) Market-Maker aktiv sind,
-        # wird hier unterstellt, dass jederzeit ein Handel möglich ist.
-        # Gültig ist dann die jeweils letzte Kursnotierung.
-        # TODO In Arbeit erläutern und begründen
+        # wird unterstellt, dass jederzeit ein Handel möglich ist.
+        # Gültig ist die jeweils letzte Kursnotierung.
         tick_ab <- findLastDatasetBeforeTimestamp(dataset_a_b$data, tick_btc_2$Time)
         
         # (Noch) kein passender Wechselkurs gefunden
@@ -537,14 +522,12 @@ calculateTriangularArbitragePriceTriples <- function(
         }
         
         # Zeitliche Differenz dennoch sehr groß - zu groß?
-        if (
-            difftime(tick_ab$Time, tick_btc_2$Time, units="hours") >
-            forexComparisonThresholdHours
-        ) {
+        forexAge <- difftime(tick_btc_2$Time, tick_ab$Time, units="secs")
+        forexAgeSummary <- c(forexAgeSummary, forexAge)
+        if (forexAge > forexComparisonThresholdHours * 60**2) {
             numDatasetsOutOfForexThreshold <- numDatasetsOutOfForexThreshold + 1L
             next
         }
-        
         
         # Set in Ergebnisvektor speichern
         # Anmerkung:
@@ -610,14 +593,33 @@ calculateTriangularArbitragePriceTriples <- function(
     printf("===============\n")
     printf("Statistiken:\n")
     printf(
-        "%s Ticks verworfen, da außerhalb des Bitcoin-Zeitfensters von %ds\n", 
+        "%s Ticks verworfen, da außerhalb des Bitcoin-Zeitfensters von %d s.\n", 
         format.number(numDatasetsOutOfBitcoinThreshold), bitcoinComparisonThresholdSeconds
     )
     printf(
-        "%s Ticks verworfen, da außerhalb des Wechselkurs-Zeitfensters von %ds\n", 
+        "%s Ticks verworfen, da Wechselkurs älter als %d h.\n", 
         format.number(numDatasetsOutOfForexThreshold), forexComparisonThresholdHours
     )
+    printf("Alter des letzten Wechselkurses (in Sekunden):\n")
+    print(summary(forexAgeSummary))
     printf("===============\n")
+    
+    # Statistiken speichern
+    statFile <- sprintf(
+        "Cache/Dreiecksarbitrage/%s-%s-%s-stats.fst",
+        exchange, currency_a, currency_b
+    )
+    write_fst(
+        data.table(
+            bitcoinComparisonThresholdSeconds = bitcoinComparisonThresholdSeconds,
+            numDatasetsOutOfBitcoinThreshold = numDatasetsOutOfBitcoinThreshold,
+            forexComparisonThresholdHours = forexComparisonThresholdHours,
+            numDatasetsOutOfForexThreshold = numDatasetsOutOfForexThreshold,
+            forexAgeSummary = list(forexAgeSummary)
+        ),
+        path = statFile,
+        compress = 100L
+    )
     
     return(invisible(NULL))
 }
