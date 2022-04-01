@@ -644,19 +644,19 @@ if (FALSE) {
     endDate <- as.POSIXct("2022-01-01 00:00:00") - .000001
     
     # Bitfinex
-    # 1h50min. 16.397.229 Datensätze in 1 GB (unkomprimiert).
+    # 5s: 1h50min. 16.396.058 Datensätze in 1.3 GB (unkomprimiert).
     calculateTriangularArbitragePriceTriples("bitfinex", "usd", "eur", "2019-09-01", endDate)
     
     # Bitstamp
-    # 1h25min. 11.993.583 Datensätze in 767.6 MB (unkomprimiert).
+    # 5s: 1h50min. 11.992.966 Datensätze in 959.4 MB (unkomprimiert).
     calculateTriangularArbitragePriceTriples("bitstamp", "usd", "eur", "2016-04-16", endDate)
     
     # Coinbase Pro
-    # 5h. 39.202.133 Datensätze in 2.5 GB (unkomprimiert).
+    # 5s: 5h. 39.199.305 Datensätze in 3.1 GB (unkomprimiert).
     calculateTriangularArbitragePriceTriples("coinbase", "usd", "eur", "2015-04-23", endDate)
     
     # Kraken
-    # 2h. 15.121.927 Datensätze in 967.8 MB (unkomprimiert).
+    # 5s: 15.120.958 Datensätze in 1.2 GB (unkomprimiert).
     calculateTriangularArbitragePriceTriples("kraken",   "usd", "eur", "2013-10-06", endDate)
 }
 

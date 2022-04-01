@@ -24,13 +24,6 @@ b <- read_fst(
     as.data.table = TRUE
 )
 
-# Hier noch nicht benötigt: Wechselkurs
-# forex <- read_fst(
-#     "Cache/forex-combined/eurusd/tick/forex-combined-eurusd-tick-2021-12.fst",
-#     columns = c("Time", "Bid", "Ask"),
-#     as.data.table = TRUE
-# )
-
 # Auf Beispiel-Zeitfenster beschränken
 a <- a[Time %between% timeframe]
 b <- b[Time %between% timeframe]
@@ -48,8 +41,8 @@ setorder(ab, Time)
 triplets <- rollapply(
     ab$Pair,
     width = 3,
-    # Es handelt sich um ein zu entfernendes Tripel, wenn  die
-    # Börse im vorherigen, aktuellen und nächsten Tick identisch ist
+    # Es handelt sich um ein zu entfernendes Tripel, wenn das Kurspaar
+    # im vorherigen, aktuellen und nächsten Tick identisch ist
     FUN = function(x) all(x == x[1]),
     fill = FALSE
 )
