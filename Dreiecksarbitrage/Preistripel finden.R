@@ -56,7 +56,7 @@ library("lubridate") # is.POSIXct, floor_date
 #' @param exchange Name der Bitcoin-Börse
 #' @param currency_a Gegenwährung 1
 #' @param currency_a Gegenwährung 2
-saveInterimResult <- function(result, index, exchange, currency_a, currency_b)
+saveInterimResult <- function(result, index, exchange, currency_a, currency_b, threshold)
 {
     # Parameter validieren
     stopifnot(
@@ -68,8 +68,8 @@ saveInterimResult <- function(result, index, exchange, currency_a, currency_b)
     )
     
     # Zieldatei bestimmen
-    outFile <- sprintf("Cache/Dreiecksarbitrage/%s-%s-%s-%d.fst",
-                       exchange, currency_a, currency_b, index)
+    outFile <- sprintf("Cache/Dreiecksarbitrage %ds/%s-%s-%s-%d.fst",
+                       threshold, exchange, currency_a, currency_b, index)
     stopifnot(!file.exists(outFile))
     
     # Ergebnis um zwischenzeitlich eingefügte `NA`s bereinigen
@@ -143,8 +143,8 @@ calculateTriangularArbitragePriceTriples <- function(
     
     # Ergebnisdatei existiert bereits
     firstOutputFile <- sprintf(
-        "Cache/Dreiecksarbitrage/%s-%s-%s-1.fst",
-        exchange, currency_a, currency_b
+        "Cache/Dreiecksarbitrage %ds/%s-%s-%s-1.fst",
+        bitcoinComparisonThresholdSeconds, exchange, currency_a, currency_b
     )
     if (file.exists(firstOutputFile)) {
         printf("Zieldatei %s bereits vorhanden!\n", firstOutputFile)
@@ -300,11 +300,12 @@ calculateTriangularArbitragePriceTriples <- function(
     numDatasetsOutOfForexThreshold <- 0L
     
     # Hauptschleife: Paarweise vergleichen
-    printf("\n  Beginne Auswertung für %s und %s an der Börse %s ab %s.\n\n", 
+    printf("\n  Beginne Auswertung für %s und %s an der Börse %s ab %s (BTC-Threshold: %ds).\n\n", 
            format.currencyPair(pair_btc_a),
            format.currencyPair(pair_btc_b),
            exchange,
-           format(startDate, "%d.%m.%Y %H:%M:%S")
+           format(startDate, "%d.%m.%Y %H:%M:%S"),
+           bitcoinComparisonThresholdSeconds
     )
     printf("  % 13s   % 11s   %-26s   % 10s   % 10s   % 10s   % 3s\n",
            "Laufzeit", "Verarbeitet", "Aktueller Datensatz",
@@ -582,7 +583,7 @@ calculateTriangularArbitragePriceTriples <- function(
             )
             
             # Ergebnis speichern
-            saveInterimResult(result, result_set_index, exchange, currency_a, currency_b)
+            saveInterimResult(result, result_set_index, exchange, currency_a, currency_b, bitcoinComparisonThresholdSeconds)
             result_set_index <- result_set_index + 1L
             
             # Ergebnisspeicher leeren
@@ -592,7 +593,7 @@ calculateTriangularArbitragePriceTriples <- function(
     }
     
     # Rest speichern
-    saveInterimResult(result, result_set_index, exchange, currency_a, currency_b)
+    saveInterimResult(result, result_set_index, exchange, currency_a, currency_b, bitcoinComparisonThresholdSeconds)
     
     printf("\n\n  Abgeschlossen.\n")
     printf("===============\n")
@@ -609,8 +610,8 @@ calculateTriangularArbitragePriceTriples <- function(
     
     # Statistiken speichern
     statFile <- sprintf(
-        "Cache/Dreiecksarbitrage/%s-%s-%s.stats.fst",
-        exchange, currency_a, currency_b
+        "Cache/Dreiecksarbitrage %ds/%s-%s-%s.stats.fst",
+        bitcoinComparisonThresholdSeconds, exchange, currency_a, currency_b
     )
     if (file.exists(statFile)) {
         unlink(statFile)
