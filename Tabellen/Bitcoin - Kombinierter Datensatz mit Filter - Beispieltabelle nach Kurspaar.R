@@ -8,7 +8,7 @@ source("Funktionen/printf.R")
 # Betrachtetes Zeitfenster
 # Unterscheidet sich von der Raumarbitrage, da bei dem dortigen Zeitfenster
 # kein Devisenhandel stattfand
-timeframe <- c("2021-12-05 22:35:15.576245", "2021-12-05 22:35:16")
+timeframe <- c("2021-12-05 22:30:03.320500", "2021-12-05 22:30:04.259")
 
 # Beispieldaten laden
 # Hier: Coinbase Pro, da dort anschaulich auch mehrere
@@ -30,16 +30,16 @@ b <- b[Time %between% timeframe]
 
 # Gleiche Ticks gruppieren und ursprüngliches Paar vermerken
 a <- a[j=.(PriceLow=min(Price), PriceHigh=max(Price), n=.N), by=Time]
-a[, Pair:="BTC/USD"]
+a[, CurrencyPair:="BTC/USD"]
 b <- b[j=.(PriceLow=min(Price), PriceHigh=max(Price), n=.N), by=Time]
-b[, Pair:="BTC/EUR"]
+b[, CurrencyPair:="BTC/EUR"]
 
 # Beide Tabellen zusammenführen, hier nach Kurspaar.
 # Dokumentation: Siehe `Funktionen/MergeSortAndFilter.R`
 ab <- rbindlist(list(a, b))
 setorder(ab, Time)
 triplets <- rollapply(
-    ab$Pair,
+    ab$CurrencyPair,
     width = 3,
     # Es handelt sich um ein zu entfernendes Tripel, wenn das Kurspaar
     # im vorherigen, aktuellen und nächsten Tick identisch ist
@@ -58,14 +58,14 @@ for (i in seq_len(nrow(ab))) {
     )
     printf(
         "%s%s\\,%s &\n",
-        tabIndent, format.money(tick$PriceHigh, digits=2), substr(tick$Pair, 5, 7)
+        tabIndent, format.money(tick$PriceHigh, digits=2), substr(tick$CurrencyPair, 5, 7)
     )
     printf(
         "%s%s\\,%s &\n",
-        tabIndent, format.money(tick$PriceLow, digits=2), substr(tick$Pair, 5, 7)
+        tabIndent, format.money(tick$PriceLow, digits=2), substr(tick$CurrencyPair, 5, 7)
     )
     printf("%s%d &\n", tabIndent, tick$n)
-    printf("%s%s &\n", tabIndent, tick$Pair)
+    printf("%s%s &\n", tabIndent, tick$CurrencyPair)
     
     if (isTRUE(triplets[i])) {
         printf("%s* \\\\\n", tabIndent)

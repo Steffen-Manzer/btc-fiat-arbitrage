@@ -240,6 +240,10 @@ calculateIntervals <- function(timeBoundaries, breakpoints)
 #' @param removeGaps Datenlücken nicht interpolieren/zeichnen
 #' @param plotType Plot-Typ: line oder point
 #' @param plotTitle Überschrift (optional)
+#' @param plotTextPrefix Präfix für alle Texte
+#'                       (bei NA: Kleinere Schrift, wenn LaTeX gewählt)
+#' @param plotSmallPrefix Präfix für alle kleinen Texte
+#'                        (bei NA: Kleinere Schrift, wenn LaTeX gewählt)
 #' @return Der Plot (unsichtbar)
 plotAggregatedPriceDifferencesOverTime <- function(
     priceDifferences,
@@ -247,14 +251,17 @@ plotAggregatedPriceDifferencesOverTime <- function(
     breakpoints = NULL,
     removeGaps = TRUE,
     plotType = "line",
-    plotTitle = NULL
+    plotTitle = NULL,
+    plotTextPrefix = NA,
+    plotSmallPrefix = NA
 ) {
     # Parameter validieren
     stopifnot(
         is.data.table(priceDifferences), nrow(priceDifferences) > 0L,
         !is.null(priceDifferences$Time),
         is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L),
-        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L)
+        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L),
+        length(plotTextPrefix) == 1L, length(plotSmallPrefix) == 1L
     )
     
     # Ausgabeoptionen
@@ -270,12 +277,14 @@ plotAggregatedPriceDifferencesOverTime <- function(
     }
     
     # Einige Bezeichnungen und Variablen
-    if (is.null(latexOutPath)) {
-        plotTextPrefix <- ""
-        plotSmallPrefix <- ""
-    } else {
-        plotTextPrefix <- "\\footnotesize "
-        plotSmallPrefix <- "\\small "
+    if (is.na(plotTextPrefix)) {
+        if (is.null(latexOutPath)) {
+            plotTextPrefix <- ""
+            plotSmallPrefix <- ""
+        } else {
+            plotTextPrefix <- "\\footnotesize "
+            plotSmallPrefix <- "\\small "
+        }
     }
     plotXLab <- "Datum"
     plotYLab <- "Preisabweichung"
@@ -386,74 +395,6 @@ plotAggregatedPriceDifferencesOverTime <- function(
     } else {
         return(plot)
     }
-    
-    
-    
-    ## NOT RUN
-    # Grafische Darstellung mit Min/Max/Mean, genutzt für Erläuterungen
-    # oder Doktorandenkolloquium
-    maxValue <- max(priceDifferences$Max)
-    intervals <- calculateIntervals(priceDifferences$Time, breakpoints)
-    ggplot(priceDifferences) +
-        geom_rect(
-            aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
-            data = intervals,
-            alpha = .25
-        ) +
-        geom_text(
-            aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
-            data = intervals
-        ) +
-        geom_ribbon(aes(x=Time, ymin=0,ymax=Max),fill="grey70") +
-        geom_line(aes(x=Time, y=Mean,color="1",linetype="1"),size=.5) + 
-        theme_minimal() +
-        theme(
-            legend.position = "none",
-            plot.title.position = "plot",
-            axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
-            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
-        ) +
-        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
-        scale_y_continuous(labels=function(x) paste(format.number(x * 100), "%")) +
-        scale_color_ptol() +
-        scale_fill_ptol() +
-        labs(
-            x = paste0(plotTextPrefix, plotXLab),
-            y = paste0(plotTextPrefix, plotYLab),
-            title = paste0(plotSmallPrefix, plotTitle)
-        )
-    
-    # Auswertung mit Mean
-    plotTitle <- "Preisabweichungen BTC/USD (arith. Mittel)"
-    maxValue <- max(priceDifferences$Mean)
-    intervals <- calculateIntervals(priceDifferences$Time, breakpoints)
-    ggplot(priceDifferences) + 
-        geom_rect(
-            aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
-            data = intervals,
-            alpha = .25
-        ) +
-        geom_text(
-            aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
-            data = intervals
-        ) +
-        geom_line(aes(x=Time, y=Mean,color="1",linetype="1"),size=.5) + 
-        theme_minimal() +
-        theme(
-            legend.position = "none",
-            plot.title.position = "plot",
-            axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
-            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
-        ) +
-        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
-        scale_y_continuous(labels=function(x) paste(format.number(x * 100), "%")) +
-        scale_color_ptol() +
-        scale_fill_ptol() +
-        labs(
-            x = paste0(plotTextPrefix, plotXLab),
-            y = paste0(plotTextPrefix, plotYLab),
-            title = paste0(plotSmallPrefix, plotTitle)
-        )
 }
 
 
@@ -853,6 +794,9 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
 
 #' Informationen über einen Datensatz als LaTeX-Tabelle ausgeben
 #' 
+#' TODO Funktionsaufruf mit großen Daten sehr langsam und speicherintensiv,
+#' ggf. optimieren
+#' 
 #' @param comparablePrices `data.table` aus `loadComparablePricesByCurrency`
 #'                         oder aus `aggregatePriceDifferences`
 #' @param outFile Zieldatei
@@ -865,7 +809,8 @@ summariseDatasetAsTable <- function(
     label = NULL
 )
 {
-    printf("Erzeuge Überblickstabelle in %s\n", basename(outFile))
+    tic()
+    printf("Erzeuge Überblickstabelle in %s", basename(outFile))
     numRowsTotal <- nrow(dataset)
     
     # Tabellenzeile erzeugen
@@ -915,6 +860,15 @@ summariseDatasetAsTable <- function(
             unique(dataset$ExchangeLow)
         )
     )
+    
+    
+    if (length(exchangePairsInThisSubset) < 4L) {
+        # Tabelle kann im Fließtext unterkommen
+        tablePosition <- "tbh"
+    } else {
+        # Eine ganze Seite für die Statistik reservieren
+        tablePosition <- "p"
+    }
     
     if (length(exchangePairsInThisSubset) == 2L) {
         
@@ -1008,6 +962,7 @@ summariseDatasetAsTable <- function(
     }
     summaryTableTemplateFile |>
         read_file() |>
+        str_replace(coll("{tablePosition}"), tablePosition) |>
         str_replace(coll("{tableCaption}"), caption) |>
         str_replace(coll("{tableContent}"), tableContent) |>
         str_replace(coll("{tableLabel}"), label) |>
@@ -1015,6 +970,9 @@ summariseDatasetAsTable <- function(
     
     # Vor versehentlichem Überschreiben schützen
     Sys.chmod(outFile, mode="0444")
+    
+    # Zeitmessung abschließen
+    toc()
     
     return(invisible(NULL))
 }

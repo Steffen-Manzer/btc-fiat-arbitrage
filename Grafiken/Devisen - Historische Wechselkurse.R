@@ -47,7 +47,7 @@ for (pair in pairs) {
     dataset$Datensatz <- pair
     
     # Zeitstempel
-    # Siehe "2 Aufbereitung Dukascopy Rohdaten zu rds.r"
+    # Siehe "2 Aufbereitung Dukascopy Rohdaten zu rds.R"
     dataset$timestamp <- as.Date(as.POSIXct(dataset$timestamp/1000, origin = "1970-01-01"))
     
     # Datum einheitlich begrenzen. Historische EURUSD-Kurse nicht ganz klar, daher begrenzen

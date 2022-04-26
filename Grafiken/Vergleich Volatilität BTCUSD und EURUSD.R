@@ -66,7 +66,7 @@
     # Erst ab dem 365. Wert lässt sich annualisierte Vola. berechnen
     #btcusd <- btcusd[365:nrow(btcusd)]
     
-    source("Grafiken/Vergleich Volatilität BTCUSD und EURUSD.Standalone.r", local=TRUE)
+    source("Grafiken/Vergleich Volatilität BTCUSD und EURUSD.Standalone.R", local=TRUE)
     
     # Auf relevante Spalten reduzieren, Datensatz ergänzen, Zeit vereinheitlichen
     btcusd <- btcusd[, c("Time", "vClose")]
