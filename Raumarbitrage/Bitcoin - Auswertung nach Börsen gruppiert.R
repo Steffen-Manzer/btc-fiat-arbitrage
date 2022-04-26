@@ -82,7 +82,7 @@ loadComparablePricesByCurrencyPair <- function(currencyPair, threshold)
     printf("Lade alle paarweisen Preise für %s (Schwellwert: %ds).\n", currencyPair, threshold)
     sourceFiles <- list.files(
         sprintf("Cache/Raumarbitrage %ds", threshold),
-        pattern=sprintf("^%s-.*-1\\.fst$", currencyPair),
+        pattern = sprintf("^%s-.*-1\\.fst$", currencyPair),
         full.names = TRUE
     )
     
@@ -96,7 +96,11 @@ loadComparablePricesByCurrencyPair <- function(currencyPair, threshold)
         sourceFile <- sourceFiles[[i]]
         
         # Datei lesen
-        priceDifferences <- read_fst(sourceFile, as.data.table=TRUE)
+        priceDifferences <- read_fst(
+            sourceFile,
+            columns = c("Time", "PriceHigh", "ExchangeHigh", "PriceLow", "ExchangeLow"),
+            as.data.table = TRUE
+        )
         
         # Unterschiede berechnen
         priceDifferences[,PriceDifference:=(PriceHigh/PriceLow)-1]
