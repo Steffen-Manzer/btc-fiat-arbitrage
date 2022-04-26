@@ -634,7 +634,7 @@ calculateTriangularArbitragePriceTriples <- function(
 
 # Verfügbare Daten nach Börse und Kurspaar:
 # Börse     BTC/USD     BTC/EUR     BTC/GBP     BTC/JPY     BTC/CHF     BTC/AUD     BTC/CAD
-# Bitfinex  14.01.2013  01.09.2019  29.03.2018  29.03.2018  -           -
+# Bitfinex  14.01.2013  19.05.2017  29.03.2018  29.03.2018  -           -
 # Bitstamp  18.08.2011  16.04.2016  28.05.2020  -           -           -
 # Coinbase  01.12.2014  23.04.2015  21.04.2015  -           -           -
 # Kraken    06.10.2013  10.09.2013  06.11.2014  05.11.2014  06.12.2019  16.06.2020  29.06.2015
@@ -645,7 +645,7 @@ if (FALSE) {
     
     # Bitfinex
     # 5s: 1h50min. 16.396.058 Datensätze in 1.3 GB (unkomprimiert).
-    calculateTriangularArbitragePriceTriples("bitfinex", "usd", "eur", "2019-09-01", endDate)
+    calculateTriangularArbitragePriceTriples("bitfinex", "usd", "eur", "2017-05-19", endDate)
     
     # Bitstamp
     # 5s: 1h50min. 11.992.966 Datensätze in 959.4 MB (unkomprimiert).

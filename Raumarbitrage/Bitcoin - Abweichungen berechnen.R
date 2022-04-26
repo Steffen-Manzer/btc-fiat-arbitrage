@@ -460,7 +460,7 @@ compareTwoExchanges <- function(
 
 # Verfügbare Daten nach Börse und Kurspaar:
 # Börse     BTC/USD     BTC/EUR     BTC/GBP     BTC/JPY     BTC/CHF     BTC/AUD     BTC/CAD
-# Bitfinex  14.01.2013  01.09.2019  29.03.2018  29.03.2018  -           -
+# Bitfinex  14.01.2013  19.05.2017  29.03.2018  29.03.2018  -           -
 # Bitstamp  18.08.2011  16.04.2016  28.05.2020  -           -           -
 # Coinbase  01.12.2014  23.04.2015  21.04.2015  -           -           -
 # Kraken    06.10.2013  10.09.2013  06.11.2014  05.11.2014  06.12.2019  16.06.2020  29.06.2015
@@ -493,13 +493,13 @@ if (FALSE) {
     # BTC/EUR -----------------------------------------------------------------
     
     # Bitfinex - Bitstamp: ~20min. 4.035.994 Datensätze in 193.7 MB (unkomprimiert).
-    compareTwoExchanges("bitfinex", "bitstamp", "btceur", "2019-09-01 00:00:00", endDate)
+    compareTwoExchanges("bitfinex", "bitstamp", "btceur", "2017-05-19 08:16:21", endDate)
     
     # Bitfinex - Coinbase Pro: ~30min. 7.244.285 Datensätze in 347.7 MB (unkomprimiert).
-    compareTwoExchanges("bitfinex", "coinbase", "btceur", "2019-09-01 00:00:00", endDate)
+    compareTwoExchanges("bitfinex", "coinbase", "btceur", "2017-05-19 08:16:21", endDate)
     
     # Bitfinex - Kraken: ~30min. 6.351.131 Datensätze in 304.9 MB (unkomprimiert).
-    compareTwoExchanges("bitfinex", "kraken",   "btceur", "2019-09-01 00:00:00", endDate)
+    compareTwoExchanges("bitfinex", "kraken",   "btceur", "2017-05-19 08:16:21", endDate)
     
     # Bitstamp - Coinbase Pro: ~1h15min. 16.767.027 Datensätze in 804.8 MB (unkomprimiert).
     compareTwoExchanges("bitstamp", "coinbase", "btceur", "2016-04-16 16:55:02", endDate)
