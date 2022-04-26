@@ -178,7 +178,7 @@ aggregateResultsByTime <- function(result, floorUnits, interval = NULL)
 
 #' Zeichne Arbitrageergebnisse als Linien-/Punktgrafik im Zeitverlauf
 #' 
-#' @param arbitrageResults `data.table` mit den aggr. Preisen der verschiedenen Börsen
+#' @param arbitrageResults `data.table` mit den aggregierten Ergebnissen
 #' @param latexOutPath Ausgabepfad als LaTeX-Datei
 #' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
 #' @param removeGaps Datenlücken nicht interpolieren/zeichnen
@@ -344,6 +344,104 @@ plotAggregatedResultsOverTime <- function(
 }
 
 
+#' Zeichne Anzahl der Beobachtungen als Liniengrafik im Zeitverlauf
+#' 
+#' @param arbitrageResults `data.table` mit den aggregierten Ergebnissen
+#' @return Der Plot (unsichtbar)
+plotNumResultsOverTime <- function(
+    arbitrageResults,
+    breakpoints = NULL,
+    timeHorizon = "Monatliche",
+    plotTitle = NULL
+) {
+    # Parameter validieren
+    stopifnot(
+        is.data.table(arbitrageResults), nrow(arbitrageResults) > 0L,
+        !is.null(arbitrageResults$Time)
+    )
+    
+    # Einige Bezeichnungen und Variablen
+    plotXLab <- "Datum"
+    plotYLab <- paste0(timeHorizon, " Beobachtungen")
+    plotTextPrefix <- "\\footnotesize "
+    maxValue <- max(arbitrageResults$n)
+    
+    # Achseneigenschaften
+    if (maxValue > 1e6) {
+        roundedTo <- "Mio."
+        roundFac <- 1e6
+    } else {
+        roundedTo <- "Tsd."
+        roundFac <- 1e3
+    }
+    
+    plot <- ggplot(arbitrageResults)
+    
+    # Bereiche zeichnen und Nummer anzeigen
+    if (!is.null(breakpoints)) {
+        
+        # Die hier bestimmten Intervalle der aggregierten Daten können
+        # von den Intervallen des gesamten Datensatzes abweichen
+        intervals <- calculateIntervals(arbitrageResults$Time, breakpoints)
+        
+        # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
+        plot <- plot + 
+            geom_rect(
+                aes(
+                    xmin = From,
+                    xmax = To,
+                    ymin = 0,
+                    ymax = maxValue * 1.05,
+                    fill = Set
+                ),
+                data = intervals,
+                alpha = .25
+            ) +
+            geom_text(
+                aes(
+                    x = From+(To-From)/2,
+                    y = maxValue,
+                    label = paste0(plotTextPrefix, Set)
+                ),
+                data = intervals
+            )
+    }
+    
+    # Anzahl Datensätze zeichnen
+    plot <- plot +
+        geom_line(
+            aes(x=Time, y=n, color="1", linetype="1"),
+            size = .5
+        )  + 
+        theme_minimal() +
+        theme(
+            legend.position = "none",
+            plot.title.position = "plot",
+            axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
+        ) +
+        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
+        coord_cartesian(ylim=c(0, maxValue)) +
+        scale_y_continuous(
+            labels = function(x) paste(format.number(x / roundFac))
+            #breaks = breaks_extended(4L)
+        ) +
+        scale_color_ptol() +
+        scale_fill_ptol() +
+        labs(
+            x = paste0(plotTextPrefix, plotXLab),
+            y = paste0(plotTextPrefix, plotYLab, " [", roundedTo, "]")
+        )
+    
+    if (!is.null(plotTitle)) {
+        plot <- plot + ggtitle(paste0("\\small ", plotTitle))
+    }
+    
+    return(plot)
+}
+
+
+
 # Haupt-Auswertungsfunktion ---------------------------------------------------
 
 analyseTriangularArbitrage <- function(exchange, currency_a, currency_b)
@@ -358,6 +456,9 @@ analyseTriangularArbitrage <- function(exchange, currency_a, currency_b)
     
     # Variablen initialisieren
     exchangeName <- exchanges[[exchange]]
+    
+    # TODO
+    breakpoints <- NULL
     
     dataFile <- sprintf(
         "Cache/Dreiecksarbitrage 5s/%s-%s-%s-1.fst",
@@ -408,7 +509,7 @@ analyseTriangularArbitrage <- function(exchange, currency_a, currency_b)
     # Zusammenfassung ausgeben
     numTotal <- nrow(result$data)
     printf("%s Datensätze Davon:\n", format.number(numTotal))
-    for (largerThan in c(5, 2, 1, .5, .2, .1)) {
+    for (largerThan in c(5, 2, 1, .5)) {
         numLarger <- length(result$data[BestResult >= (1 + largerThan / 100), which=TRUE])
         printf(
             "Anzahl >= %.1f %%: %s (%s %%)\n",
@@ -422,11 +523,17 @@ analyseTriangularArbitrage <- function(exchange, currency_a, currency_b)
     # Ergebnisse
     p_diff <- plotAggregatedResultsOverTime(
         resultsByMonth,
-        #breakpoints = breakpoints,
+        breakpoints = breakpoints,
         # Lücken werden immer auf 1d-Basis entfernt.
         # Da es sich um Monatsdaten handelt, wäre der Plot leer...
         removeGaps = FALSE#,
         #plotTitle = "Arbitrageergebnis"
+    )
+    p_nrow <- plotNumResultsOverTime(
+        resultsByMonth,
+        breakpoints = breakpoints,
+        timeHorizon = "",
+        plotTitle = "Anzahl monatlicher Beobachtungen"
     )
 }
 
