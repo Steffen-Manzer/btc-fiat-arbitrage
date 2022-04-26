@@ -7,7 +7,7 @@ Bitcoin- und Devisenmärkten.
 
 ## Versionshinweise
 
-- Die Auswertungsskripte wurden unter R 4.1.2 entwickelt.
+- Die Auswertungsskripte wurden unter R 4.1.3 entwickelt.
 - Die in PHP geschriebenen Daten-Crawler wurden unter PHP 8.1 entwickelt.
 - Die in Python geschriebenen Daten-Crawler wurden unter Python 3.9 entwickelt.
 
