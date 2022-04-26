@@ -644,7 +644,7 @@ if (FALSE) {
     endDate <- as.POSIXct("2022-01-01 00:00:00") - .000001
     
     # Bitfinex
-    # 5s: 1h50min. 16.396.058 Datensätze in 1.3 GB (unkomprimiert).
+    # 5s: 2h37min. 19.764.955 Datensätze in 1.6 GB (unkomprimiert).
     calculateTriangularArbitragePriceTriples("bitfinex", "usd", "eur", "2017-05-21", endDate)
     
     # Bitstamp

@@ -499,13 +499,13 @@ if (FALSE) {
     
     # BTC/EUR -----------------------------------------------------------------
     
-    # Bitfinex - Bitstamp: ~20min. 4.035.994 Datensätze in 193.7 MB (unkomprimiert).
+    # Bitfinex - Bitstamp: ~30min. 5.564.218 Datensätze in 222.6 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "bitstamp", "btceur", "2017-05-19 08:16:21", endDate)
     
-    # Bitfinex - Coinbase Pro: ~30min. 7.244.285 Datensätze in 347.7 MB (unkomprimiert).
+    # Bitfinex - Coinbase Pro: ~45min. 9.370.516 Datensätze in 374.8 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "coinbase", "btceur", "2017-05-19 08:16:21", endDate)
     
-    # Bitfinex - Kraken: ~30min. 6.351.131 Datensätze in 304.9 MB (unkomprimiert).
+    # Bitfinex - Kraken: ~40min. 8.562.289 Datensätze in 342.5 MB (unkomprimiert).
     compareTwoExchanges("bitfinex", "kraken",   "btceur", "2017-05-19 08:16:21", endDate)
     
     # Bitstamp - Coinbase Pro: ~1h15min. 16.767.027 Datensätze in 804.8 MB (unkomprimiert).
