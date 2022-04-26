@@ -31,7 +31,7 @@ library("lubridate") # floor_date
 library("ggplot2")
 library("ggthemes")
 library("gridExtra") # grid.arrange
-library("readr") # read_file
+library("readr") # read_file, write_file
 library("stringr") # str_replace
 library("tictoc")
 

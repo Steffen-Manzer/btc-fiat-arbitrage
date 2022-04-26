@@ -448,7 +448,14 @@ compareTwoExchanges <- function(
     }
     
     # Rest speichern
-    savePartialResult(result, result_set_index, exchange_a, exchange_b, currencyPair)
+    savePartialResult(
+        result, 
+        result_set_index, 
+        exchange_a, 
+        exchange_b, 
+        currencyPair,
+        comparisonThreshold
+    )
     
     printf("\n\n  Abgeschlossen.\n")
     

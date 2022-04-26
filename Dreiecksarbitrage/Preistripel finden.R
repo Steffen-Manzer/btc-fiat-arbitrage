@@ -645,7 +645,7 @@ if (FALSE) {
     
     # Bitfinex
     # 5s: 1h50min. 16.396.058 Datensätze in 1.3 GB (unkomprimiert).
-    calculateTriangularArbitragePriceTriples("bitfinex", "usd", "eur", "2017-05-19", endDate)
+    calculateTriangularArbitragePriceTriples("bitfinex", "usd", "eur", "2017-05-21", endDate)
     
     # Bitstamp
     # 5s: 1h50min. 11.992.966 Datensätze in 959.4 MB (unkomprimiert).
