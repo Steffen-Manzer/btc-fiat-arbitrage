@@ -240,10 +240,6 @@ calculateIntervals <- function(timeBoundaries, breakpoints)
 #' @param removeGaps Datenlücken nicht interpolieren/zeichnen
 #' @param plotType Plot-Typ: line oder point
 #' @param plotTitle Überschrift (optional)
-#' @param plotTextPrefix Präfix für alle Texte
-#'                       (bei NA: Kleinere Schrift, wenn LaTeX gewählt)
-#' @param plotSmallPrefix Präfix für alle kleinen Texte
-#'                        (bei NA: Kleinere Schrift, wenn LaTeX gewählt)
 #' @return Der Plot (unsichtbar)
 plotAggregatedPriceDifferencesOverTime <- function(
     priceDifferences,
@@ -251,17 +247,14 @@ plotAggregatedPriceDifferencesOverTime <- function(
     breakpoints = NULL,
     removeGaps = TRUE,
     plotType = "line",
-    plotTitle = NULL,
-    plotTextPrefix = NA,
-    plotSmallPrefix = NA
+    plotTitle = NULL
 ) {
     # Parameter validieren
     stopifnot(
         is.data.table(priceDifferences), nrow(priceDifferences) > 0L,
         !is.null(priceDifferences$Time),
         is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L),
-        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L),
-        length(plotTextPrefix) == 1L, length(plotSmallPrefix) == 1L
+        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L)
     )
     
     # Ausgabeoptionen
@@ -277,15 +270,8 @@ plotAggregatedPriceDifferencesOverTime <- function(
     }
     
     # Einige Bezeichnungen und Variablen
-    if (is.na(plotTextPrefix)) {
-        if (is.null(latexOutPath)) {
-            plotTextPrefix <- ""
-            plotSmallPrefix <- ""
-        } else {
-            plotTextPrefix <- "\\footnotesize "
-            plotSmallPrefix <- "\\small "
-        }
-    }
+    plotTextPrefix <- "\\footnotesize "
+    plotSmallPrefix <- "\\small "
     plotXLab <- "Datum"
     plotYLab <- "Preisabweichung"
     
