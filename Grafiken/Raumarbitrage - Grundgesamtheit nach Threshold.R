@@ -40,7 +40,7 @@ for (t in c(2, 5, 10, 30)) {
     # Börsenpaare durchgehen
     # ACHTUNG: Annahme, dass es nur eine Teildatei gibt!
     files <- list.files(
-        sprintf("Cache/Raumarbitrage %ds/", t),
+        sprintf("Cache/Raumarbitrage/%ds/", t),
         pattern = ".+-1\\.fst",
         full.names = TRUE
     )

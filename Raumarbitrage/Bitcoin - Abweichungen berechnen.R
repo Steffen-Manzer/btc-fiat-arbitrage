@@ -75,7 +75,7 @@ savePartialResult <- function(
     
     # Zieldatei bestimmen
     outFile <- sprintf(
-        "Cache/Raumarbitrage %ds/%s-%s-%s-%d.fst",
+        "Cache/Raumarbitrage/%ds/%s-%s-%s-%d.fst",
         comparisonThreshold, tolower(currencyPair), exchange_a, exchange_b, index
     )
     stopifnot(!file.exists(outFile))
@@ -115,7 +115,7 @@ savePartialResult <- function(
 #' @param comparisonThreshold Zeitliche Differenz zweier Ticks in Sekunden,
 #'                            ab der das Tick-Paar verworfen wird.
 #' @return `NULL` Ergebnisse werden in mehreren Dateien (i = 1...n) unter
-#'   Cache/Raumarbitrage/`currencyPair`-`exchange_a`-`exchange_b`-`i`.fst
+#'   Cache/Raumarbitrage/`threshold`s/`currencyPair`-`exchange_a`-`exchange_b`-`i`.fst
 #'   gespeichert (siehe `savePartialResult`).
 compareTwoExchanges <- function(
     exchange_a,
@@ -142,7 +142,7 @@ compareTwoExchanges <- function(
     
     # Ergebnisdatei existiert bereits
     firstOutputFile <- sprintf(
-        "Cache/Raumarbitrage %ds/%s-%s-%s-1.fst",
+        "Cache/Raumarbitrage/%ds/%s-%s-%s-1.fst",
         comparisonThreshold, tolower(currencyPair), exchange_a, exchange_b
     )
     if (file.exists(firstOutputFile)) {

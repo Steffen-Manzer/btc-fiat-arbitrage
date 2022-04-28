@@ -3,7 +3,8 @@
 #'
 #' Notwendig ist die vorherige paarweise Berechnung und Speicherung relevanter
 #' Preisabweichungen unter
-#'   `Cache/Raumarbitrage/{Kurspaar}-{Börse 1}-{Börse 2}-{i}` mit `i = 1 ... n`.
+#'   `Cache/Raumarbitrage/{Grenzwert}s/{Kurspaar}-{Börse 1}-{Börse 2}-{i}`
+#'   mit `i = 1 ... n`.
 #' über die Datei `Bitcoin - Abweichungen berechnen.r`.
 #'
 #' Stand Januar 2022 passen sämtliche Ergebnisse noch mit etwas Puffer in eine
@@ -87,7 +88,7 @@ loadComparablePricesByCurrencyPair <- function(currencyPair, threshold)
     # Nur jeweils erste Datei einlesen, siehe oben.
     printf("Lade alle paarweisen Preise für %s (Schwellwert: %ds).\n", currencyPair, threshold)
     sourceFiles <- list.files(
-        sprintf("Cache/Raumarbitrage %ds", threshold),
+        sprintf("Cache/Raumarbitrage/%ds", threshold),
         pattern = sprintf("^%s-.*-1\\.fst$", currencyPair),
         full.names = TRUE
     )
