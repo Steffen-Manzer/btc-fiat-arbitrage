@@ -8,6 +8,7 @@ library("readr") # read_file
 library("stringr") # str_replace
 source("Funktionen/FormatCurrencyPair.R")
 source("Funktionen/FormatDuration.R")
+source("Funktionen/printf.R")
 source("Konfiguration/FilePaths.R")
 
 
@@ -95,8 +96,8 @@ for (i in seq_along(exchangeMetadata)) {
                 sprintf("    \\qquad %s &\n", pair),
                 sprintf("        %s &\n", format(as.POSIXct(period$startDate), "%d.%m.%Y, %H:%M:%S")),
                 sprintf("        %s &\n", format(as.POSIXct(period$endDate), "%d.%m.%Y, %H:%M:%S")),
-                sprintf("        %s &\n", periodDuration),
-                sprintf("        %s\n", period$notes),
+                sprintf("        %s\n", periodDuration),
+                #sprintf("        %s\n", period$notes),
                 "        \\\\\n\n"
             )
         }
@@ -112,7 +113,8 @@ templateFile |>
 
 # Vor versehentlichem Überschreiben schützen
 Sys.chmod(outFile, mode="0444")
-cat(
-    "Achtung: Ergebnisdatei ggf. händisch nachbearbeiten und Zeilenumbrüche",
-    "an ungünstigen Stellen verhindern (`\\\\*` statt `\\\\`)\n"
-)
+# cat(
+#     "Achtung: Ergebnisdatei ggf. händisch nachbearbeiten und Zeilenumbrüche",
+#     "an ungünstigen Stellen verhindern (`\\\\*` statt `\\\\`)\n"
+# )
+printf("Tabelle geschrieben: %s\n", outFile)
