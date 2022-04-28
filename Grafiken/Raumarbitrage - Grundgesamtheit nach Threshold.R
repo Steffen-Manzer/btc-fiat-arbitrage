@@ -30,6 +30,7 @@ exchangeNames <- list(
     "kraken" = "Kraken"
 )
 
+
 # Übersicht einlesen ----------------------------------------------------------
 metadata <- data.table()
 
@@ -85,18 +86,15 @@ metadata <- metadata[
 ]
 
 # Kurspaare nicht alphabetisch, sondern nach ihrer Bedeutung sortieren
-metadata[,currencyPair:=factor(currencyPair, levels = c("btcusd", "btceur", "btcgbp", "btcjpy"))]
+metadata[,currencyPair:=factor(currencyPair, levels = c("btcusd", "btceur"))]
 
 
 # Plot erzeugen ---------------------------------------------------------------
 
 # Absolut als zwei Barcharts mit separaten Achseneinteilungen
 metadata[,thresholdFactor:=factor(threshold, levels=c("2", "5", "10", "30"))]
-p1 <- 
-    ggplot(
-        metadata[currencyPair != "btcjpy"],
-        aes(x=currencyPair, y=numRows, fill=thresholdFactor)
-    ) +
+p <- 
+    ggplot(metadata, aes(x=currencyPair, y=numRows, fill=thresholdFactor)) +
     geom_bar(
         position = position_dodge(width=.85),
         stat = "identity",
@@ -117,41 +115,11 @@ p1 <-
     scale_fill_ptol(labels=function(x) paste0(x, "\\,s")) +
     theme_minimal() +
     theme(
-        legend.position = "none",
-        axis.title.x = element_text(size = 9, margin = margin(t = 10)),
-        axis.title.y = element_text(size = 9, margin = margin(r = 10))
-    ) +
-    labs(x="Kurspaar", y="Tauschmöglichkeiten [Mio.]")
-p2 <- 
-    ggplot(
-        metadata[currencyPair == "btcjpy"],
-        aes(x=currencyPair, y=numRows, fill=thresholdFactor)
-    ) +
-    geom_bar(
-        position = position_dodge(width=.85),
-        stat = "identity",
-        width = .75
-    ) +
-    geom_text(
-        aes(label=round(numRows/1e3)),
-        position = position_dodge(width=.85),
-        vjust = -0.5,
-        size = 3
-    ) +
-    scale_x_discrete(labels=format.currencyPair, expand=c(.15,.15)) +
-    scale_y_continuous(
-        breaks = seq(0, 225e3, by=50e3),
-        labels = function(x) format.number(x/1e3),
-        limits = c(0, 235e3)
-    ) +
-    scale_fill_ptol(labels=function(x) paste0(x, "\\,s")) +
-    theme_minimal() +
-    theme(
         axis.title.x = element_text(size = 9, margin = margin(t = 10)),
         axis.title.y = element_text(size = 9, margin = margin(r = 10)),
         legend.title = element_text(size = 9)
     ) +
-    labs(x="Kurspaar", y="Tauschmöglichkeiten [Tsd.]", fill="Grenzwert")
+    labs(x="Kurspaar", y="Tauschmöglichkeiten [Mio.]", fill="Grenzwert")
 
 if (plotAsLaTeX) {
     source("Konfiguration/TikZ.R")
@@ -164,11 +132,7 @@ if (plotAsLaTeX) {
     )
 }
 
-grid.arrange(
-    p1, p2,
-    layout_matrix = rbind(c(1,2)),
-    widths = c(9,6)
-)
+print(p)
 
 if (plotAsLaTeX) {
     dev.off()

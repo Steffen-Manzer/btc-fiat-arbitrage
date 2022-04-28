@@ -45,6 +45,12 @@ exchangeNames <- list(
     "kraken" = "Kraken"
 )
 
+# BTC/USD: ~11,5 GB
+# BTC/EUR: ~4,5 GB
+# BTC/GBP: ~450 MB --- Nicht mehr in Arbeit
+# BTC/JPY: < 10 MB --- Nicht mehr in Arbeit
+currencyPairs <- c("btcusd", "btceur")
+
 # Die Breakpoints selbst werden immer dem letzten der beiden entstehenden
 # Intervalle zugerechnet
 breakpoints <- list(
@@ -1167,18 +1173,14 @@ analysePriceDifferences <- function(
 # und die Verarbeitung viel Zeit in Anspruch nimmt.
 if (FALSE) {
     
-    # BTC/USD: ~11,5 GB
-    # BTC/EUR: ~4,5 GB
-    # BTC/GBP: ~450 MB
-    # BTC/JPY: < 10 MB
-    for (pair in c("btcusd", "btceur", "btcgbp", "btcjpy")) {
+    for (pair in currencyPairs) {
         analysePriceDifferences(pair, breakpoints[[pair]])
     }
     
     # Zusätzliche Intervalle für Anhang erstellen
     # Achtung: Immenser Bedarf an Arbeitsspeicher!!! (> 20 GB)
     for (threshold in c(2L, 10L, 30L)) {
-        for (pair in c("btcusd", "btceur", "btcgbp", "btcjpy")) {
+        for (pair in currencyPairs) {
             printf("\n\nBetrachte %s für den Schwellwert %ds...\n", pair, threshold)
             analysePriceDifferences(
                 pair,

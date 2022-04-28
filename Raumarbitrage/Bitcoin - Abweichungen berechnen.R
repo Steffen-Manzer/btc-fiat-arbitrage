@@ -519,30 +519,32 @@ if (FALSE) {
     
     
     # BTC/GBP -----------------------------------------------------------------
+    # Nicht mehr betrachtet
     
-    # Bitfinex - Bitstamp: ~5min. 429.638 Datensätze in 20.6 MB (unkomprimiert).
-    compareTwoExchanges("bitfinex", "bitstamp", "btcgbp", "2020-05-28 09:37:26", endDate)
-    
-    # Bitfinex - Coinbase Pro: ~18min. 4.517.863 Datensätze in 216.9 MB (unkomprimiert).
-    compareTwoExchanges("bitfinex", "coinbase", "btcgbp", "2018-03-29 14:40:57", endDate)
-    
-    # Bitfinex - Kraken: ~5min. 610.309 Datensätze in 29.3 MB (unkomprimiert).
-    compareTwoExchanges("bitfinex", "kraken",   "btcgbp", "2018-03-29 14:40:57", endDate)
-    
-    # Bitstamp - Coinbase Pro: ~6min. 978.408 Datensätze in 47 MB (unkomprimiert).
-    compareTwoExchanges("bitstamp", "coinbase", "btcgbp", "2020-05-28 09:37:26", endDate)
-    
-    # Bitstamp - Kraken: ~2min30s. 192.105 Datensätze in 9.2 MB (unkomprimiert).
-    compareTwoExchanges("bitstamp", "kraken",   "btcgbp", "2020-05-28 09:37:26", endDate)
-    
-    # Coinbase Pro - Kraken: ~8min. 1.396.126 Datensätze in 44.7 MB (unkomprimiert).
-    compareTwoExchanges("coinbase", "kraken",   "btcgbp", "2015-04-21 22:22:41", endDate)
+    # # Bitfinex - Bitstamp: ~5min. 429.638 Datensätze in 20.6 MB (unkomprimiert).
+    # compareTwoExchanges("bitfinex", "bitstamp", "btcgbp", "2020-05-28 09:37:26", endDate)
+    # 
+    # # Bitfinex - Coinbase Pro: ~18min. 4.517.863 Datensätze in 216.9 MB (unkomprimiert).
+    # compareTwoExchanges("bitfinex", "coinbase", "btcgbp", "2018-03-29 14:40:57", endDate)
+    # 
+    # # Bitfinex - Kraken: ~5min. 610.309 Datensätze in 29.3 MB (unkomprimiert).
+    # compareTwoExchanges("bitfinex", "kraken",   "btcgbp", "2018-03-29 14:40:57", endDate)
+    # 
+    # # Bitstamp - Coinbase Pro: ~6min. 978.408 Datensätze in 47 MB (unkomprimiert).
+    # compareTwoExchanges("bitstamp", "coinbase", "btcgbp", "2020-05-28 09:37:26", endDate)
+    # 
+    # # Bitstamp - Kraken: ~2min30s. 192.105 Datensätze in 9.2 MB (unkomprimiert).
+    # compareTwoExchanges("bitstamp", "kraken",   "btcgbp", "2020-05-28 09:37:26", endDate)
+    # 
+    # # Coinbase Pro - Kraken: ~8min. 1.396.126 Datensätze in 44.7 MB (unkomprimiert).
+    # compareTwoExchanges("coinbase", "kraken",   "btcgbp", "2015-04-21 22:22:41", endDate)
     
     
     # BTC/JPY -----------------------------------------------------------------
+    # Nicht mehr betrachtet
     
-    # Bitfinex - Kraken: ~2min. 116.057 Datensätze in 3.7 MB (unkomprimiert).
-    compareTwoExchanges("bitfinex", "kraken",   "btcjpy", "2018-03-29 15:55:31", endDate)
+    # # Bitfinex - Kraken: ~2min. 116.057 Datensätze in 3.7 MB (unkomprimiert).
+    # compareTwoExchanges("bitfinex", "kraken",   "btcjpy", "2018-03-29 15:55:31", endDate)
     
     
     # BTC/CHF -----------------------------------------------------------------

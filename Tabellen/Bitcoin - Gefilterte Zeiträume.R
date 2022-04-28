@@ -22,8 +22,7 @@ exchangeNames <- list(
 )
 
 #' Genutzte Kurspaare (Kleinbuchstaben)
-#' TODO Anpassen an tatsächlich genutzte Paare
-requiredPairs <- c("btcusd", "btceur", "btcgbp", "btcjpy")
+requiredPairs <- c("btcusd", "btceur")
 
 #' Tabellen-Template mit `{tableContent}` als Platzhalter
 templateFile <- sprintf("%s/Tabellen/Templates/Bitcoin_Empirie_Filter.tex", latexOutPath)
