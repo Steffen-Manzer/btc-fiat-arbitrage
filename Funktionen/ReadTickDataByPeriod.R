@@ -21,7 +21,7 @@ readTickDataByPeriod <- function(
     currencyPair,
     startTime,
     endTime,
-    filterSuspiciousPeriods = TRUE,
+    filterSuspiciousPeriods = FALSE,
     ...
 ) {
     

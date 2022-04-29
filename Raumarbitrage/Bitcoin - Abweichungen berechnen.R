@@ -160,7 +160,9 @@ compareTwoExchanges <- function(
                              exchange_a, tolower(currencyPair)),
         EndDate = endDate,
         data = data.table(),
-        SuspiciousPeriods = loadSuspiciousPeriods(exchange_a, currencyPair)
+        # [27.04.2022] Keine Filterung mehr vornehmen
+        #SuspiciousPeriods = loadSuspiciousPeriods(exchange_a, currencyPair)
+        SuspiciousPeriods = NULL
     )
     
     dataset_b <- new("Dataset",
@@ -170,7 +172,9 @@ compareTwoExchanges <- function(
                              exchange_b, tolower(currencyPair)),
         EndDate = endDate,
         data = data.table(),
-        SuspiciousPeriods = loadSuspiciousPeriods(exchange_b, currencyPair)
+        # [27.04.2022] Keine Filterung mehr vornehmen
+        #SuspiciousPeriods = loadSuspiciousPeriods(exchange_b, currencyPair)
+        SuspiciousPeriods = NULL
     )
     
     # -- Diese Schritte werden regelmäßig wiederholt, um sequentiell weitere Daten zu laden --

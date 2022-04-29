@@ -187,7 +187,9 @@ calculateTriangularArbitragePriceTriples <- function(
         EndDate = endDate,
         data = data.table(),
         TradingHours = trading_hours_a_b,
-        SuspiciousPeriods = loadSuspiciousPeriods(exchange, pair_btc_a)
+        # [27.04.2022] Keine Filterung mehr vornehmen
+        #SuspiciousPeriods = loadSuspiciousPeriods(exchange, pair_btc_a)
+        SuspiciousPeriods = NULL
     )
     dataset_btc_b <- new(
         "Dataset",
@@ -196,7 +198,9 @@ calculateTriangularArbitragePriceTriples <- function(
         EndDate = endDate,
         data = data.table(),
         TradingHours = trading_hours_a_b,
-        SuspiciousPeriods = loadSuspiciousPeriods(exchange, pair_btc_b)
+        # [27.04.2022] Keine Filterung mehr vornehmen
+        #SuspiciousPeriods = loadSuspiciousPeriods(exchange, pair_btc_b)
+        SuspiciousPeriods = NULL
     )
     
     # -- Diese Schritte werden regelmäßig wiederholt, um sequentiell weitere Daten zu laden --
