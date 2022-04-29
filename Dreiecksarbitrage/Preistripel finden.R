@@ -68,7 +68,7 @@ saveInterimResult <- function(result, index, exchange, currency_a, currency_b, t
     )
     
     # Zieldatei bestimmen
-    outFile <- sprintf("Cache/Dreiecksarbitrage %ds/%s-%s-%s-%d.fst",
+    outFile <- sprintf("Cache/Dreiecksarbitrage/%ds/%s-%s-%s-%d.fst",
                        threshold, exchange, currency_a, currency_b, index)
     stopifnot(!file.exists(outFile))
     
@@ -143,7 +143,7 @@ calculateTriangularArbitragePriceTriples <- function(
     
     # Ergebnisdatei existiert bereits
     firstOutputFile <- sprintf(
-        "Cache/Dreiecksarbitrage %ds/%s-%s-%s-1.fst",
+        "Cache/Dreiecksarbitrage/%ds/%s-%s-%s-1.fst",
         bitcoinComparisonThresholdSeconds, exchange, currency_a, currency_b
     )
     if (file.exists(firstOutputFile)) {
@@ -610,7 +610,7 @@ calculateTriangularArbitragePriceTriples <- function(
     
     # Statistiken speichern
     statFile <- sprintf(
-        "Cache/Dreiecksarbitrage %ds/%s-%s-%s.stats.fst",
+        "Cache/Dreiecksarbitrage/%ds/%s-%s-%s.stats.fst",
         bitcoinComparisonThresholdSeconds, exchange, currency_a, currency_b
     )
     if (file.exists(statFile)) {

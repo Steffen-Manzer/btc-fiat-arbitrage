@@ -20,7 +20,7 @@ fst_from <- 37600000L
 fst_to <- fst_from + 1e5
 
 data_total <- read_fst(
-    path = "Cache/Dreiecksarbitrage 5s/coinbase-usd-eur-1.fst",
+    path = "Cache/Dreiecksarbitrage/5s/coinbase-usd-eur-1.fst",
     from = fst_from,
     to = fst_to,
     as.data.table = TRUE

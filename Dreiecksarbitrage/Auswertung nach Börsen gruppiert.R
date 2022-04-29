@@ -618,7 +618,7 @@ analyseTriangularArbitrage <- function(
     breakpoints <- breakpointsByExchange[[exchange]]
     
     dataFile <- sprintf(
-        "Cache/Dreiecksarbitrage %ds/%s-%s-%s-1.fst",
+        "Cache/Dreiecksarbitrage/%ds/%s-%s-%s-1.fst",
         threshold, exchange, currency_a, currency_b
     )
     stopifnot(file.exists(dataFile))
