@@ -34,7 +34,7 @@ exchangeNames <- list(
 metadata <- data.table()
 
 # Mögliche zeitliche Limits durchgehen
-for (t in c(2, 5, 10, 30)) {
+for (t in c(1, 2, 5, 10)) {
     
     # Börsenpaare durchgehen
     # ACHTUNG: Annahme, dass es nur eine Teildatei gibt!
@@ -75,7 +75,7 @@ for (t in c(2, 5, 10, 30)) {
 # Plot erzeugen ---------------------------------------------------------------
 
 # Absolut als Barchart
-metadata[,thresholdFactor:=factor(threshold, levels=c("2", "5", "10", "30"))]
+metadata[,thresholdFactor:=factor(threshold, levels=c("1", "2", "5", "10"))]
 p <-
     ggplot(metadata, aes(x=exchange, y=numRows, fill=thresholdFactor)) +
     geom_bar(
@@ -126,24 +126,20 @@ if (plotAsLaTeX) {
 for (exchangeName in unique(metadata$exchange)) {
     printf("%s:\n", exchangeName)
     
-    result <- metadata[exchange == exchangeName & threshold == 30L, numRows] /
-        metadata[exchange == exchangeName & threshold == 2L, numRows]
-    printf("     2s -> 30s: %s %%\n", format.percentage(result - 1, 1L))
+    result <- metadata[exchange == exchangeName & threshold == 10L, numRows] /
+        metadata[exchange == exchangeName & threshold == 1L, numRows]
+    printf("    1s -> 10s: %s %%\n", format.percentage(result - 1, 1L))
     
-    result <- metadata[exchange == exchangeName & threshold == 30L, numRows] /
-        metadata[exchange == exchangeName & threshold == 5L, numRows]
-    printf("     5s -> 30s: %s %%\n", format.percentage(result - 1, 1L))
+    result <- metadata[exchange == exchangeName & threshold == 2L, numRows] /
+        metadata[exchange == exchangeName & threshold == 1L, numRows]
+    printf("    1s ->  2s: %s %%\n", format.percentage(result - 1, 1L))
     
     result <- metadata[exchange == exchangeName & threshold == 5L, numRows] /
         metadata[exchange == exchangeName & threshold == 2L, numRows]
-    printf("     2s ->  5s: %s %%\n", format.percentage(result - 1, 1L))
+    printf("    2s ->  5s: %s %%\n", format.percentage(result - 1, 1L))
     
     result <- metadata[exchange == exchangeName & threshold == 10L, numRows] /
         metadata[exchange == exchangeName & threshold == 5L, numRows]
-    printf("     5s -> 10s: %s %%\n", format.percentage(result - 1, 1L))
-    
-    result <- metadata[exchange == exchangeName & threshold == 30L, numRows] /
-        metadata[exchange == exchangeName & threshold == 10L, numRows]
-    printf("    10s -> 30s: %s %%\n", format.percentage(result - 1, 1L))
+    printf("    5s -> 10s: %s %%\n", format.percentage(result - 1, 1L))
     
 }

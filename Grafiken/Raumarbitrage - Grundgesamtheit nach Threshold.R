@@ -35,7 +35,7 @@ exchangeNames <- list(
 metadata <- data.table()
 
 # Mögliche zeitliche Limits durchgehen
-for (t in c(2, 5, 10, 30)) {
+for (t in c(1, 2, 5, 10)) {
     
     # Börsenpaare durchgehen
     # ACHTUNG: Annahme, dass es nur eine Teildatei gibt!
@@ -92,7 +92,7 @@ metadata[,currencyPair:=factor(currencyPair, levels = c("btcusd", "btceur"))]
 # Plot erzeugen ---------------------------------------------------------------
 
 # Absolut als zwei Barcharts mit separaten Achseneinteilungen
-metadata[,thresholdFactor:=factor(threshold, levels=c("2", "5", "10", "30"))]
+metadata[,thresholdFactor:=factor(threshold, levels=c("1", "2", "5", "10"))]
 p <- 
     ggplot(metadata, aes(x=currencyPair, y=numRows, fill=thresholdFactor)) +
     geom_bar(
@@ -145,13 +145,13 @@ for (pair in unique(metadata$currencyPair)) {
     
     printf("%s:\n", format.currencyPair(pair))
     
-    result <- metadata[currencyPair == pair & threshold == 30L, numRows] /
-        metadata[currencyPair == pair & threshold == 2L, numRows]
-    printf("     2s -> 30s: %s %%\n", format.percentage(result - 1, 1L))
+    result <- metadata[currencyPair == pair & threshold == 10L, numRows] /
+        metadata[currencyPair == pair & threshold == 1L, numRows]
+    printf("     1s -> 10s: %s %%\n", format.percentage(result - 1, 1L))
     
-    result <- metadata[currencyPair == pair & threshold == 30L, numRows] /
-        metadata[currencyPair == pair & threshold == 5L, numRows]
-    printf("     5s -> 30s: %s %%\n", format.percentage(result - 1, 1L))
+    result <- metadata[currencyPair == pair & threshold == 2L, numRows] /
+        metadata[currencyPair == pair & threshold == 1L, numRows]
+    printf("     1s ->  2s: %s %%\n", format.percentage(result - 1, 1L))
     
     result <- metadata[currencyPair == pair & threshold == 5L, numRows] /
         metadata[currencyPair == pair & threshold == 2L, numRows]
@@ -160,9 +160,5 @@ for (pair in unique(metadata$currencyPair)) {
     result <- metadata[currencyPair == pair & threshold == 10L, numRows] /
         metadata[currencyPair == pair & threshold == 5L, numRows]
     printf("     5s -> 10s: %s %%\n", format.percentage(result - 1, 1L))
-    
-    result <- metadata[currencyPair == pair & threshold == 30L, numRows] /
-        metadata[currencyPair == pair & threshold == 10L, numRows]
-    printf("    10s -> 30s: %s %%\n", format.percentage(result - 1, 1L))
     
 }

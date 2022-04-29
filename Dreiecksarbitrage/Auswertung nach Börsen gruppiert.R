@@ -19,7 +19,6 @@
 source("Klassen/TriangularResult.R")
 source("Funktionen/DetermineCurrencyPairOrder.R")
 source("Funktionen/FormatNumber.R")
-#source("Funktionen/FormatPOSIXctWithFractionalSeconds.R")
 source("Funktionen/printf.R")
 source("Konfiguration/FilePaths.R")
 library("fst")
