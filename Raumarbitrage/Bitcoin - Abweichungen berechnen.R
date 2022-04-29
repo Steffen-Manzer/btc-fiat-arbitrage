@@ -159,10 +159,9 @@ compareTwoExchanges <- function(
         PathPrefix = sprintf("Cache/%s/%s/tick/%1$s-%2$s-tick",
                              exchange_a, tolower(currencyPair)),
         EndDate = endDate,
-        data = data.table(),
+        data = data.table()
         # [27.04.2022] Keine Filterung mehr vornehmen
         #SuspiciousPeriods = loadSuspiciousPeriods(exchange_a, currencyPair)
-        SuspiciousPeriods = NULL
     )
     
     dataset_b <- new("Dataset",
@@ -171,10 +170,9 @@ compareTwoExchanges <- function(
         PathPrefix = sprintf("Cache/%s/%s/tick/%1$s-%2$s-tick",
                              exchange_b, tolower(currencyPair)),
         EndDate = endDate,
-        data = data.table(),
+        data = data.table()
         # [27.04.2022] Keine Filterung mehr vornehmen
         #SuspiciousPeriods = loadSuspiciousPeriods(exchange_b, currencyPair)
-        SuspiciousPeriods = NULL
     )
     
     # -- Diese Schritte werden regelmäßig wiederholt, um sequentiell weitere Daten zu laden --
