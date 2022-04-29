@@ -2,6 +2,9 @@
 #' zu erkennen und zu bereinigen.
 #' Zur exemplarischen Veranschaulichung solcher Anomalien siehe bspw.
 #'   `Auffälligkeiten visualisieren.r`.
+#'
+#' Stand 27.04.2022: Anomalien noch darstellen, aber nicht mehr entfernen,
+#' da sie keine relevante Auswirkung auf die Auswertung haben.
 
 
 # Bibliotheken und Funktionen laden -------------------------------------------

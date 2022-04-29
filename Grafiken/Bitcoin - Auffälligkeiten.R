@@ -63,7 +63,7 @@ a_coinbase <- a_coinbase[Time %between% a_datalimits]
 a_coinbase[,Exchange:=factor("Coinbase Pro", levels=c("Bitstamp", "Coinbase Pro"))]
 
 plotTitle <- paste0(plotTextPrefix, 
-                    "Ausreißer an der Börse \\textit{Bitstamp} am 10.\\,Oktober\\,2021")
+                    "Panel 3: \\textit{Bitstamp} am 10.\\,Oktober\\,2021")
 plotXLab <- paste0(plotTextPrefix, "Uhrzeit")
 plotYLab <- paste0(plotTextPrefix, "Preis in USD")
 
@@ -152,7 +152,7 @@ setorder(b_combined, Time)
 b_combined[,Exchange:=factor(Exchange, levels=c("Kraken", "Coinbase Pro"))]
 
 plotTitle <- paste0(plotTextPrefix, 
-                    "Sprünge an der Börse \\textit{Kraken} am 22.\\,Februar\\,2021")
+                    "Panel 1: \\textit{Kraken} am 22.\\,Februar\\,2021")
 plotXLab <- paste0(plotTextPrefix, "Uhrzeit")
 plotYLab <- paste0(plotTextPrefix, "Preis in USD")
 
@@ -214,7 +214,7 @@ setorder(c_combined, Time)
 c_combined[,Exchange:=factor(Exchange, levels=c("Coinbase Pro", "Bitstamp"))]
 
 plotTitle <- paste0(plotTextPrefix, 
-                    "Sprünge an der Börse \\textit{Coinbase Pro} am 14.\\,Januar\\,2015")
+                    "Panel 2: \\textit{Coinbase Pro} am 14.\\,Januar\\,2015")
 plotXLab <- paste0(plotTextPrefix, "Uhrzeit")
 plotYLab <- paste0(plotTextPrefix, "Preis in USD")
 

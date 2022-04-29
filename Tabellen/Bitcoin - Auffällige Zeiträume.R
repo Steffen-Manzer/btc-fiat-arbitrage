@@ -1,4 +1,4 @@
-#' Stelle alle Filter-Zeiträume aus `Daten/bitcoin-metadata.json` in einer
+#' Stelle alle auffälligen Zeiträume aus `Daten/bitcoin-metadata.json` in einer
 #' Tabelle dar.
 
 
