@@ -21,8 +21,9 @@ source("Konfiguration/FilePaths.R")
 
 # Startzeit
 # Beginn der vorliegenden Daten: 01.01.2020
-# Beginn der Bitcoin-Daten: 18.08.2011 = Relevanter Zeitraum
-now <- as.POSIXct("2011-08-01")
+# Beginn der Bitcoin-Daten: 18.08.2011
+# Dreiecksarbitrage: Frühestens ab Oktober 2013
+now <- as.POSIXct("2013-01-01")
 
 # Ausgabedateien
 plotAsLaTeX <- TRUE

@@ -15,8 +15,8 @@ parseDukascopyTickData <- function(srcFile) {
     # Tickdaten aus CSV einlesen
     # Datenstruktur:
     #                       Time     Bid     Ask BidVolume AskVolume
-    # 1: 2010-01-01 00:00:03.963 1.43283 1.43293   2300000   3000000
-    # 2: 2010-01-01 00:00:05.996 1.43278 1.43290   1400000   4200000
+    # 1: 2013-01-01 00:00:00.463 1.3195  1.31962   1500000   1500000
+    # 2: 2013-01-01 00:00:07.974 1.31951 1.31963   1500000   2250000
     # Überspringe Leerzeilen (können aufgrund eines Bugs in
     # der Datenerfassung am Wochenende auftreten)
     thisDataset <- fread(

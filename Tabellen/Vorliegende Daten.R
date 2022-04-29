@@ -84,24 +84,34 @@ for (i in seq_along(exchanges)) {
         files <- list.files(sprintf("Cache/%s/%s/tick", source, pair), full.names=TRUE)
         
         numTicks <- 0L
+        isFirst <- TRUE
         for (i in seq_along(files)) {
             f <- files[i]
+            
+            # EUR/USD-Daten liegen ewig weit zurück, relevant aber erst ab 2013
+            yr <- str_match(f, "\\d{4}")
+            if (pair == "eurusd" && as.integer(yr) < 2013) {
+                next
+            }
             
             # Anzahl Ticks lesen
             fileStats <- metadata_fst(f)
             numTicks <- numTicks + fileStats$nrOfRows
             
             # Ersten Datensatz lesen
-            if (i == 1L) {
+            if (isFirst) {
                 firstDataset <- read_fst(f, columns=c("Time"), to=1L, as.data.table=TRUE)
                 firstDataset <- firstDataset$Time[1L]
+                isFirst <- FALSE
             }
             
             # Letzten Datensatz lesen
             if (i == length(files)) {
-                lastDataset <- read_fst(f, columns=c("Time"), 
-                                        from=fileStats$nrOfRows, to=fileStats$nrOfRows,
-                                        as.data.table=TRUE)
+                lastDataset <- read_fst(
+                    f, columns = c("Time"), 
+                    from = fileStats$nrOfRows, to = fileStats$nrOfRows,
+                    as.data.table = TRUE
+                )
                 lastDataset <- lastDataset$Time[1L]
             }
         }

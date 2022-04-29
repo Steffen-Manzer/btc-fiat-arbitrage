@@ -10,10 +10,6 @@
 
 Abruf von monatlich aufbereiteten .zip-Dateien von der Webseite.
 
-## Enthaltener Zeitraum
-
-Alle Datensätze enthalten Daten von 01.01.2010, 00:00:00.000 (UTC) bis heute.
-
 ## Dateistruktur
 - Währungspaar
 - Datum/Uhrzeit ([UTC](https://de.wikipedia.org/wiki/Koordinierte_Weltzeit)) mit einer Genauigkeit von 1 ms
@@ -21,8 +17,8 @@ Alle Datensätze enthalten Daten von 01.01.2010, 00:00:00.000 (UTC) bis heute.
 - Beispiel EUR/USD:
 
 ---
-    EUR/USD,20211101 19:07:40.498,1.16034,1.16037
-    EUR/USD,20211101 19:07:42.231,1.16033,1.16037
-    EUR/USD,20211101 19:07:42.234,1.16033,1.16035
+    EUR/USD,20130101 21:59:59.981,1.32023,1.32054
+    EUR/USD,20130101 21:59:59.996,1.32027,1.32051
+    EUR/USD,20130101 22:00:00.296,1.32027,1.32051
 	[...]
 ---
