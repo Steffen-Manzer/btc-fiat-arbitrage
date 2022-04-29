@@ -45,8 +45,7 @@
         )
     }
     
-    plot = bpi %>%
-        ggplot(aes(x=TimeFrom, y=Exchange, colour=Exchange)) +
+    plot = ggplot(bpi, aes(x=TimeFrom, y=Exchange, colour=Exchange)) +
         geom_errorbarh(
             aes(xmin=TimeFrom, xmax=TimeTo, height=0),
             show.legend=FALSE,

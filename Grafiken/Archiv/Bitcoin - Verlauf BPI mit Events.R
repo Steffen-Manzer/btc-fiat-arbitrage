@@ -153,8 +153,7 @@
         }
         
         # Erstelle Plot mit Tagesdaten
-        plot = bpi.perDay %>%
-            ggplot(aes(x=Time)) +
+        plot = ggplot(bpi.perDay, aes(x=Time)) +
             geom_vline(data=timeframe, aes(xintercept=Time), color="red", size=.5) +
             geom_line(aes(y=Close), size=.5) +
             theme_minimal() +

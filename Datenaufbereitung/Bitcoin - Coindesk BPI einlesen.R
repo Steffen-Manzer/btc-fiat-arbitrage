@@ -21,7 +21,6 @@ library("fst")
 library("data.table")
 library("lubridate") # floor_date
 library("fasttime") # fastPOSIXct
-library("dplyr")
 library("tictoc")
 
 
@@ -47,17 +46,17 @@ toc()
 # Aggregieren auf Tagesdaten --------------------------------------------------
 cat("Aggregating as daily data and saving as .fst ... ")
 tic()
-# TODO Per data.table aggregieren
-bpi.perDay <- bpi.60s %>%
-    group_by(Time=as.Date(Time)) %>%
-    summarise(
+bpi.perDay <- bpi.60s[
+    j = .(
         Mean = mean(Close),
         Open = first(Close),
         High = max(Close),
         Low = min(Close),
         Close = last(Close), # Muss bei gleichem Namen die letzte Zeile sein
-        NumDatasets = n()
-    )
+        NumDatasets = .N
+    ),
+    by = .(Time = as.Date(Time))
+]
 
 # Rendite
 bpi.perDay$Rendite <- c(0, diff(log(bpi.perDay$Close)))
@@ -70,16 +69,17 @@ toc()
 # Aggregieren auf Monatsdaten -------------------------------------------------
 cat("Aggregating as monthly data and saving as .fst ... ")
 tic()
-bpi.perMonth <- bpi.60s %>%
-    group_by(Time=as.Date(floor_date(Time, "month"))) %>%
-    summarise(
+bpi.perMonth <- bpi.60s[
+    j = .(
         Mean = mean(Close),
         Open = first(Close),
         High = max(Close),
         Low = min(Close),
         Close = last(Close), # Muss bei gleichem Namen die letzte Zeile sein
-        NumDatasets = n()
-    )
+        NumDatasets = .N
+    ),
+    by = .(Time = as.Date(floor_date(Time, "month")))
+]
 
 # Rendite
 bpi.perMonth$Rendite <- c(0, diff(log(bpi.perMonth$Close)))

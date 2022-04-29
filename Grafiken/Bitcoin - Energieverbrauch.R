@@ -31,7 +31,10 @@
     comparisonApiGermanyParams <- "name=43311-0002&startyear=2016&username=DEJ07P56OT&password=K7QN@RF8YwFWnph798_k"
     
     # Nur einmal pro Woche neu laden
-    if (fromLaTeX && asTeX && file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 8) {
+    if (
+        fromLaTeX && asTeX && file.exists(texFile) && 
+        difftime(Sys.time(), file.mtime(texFile), units = "days") < 8
+    ) {
         cat("Grafik Bitcoin-Energieverbrauch noch aktuell, keine Aktualisierung.\n")
         return()
     }
@@ -44,7 +47,7 @@
     #library("stringr") # Destatis-Datum einlesen
     #library("purrr") # Destatis-Datum einlesen
     library("lubridate") # floor_date
-    library("dplyr")
+    #library("dplyr") # Nur für auskommentierte Bereiche nötig
     library("ggplot2")
     library("ggthemes")
     
@@ -56,8 +59,13 @@
         col.names = c("Time", "Geschätzter Jahresenergiebedarf", "Minimaler Jahresenergiebedarf")
     )
     cat(nrow(rawData), "Datensaetze geladen.\n")
-    rawData$Time <- as.Date(parse_date_time2(rawData$Time, order = "Y/m/d", tz="UTC"))
-    rawData <- rawData %>% melt(id.vars="Time", variable.name = "Type", value.name="Energiemenge_in_TWh")
+    rawData[, Time := as.Date(parse_date_time2(rawData$Time, order = "Y/m/d", tz="UTC"))]
+    rawData <- melt(
+        rawData,
+        id.vars = "Time",
+        variable.name = "Type",
+        value.name = "Energiemenge_in_TWh"
+    )
     
     
     # Daten einlesen: Destatis
@@ -153,17 +161,11 @@
         )
     }
     
-    plot <- rawData %>%
-        ggplot(aes(x=Time)) +
+    plot <- ggplot(rawData, aes(x=Time)) +
         geom_line(
             aes(y=Energiemenge_in_TWh, color=Type, linetype=Type),
             size=1
         ) +
-        # geom_line(
-        #     data = destatisTable,
-        #     aes(x=Time, y=Annualized/1e6, color=Type, linetype=Type), 
-        #     size=1
-        # ) +
         theme_minimal() +
         theme(
             legend.title = element_blank(),

@@ -19,12 +19,17 @@
     # Konfiguration -----------------------------------------------------------
     source("Konfiguration/FilePaths.R")
     texFile <- sprintf("%s/Abbildungen/Markteffizienz_Bitcoin_HistorischeKurse.tex", latexOutPath)
-    outFileTimestamp <- sprintf("%s/Abbildungen/Markteffizienz_Bitcoin_HistorischeKurse_Stand.tex",
-                                latexOutPath)
+    outFileTimestamp <- sprintf(
+        "%s/Abbildungen/Markteffizienz_Bitcoin_HistorischeKurse_Stand.tex",
+        latexOutPath
+    )
     plotAsLaTeX <- fromLaTeX || TRUE
     
     # Nur einmal pro Monat neu laden
-    if (fromLaTeX && plotAsLaTeX && file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 28) {
+    if (
+        fromLaTeX && plotAsLaTeX && file.exists(texFile) && 
+        difftime(Sys.time(), file.mtime(texFile), units = "days") < 28
+    ) {
         cat("Grafik BTCUSD noch aktuell, keine Aktualisierung.\n")
         return()
     }
@@ -32,7 +37,6 @@
     # Bibliotheken laden ------------------------------------------------------
     library("fst")
     library("data.table")
-    library("dplyr")
     library("lubridate") # floor_date
     library("ggplot2")
     library("ggthemes")
@@ -43,9 +47,10 @@
     btcusd <- read_fst("Cache/coindesk/bpi-daily-btcusd.fst", as.data.table = TRUE)
     
     # Auf Wochendaten summieren
-    btcusd <- btcusd %>%
-        group_by(Time=as.Date(floor_date(Time, unit="week", week_start=1))) %>%
-        summarise(Close=last(Close))
+    btcusd <- btcusd[
+        j = .(Close = last(Close)),
+        by = .(Time = as.Date(floor_date(Time, unit="week", week_start=1)))
+    ]
     
     if (plotAsLaTeX) {
         source("Konfiguration/TikZ.R")
@@ -59,8 +64,7 @@
     }
     
     # Plots
-    plotBase <- btcusd %>%
-        ggplot(aes(x=Time)) +
+    plotBase <- ggplot(btcusd, aes(x=Time)) +
         geom_line(aes(y=Close, color="BTCUSD"), size=1) +
         theme_minimal() +
         theme(

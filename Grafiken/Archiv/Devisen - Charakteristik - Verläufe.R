@@ -45,7 +45,6 @@ if (
 # Bibliotheken laden ----------------------------------------------------------
 library("fst")
 library("data.table")
-library("dplyr")
 library("ggplot2")
 library("ggthemes")
 library("gridExtra")
@@ -95,17 +94,18 @@ if (asTeX) {
     tikz(
         file = texFile,
         width = documentPageWidth,
-        #height = 6 / 2.54, # cm -> Zoll
         height = 7 / 2.54, # cm -> Zoll
         sanitize = TRUE
     )
 }
 
 # Volatilität
-plotVola <- plotData %>%
-    # Aus Gründen der Übersichtlichkeit auf letzte fünf Jahre beschränken
-    filter(Time >= "2014-01-01") %>%
-    ggplot(aes(x=Time, y=vClose, group=Datensatz)) +
+plotVola <-
+    ggplot(
+        # Aus Gründen der Übersichtlichkeit auf letzte fünf Jahre beschränken
+        plotData[Time >= "2014-01-01"],
+        aes(x=Time, y=vClose, group=Datensatz)
+    ) +
     geom_line(aes(color=Datensatz, linetype=Datensatz), size=1) +
     theme_minimal() +
     theme(
@@ -132,8 +132,7 @@ plotVola <- plotData %>%
 
 
 # Renditedichten
-plotRendite <- plotData %>%
-    ggplot(aes(y=Rendite)) +
+plotRendite <- ggplot(plotData, aes(y=Rendite)) +
     geom_density(aes(color=Datensatz, linetype=Datensatz), size=1) +
     #geom_histogram(aes(fill=Datensatz, linetype=Datensatz), binwidth = 5e-4) + 
     facet_wrap(vars(Datensatz)) +
@@ -153,28 +152,7 @@ plotRendite <- plotData %>%
     scale_fill_ptol() +
     labs(title="\\footnotesize Renditedichteverteilung")
 
-# plotRendite2 <- plotData %>%
-#     filter(Datensatz==c("USDCAD", "USDCHF", "USDJPY")) %>%
-#     #ggplot(aes(x=Datensatz, y=Rendite)) +
-#     #geom_boxplot(outlier.size=1) +
-#     ggplot(aes(y=Rendite)) +
-#     geom_density(aes(color=Datensatz, linetype=Datensatz)) +
-#     facet_grid(cols=vars(Datensatz)) +
-#     theme_minimal() +
-#     theme(
-#         legend.position = "none",
-#         axis.title.x = element_blank(),
-#         axis.title.y = element_blank()
-#     ) +
-#     scale_color_ptol()
-
 grid.arrange(plotVola, plotRendite, nrow=1)
-# grid.arrange(
-#     grobs = list(plotVola, plotRendite1, plotRendite2),
-#     nrow = 2,
-#     ncol = 2,
-#     layout_matrix = rbind(c(1, 2), c(1, 3))
-# )
 
 if (asTeX) {
     dev.off()

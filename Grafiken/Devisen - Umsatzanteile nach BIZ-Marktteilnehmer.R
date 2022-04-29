@@ -10,7 +10,6 @@
 # Bibliotheken laden ----------------------------------------------------------
 source("Konfiguration/FilePaths.R")
 library("data.table")
-library("dplyr")
 library("ggplot2")
 library("ggthemes")
 
@@ -45,8 +44,7 @@ if (asTeX) {
     )
 }
 
-plot <- counterparties %>%
-    ggplot(aes(x=Jahr, y=Umsatz)) +
+plot <- ggplot(counterparties, aes(x=Jahr, y=Umsatz)) +
     geom_line(aes(color=Kategorie, linetype=Kategorie), size=1) +
     scale_x_date(
         labels = function(x) { format(x, "%Y") },

@@ -31,7 +31,6 @@
     # Bibliotheken laden ------------------------------------------------------
     library("data.table")
     library("fasttime") # fastPOSIXct
-    library("dplyr")
     library("ggplot2")
     library("ggthemes")
     library("zoo")
@@ -50,17 +49,16 @@
     btcvolume <- btcvolume[, c("Time", "Volume")]
     
     # Auf Jahr+Monat aggregieren und Tagesdurchschnitt berechnen
-    btcvolume <- btcvolume %>%
-        group_by(as.yearmon(Time)) %>%
-        summarise(
+    btcvolume <- btcvolume[
+        j = .(
             meanDailyVolume = mean(Volume),
             medianDailyVolume = median(Volume),
             minDailyVolume = min(Volume),
             maxDailyVolume = max(Volume),
             monthlyVolume = sum(Volume)
-        )
-    setnames(btcvolume, 1, "Time")
-    btcvolume$Time <- as.Date(btcvolume$Time)
+        ),
+        by = .(Time = as.Date(as.yearmon(Time)))
+    ]
     
     
     # Grafiken erstellen ------------------------------------------------------
@@ -75,8 +73,7 @@
         )
     }
     
-    plot <- btcvolume %>%
-        ggplot(aes(x=Time, y=meanDailyVolume)) +
+    plot <- ggplot(btcvolume, aes(x=Time, y=meanDailyVolume)) +
         geom_line(size=1, aes(color="")) +
         theme_minimal() +
         theme(

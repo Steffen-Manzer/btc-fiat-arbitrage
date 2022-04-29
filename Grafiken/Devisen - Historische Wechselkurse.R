@@ -23,7 +23,6 @@ outFileTimestamp <- sprintf(
 
 # Bibliotheken laden ------------------------------------------------------
 library("data.table")
-library("dplyr")
 library("ggplot2")
 library("ggthemes")
 library("gridExtra")
@@ -72,8 +71,7 @@ for (pair in pairs) {
     #dataset <- dataset[312:nrow(dataset)]
     
     # Tagesschlusskurse
-    plot <- dataset %>%
-        ggplot(aes(x=timestamp, y=close, group=Datensatz)) +
+    plot <- ggplot(dataset, aes(x=timestamp, y=close, group=Datensatz)) +
         geom_line(aes(color=Datensatz)) +
         theme_minimal() +
         theme(

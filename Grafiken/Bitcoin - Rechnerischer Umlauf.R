@@ -7,7 +7,6 @@
     # Label: Krypto_Bitcoin_Umlauf
     ####
     library("data.table")
-    library("dplyr")
     library("ggplot2")
     library("ggthemes")
     
@@ -80,8 +79,7 @@
     lastResults$block <- lastVisible$block + (lastResults$block - lastVisible$block) / 2
     lastResults$bitcoins <- lastVisible$bitcoins + (lastResults$bitcoins - lastVisible$bitcoins) / 2
     
-    plot <- results %>%
-        ggplot(aes(x=block, y=bitcoins)) +
+    plot <- ggplot(results, aes(x=block, y=bitcoins)) +
         geom_line(aes(y=bitcoinsMinusAttrition, color="Produktion abzüglich Verluste"), size = 1) +
         geom_line(data=lastResults, aes(x=block, y=bitcoinsMinusAttrition, color="Produktion abzüglich Verluste"), linetype="dotted", size = 1) +
         geom_line(aes(color="Insgesamt produziert"), size = 1) +

@@ -17,11 +17,17 @@
     # Konfiguration -----------------------------------------------------------
     source("Konfiguration/FilePaths.R")
     texFile <- sprintf("%s/Abbildungen/Krypto_Bitcoin_Preis_BPI.tex", latexOutPath)
-    outFileTimestamp <- sprintf("%s/Abbildungen/Krypto_Bitcoin_Preis_BPI_Stand.tex", latexOutPath)
+    outFileTimestamp <- sprintf(
+        "%s/Abbildungen/Krypto_Bitcoin_Preis_BPI_Stand.tex",
+        latexOutPath
+    )
     plotAsLaTeX <- fromLaTeX || FALSE
     
     # Nur einmal pro Monat neu laden
-    if (fromLaTeX && plotAsLaTeX && file.exists(texFile) && difftime(Sys.time(), file.mtime(texFile), units = "days") < 28) {
+    if (
+        fromLaTeX && plotAsLaTeX && file.exists(texFile) && 
+        difftime(Sys.time(), file.mtime(texFile), units = "days") < 28
+    ) {
         cat("Grafik BTCUSD noch aktuell, keine Aktualisierung.\n")
         return()
     }
@@ -29,7 +35,6 @@
     # Bibliotheken laden ------------------------------------------------------
     library("fst")
     library("data.table")
-    library("dplyr")
     library("ggplot2")
     library("ggthemes")
     
@@ -49,8 +54,7 @@
     }
     
     # Nutze Tagesdaten
-    plot <- btcusd %>%
-        ggplot(aes(x=Time)) +
+    plot <- ggplot(btcusd, aes(x=Time)) +
         geom_line(aes(y=Close, color="BTCUSD"), size=1) +
         theme_minimal() +
         theme(

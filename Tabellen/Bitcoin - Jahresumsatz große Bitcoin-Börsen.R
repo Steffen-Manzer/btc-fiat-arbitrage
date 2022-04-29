@@ -265,14 +265,15 @@ if (asTeX) {
     # Filter jedes mal erneut prüfen!
     warning("Manually removing non-significant exchange pairs.")
     warning("Check y scale expansion (geom_text must fit)")
-    plot <- volumeSet %>%
-        filter(
-            Exchange != "Total",
-            Exchange != "Kraken" | Pair != "BTC/GBP",
-            Exchange != "Kraken" | Pair != "BTC/JPY",
-            Exchange != "Kraken" | Pair != "BTC/CAD"
-        ) %>%
-        ggplot(aes(fill=Pair, x=Exchange, y=Volume/1e6)) +
+    plot <- ggplot(
+            volumeSet[
+                Exchange != "Total" &
+                (Exchange != "Kraken" | Pair != "BTC/GBP") &
+                (Exchange != "Kraken" | Pair != "BTC/JPY") &
+                (Exchange != "Kraken" | Pair != "BTC/CAD")
+            ]
+            aes(fill=Pair, x=Exchange, y=Volume/1e6)
+        ) +
         geom_bar(position = position_dodge2(preserve = "single"), stat="identity") +
         geom_text(
             aes(x=Exchange, y=Volume/1e6, label=Pair, hjust=-.15),
