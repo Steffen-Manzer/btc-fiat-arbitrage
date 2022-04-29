@@ -259,7 +259,7 @@ if (plotAsLaTeX) {
 }
 
 grid.arrange(
-    p_bitstamp, p_kraken, p_coinbase,
+    p_kraken, p_coinbase, p_bitstamp,
     layout_matrix = rbind(c(1),c(2),c(3))
 )
 
