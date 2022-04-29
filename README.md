@@ -1,18 +1,25 @@
-# Arbitrage zwischen Bitcoin- und Devisenmärkten
+# Ungleichgewichte an Bitcoin-Märkten
 
-Crawler, Aggregatoren und Algorithmen zur Analyse von Arbitragemöglichkeiten zwischen
-Bitcoin- und Devisenmärkten.
+Crawler, Aggregatoren und Algorithmen zur Analyse von Ungleichgewichten innerhalb
+von Bitcoin-Märkten sowie zwischen Bitcoin- und Devisenmärkten.
 
 ![Raumarbitrage BTC/USD](https://research.noecho.de/Logo@2x.png)
 
 ## Versionshinweise
 
-- Die Auswertungsskripte wurden unter R 4.1.3 entwickelt.
+- Die Auswertungsskripte wurden unter R 4.2.0 entwickelt.
 - Die in PHP geschriebenen Daten-Crawler wurden unter PHP 8.1 entwickelt.
 - Die in Python geschriebenen Daten-Crawler wurden unter Python 3.9 entwickelt.
 
-Ältere Versionen können mit den vorliegenden Skripten ebenfalls funktionieren, wurden 
+Abweichende Versionen können mit den vorliegenden Skripten ebenfalls funktionieren, wurden 
 jedoch nicht getestet.
+
+## Ablauf der Analyse
+
+1. Daten erfassen (Crawler)
+2. Daten einlesen und in einem effizienten Format (hier genutzt: `fst`) zwischenspeichern
+3. Preis-Paare (Intra- und Inter-Market-Analysen) berechnen
+4. Auswertungen erzeugen
 
 ## Verbindung zu LaTeX
 Für eine automatische Datenaktualisierung aus LaTeX heraus wird in einigen Skripten der

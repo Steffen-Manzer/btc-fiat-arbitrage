@@ -586,12 +586,12 @@ summariseDatasetAsTable <- function(
 #' @param currency_b Gegenwährung 2
 #' @param threshold Zeitliche Differenz zweier BTC-Ticks in Sekunden,
 #'                  ab der das Tick-Paar verworfen wird.
-#' @return `result` (invisible) Instanz der Klasse `TriangularResult`
+#' @return `data.table`: Ergebnis von `collectDatasetSummary()`
 analyseTriangularArbitrage <- function(
     exchange,
     currency_a,
     currency_b,
-    threshold = 5L
+    threshold
 )
 {
     # Parameter validieren
@@ -714,32 +714,36 @@ analyseTriangularArbitrage <- function(
 # Auswertung händisch starten
 if (FALSE) {
     
-    bitfinexSummary <- analyseTriangularArbitrage("bitfinex", "usd", "eur") ; invisible(gc())
-    bitstampSummary <- analyseTriangularArbitrage("bitstamp", "usd", "eur") ; invisible(gc())
-    coinbaseSummary <- analyseTriangularArbitrage("coinbase", "usd", "eur") ; invisible(gc())
-    krakenSummary <- analyseTriangularArbitrage("kraken", "usd", "eur") ; invisible(gc())
+    #thresholds <- c(2L) # Testmodus/Entwicklugnsmodus
+    thresholds <- c(1L, 2L, 5L, 10L)
     
-    # Zusammenfassende Tabelle erstellen
-    totalSummary <- rbindlist(list(
-        bitfinexSummary, bitstampSummary, coinbaseSummary, krakenSummary
-    ))
-    # TODO Pfad auf btc-eur-usd korrigieren (Angleich an Plots)
-    tableOutPath <- sprintf(
-        "%s/Tabellen/Dreiecksarbitrage/5s/BTCEURUSD/Uebersicht.tex",
-        latexOutPath
-    )
-    
-    if (!dir.exists(dirname(tableOutPath))) {
-        dir.create(dirname(tableOutPath), recursive=TRUE)
+    for (threshold in thresholds) {
+        printf("\n\nBetrachte den Schwellwert %ds...\n", threshold)
+        
+        bitfinexSummary <- analyseTriangularArbitrage("bitfinex", "usd", "eur", threshold) ; invisible(gc())
+        bitstampSummary <- analyseTriangularArbitrage("bitstamp", "usd", "eur", threshold) ; invisible(gc())
+        coinbaseSummary <- analyseTriangularArbitrage("coinbase", "usd", "eur", threshold) ; invisible(gc())
+        krakenSummary <- analyseTriangularArbitrage("kraken", "usd", "eur", threshold) ; invisible(gc())
+        
+        # Zusammenfassende Tabelle erstellen
+        totalSummary <- rbindlist(list(
+            bitfinexSummary, bitstampSummary, coinbaseSummary, krakenSummary
+        ))
+        tableOutPath <- sprintf(
+            "%s/Tabellen/Dreiecksarbitrage/%ds/btc-eur-usd/Uebersicht.tex",
+            latexOutPath, threshold
+        )
+        if (!dir.exists(dirname(tableOutPath))) {
+            dir.create(dirname(tableOutPath), recursive=TRUE)
+        }
+        
+        summariseDatasetAsTable(
+            totalSummary,
+            outFile = tableOutPath,
+            caption = sprintf(
+                "Zentrale Kenngrößen der Dreiecksarbitrage für BTC, EUR und USD im Gesamtüberblick"
+            ),
+            label = sprintf("Dreiecksarbitrage_BTCEURUSD_Uebersicht_%ds", threshold)
+        )
     }
-    
-    summariseDatasetAsTable(
-        totalSummary,
-        outFile = tableOutPath,
-        caption = sprintf(
-            "Zentrale Kenngrößen der Dreiecksarbitrage für BTC, EUR und USD im Gesamtüberblick"
-        ),
-        label = sprintf("Dreiecksarbitrage_BTCEURUSD_Uebersicht_5s")
-    )
-    
 }

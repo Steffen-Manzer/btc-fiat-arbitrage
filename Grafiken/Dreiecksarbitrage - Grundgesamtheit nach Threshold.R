@@ -30,6 +30,7 @@ exchangeNames <- list(
     "kraken" = "Kraken"
 )
 
+
 # Übersicht einlesen ----------------------------------------------------------
 metadata <- data.table()
 
@@ -65,17 +66,12 @@ for (t in c(1, 2, 5, 10)) {
                 numRows = numRows
             )
         ))
-        
-        # printf("%s,%s,%s,%s,%d\n", 
-        #        t, exchange_a, exchange_b, currencyPair, numRows)
     }
 }
 
 
 # Plot erzeugen ---------------------------------------------------------------
-
-# Absolut als Barchart
-metadata[,thresholdFactor:=factor(threshold, levels=c("1", "2", "5", "10"))]
+metadata[, thresholdFactor := factor(threshold, levels=c("1", "2", "5", "10"))]
 p <-
     ggplot(metadata, aes(x=exchange, y=numRows, fill=thresholdFactor)) +
     geom_bar(
@@ -122,7 +118,6 @@ if (plotAsLaTeX) {
 
 
 # Statistiken ausgeben ----------------------------------------------------
-
 for (exchangeName in unique(metadata$exchange)) {
     printf("%s:\n", exchangeName)
     

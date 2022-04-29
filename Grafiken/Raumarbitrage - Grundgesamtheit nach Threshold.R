@@ -70,9 +70,6 @@ for (t in c(1, 2, 5, 10)) {
                 numRows = numRows
             )
         ))
-        
-        # printf("%s,%s,%s,%s,%d\n", 
-        #        t, exchange_a, exchange_b, currencyPair, numRows)
     }
 }
 
@@ -86,13 +83,11 @@ metadata <- metadata[
 ]
 
 # Kurspaare nicht alphabetisch, sondern nach ihrer Bedeutung sortieren
-metadata[,currencyPair:=factor(currencyPair, levels = c("btcusd", "btceur"))]
+metadata[, currencyPair := factor(currencyPair, levels = c("btcusd", "btceur"))]
 
 
 # Plot erzeugen ---------------------------------------------------------------
-
-# Absolut als zwei Barcharts mit separaten Achseneinteilungen
-metadata[,thresholdFactor:=factor(threshold, levels=c("1", "2", "5", "10"))]
+metadata[, thresholdFactor := factor(threshold, levels=c("1", "2", "5", "10"))]
 p <- 
     ggplot(metadata, aes(x=currencyPair, y=numRows, fill=thresholdFactor)) +
     geom_bar(
@@ -140,7 +135,6 @@ if (plotAsLaTeX) {
 
 
 # Statistiken ausgeben ----------------------------------------------------
-
 for (pair in unique(metadata$currencyPair)) {
     
     printf("%s:\n", format.currencyPair(pair))

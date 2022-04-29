@@ -11,9 +11,6 @@
 #' einzelne Ergebnisdatei, ohne dass diese jeweils mehr als 4 GB Arbeitsspeicher
 #' belegen würde.
 #' 
-#' Größte Datei: Bitfinex - Coinbase Pro für BTC/USD
-#'   mit 63.107.943 Datensätzen in 2 GB (unkomprimiert).
-#'
 #' Diese Auswertung lädt aus diesem Grund derzeit je Kurs-/Börsenpaar nur die
 #' erste Ergebnisdatei und prüft nicht, ob weitere Ergebnisse vorliegen.
 #' Das Nachladen weiterer Ergebnisdateien müsste in Zukunft ergänzt werden, wenn
@@ -48,17 +45,13 @@ exchangeNames <- list(
 
 # BTC/USD: ~11,5 GB
 # BTC/EUR: ~4,5 GB
-# BTC/GBP: ~450 MB --- Nicht mehr in Arbeit
-# BTC/JPY: < 10 MB --- Nicht mehr in Arbeit
 currencyPairs <- c("btcusd", "btceur")
 
 # Die Breakpoints selbst werden immer dem letzten der beiden entstehenden
 # Intervalle zugerechnet
 breakpoints <- list(
-    "btcusd" = c("2014-03-01", "2017-01-01", "2018-06-01", "2019-07-01", "2020-05-01"),
-    "btceur" = c("2016-04-01", "2017-01-01", "2018-03-01"),
-    "btcgbp" = c("2016-01-01", "2017-06-01", "2018-03-29", "2019-06-01"),
-    "btcjpy" = c("2019-06-01", "2019-11-01")
+    "btcusd" = c("2014-03-01", "2017-01-01", "2019-07-01"),
+    "btceur" = c("2017-01-01", "2019-07-01"),
 )
 
 #' Tabellen-Template mit `{tableContent}`, `{tableCaption` und `{tableLabel}` 
@@ -989,7 +982,7 @@ summariseDatasetAsTable <- function(
 analysePriceDifferences <- function(
     pair,
     breakpoints,
-    threshold = 5L,
+    threshold,
     plotTradingVolume = TRUE,
     analysePartialIntervals = TRUE
 )
@@ -1174,13 +1167,11 @@ analysePriceDifferences <- function(
 # und die Verarbeitung viel Zeit in Anspruch nimmt.
 if (FALSE) {
     
-    for (pair in currencyPairs) {
-        analysePriceDifferences(pair, breakpoints[[pair]])
-    }
+    #thresholds <- c(2L) # Testmodus/Entwicklugnsmodus
+    thresholds <- c(1L, 2L, 5L, 10L)
     
-    # Zusätzliche Intervalle für Anhang erstellen
     # Achtung: Immenser Bedarf an Arbeitsspeicher!!! (> 20 GB)
-    for (threshold in c(2L, 10L, 30L)) {
+    for (threshold in thresholds) {
         for (pair in currencyPairs) {
             printf("\n\nBetrachte %s für den Schwellwert %ds...\n", pair, threshold)
             analysePriceDifferences(

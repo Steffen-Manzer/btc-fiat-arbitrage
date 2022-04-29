@@ -1,3 +1,6 @@
+# Notwendige Bibliotheken laden
+library("rjson")
+
 #' Lade Zeiträume mit erkannten Ausreißern / Börsenfehlfunktionen
 #' 
 #' @param exchange Name der Bitcoin-Börse
@@ -5,9 +8,6 @@
 #' @return `data.table` Tabelle mit den Spalten `startDate` und `endDate`
 loadSuspiciousPeriods <- function(exchange, currencyPair)
 {
-    # Notwendige Bibliotheken laden
-    library("rjson")
-    
     # Metadaten einlesen
     allExchangeMetadata <- fromJSON(file="Daten/bitcoin-metadata.json")
     

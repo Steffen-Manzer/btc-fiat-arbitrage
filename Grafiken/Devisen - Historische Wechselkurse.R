@@ -5,14 +5,23 @@
 ####
 
 # Nutzt manuell abgerufene Daten, Aktualisierung über:
-# Datenanalyse/Daten/Dukascopy/dukascopy-monthly|daily.js
+# Datenanalyse/Daten/Dukascopy/dukascopy-monthly.js
 
-# Notwendige Pakete laden
+
+# Funktionen und Bibliotheken laden -------------------------------------------
+library("data.table")
+library("ggplot2")
+library("ggthemes")
+library("gridExtra")
+library("stringr")
+library("TTR") # Technical Trading Rules -> volatility
+source("Funktionen/printf.R")
 source("Konfiguration/FilePaths.R")
 
 
+# TODO Reparieren
 # Konfiguration -----------------------------------------------------------
-asTeX <- T # Ausgabe als TeX-Dokument oder in RStudio direkt
+asTeX <- F # Ausgabe als TeX-Dokument oder in RStudio direkt
 texFile <- sprintf("%s/Abbildungen/Markteffizienz_Devisen_HistorischeKurse.tex",
                    latexOutPath)
 outFileTimestamp <- sprintf(
@@ -21,19 +30,9 @@ outFileTimestamp <- sprintf(
 )
 
 
-# Bibliotheken laden ------------------------------------------------------
-library("data.table")
-library("ggplot2")
-library("ggthemes")
-library("gridExtra")
-library("TTR") # Technical Trading Rules -> volatility
-source("Funktionen/printf.R")
+# Daten einlesen --------------------------------------------------------------
+dataPathBase <- "Daten/Dukascopy/data/" # EURUSD-monthly-bid.csv.gz
 
-
-# Daten aufbereiten -------------------------------------------------------
-dataPathBase <- "Daten/Dukascopy/data/" # Dateinamen: EURUSD-daily|monthly-bid.csv.gz
-
-#pairs <- c("AUDUSD", "EURUSD", "GBPUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY", "NZDUSD")
 pairs <- c("EURUSD", "USDJPY", "GBPUSD", "USDCHF")
 plotData <- list()
 
@@ -46,7 +45,6 @@ for (pair in pairs) {
     dataset$Datensatz <- pair
     
     # Zeitstempel
-    # Siehe "2 Aufbereitung Dukascopy Rohdaten zu rds.R"
     dataset$timestamp <- as.Date(as.POSIXct(dataset$timestamp/1000, origin = "1970-01-01"))
     
     # Datum einheitlich begrenzen. Historische EURUSD-Kurse nicht ganz klar, daher begrenzen
@@ -92,8 +90,8 @@ for (pair in pairs) {
             expand = expansion(mult = c(.1, .1))
         ) + 
         scale_color_ptol() +
-        labs(title=paste0(stringr::str_sub(pair, 0, 3), "/", stringr::str_sub(pair, 4, 6))) +
-        ylab(stringr::str_sub(pair, 4, 6))
+        labs(title=paste0(str_sub(pair, 0, 3), "/", str_sub(pair, 4, 6))) +
+        ylab(str_sub(pair, 4, 6))
     
     plotData <- c(plotData, list(plot))
 }
@@ -106,7 +104,6 @@ if (asTeX) {
     tikz(
         file = texFile,
         width = documentPageWidth,
-        #height = 6 / 2.54, # cm -> Zoll
         height = 7 / 2.54, # cm -> Zoll
         sanitize = TRUE
     )

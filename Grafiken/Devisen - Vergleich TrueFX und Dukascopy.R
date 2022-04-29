@@ -31,7 +31,7 @@ texFileSpread <- sprintf(
     "%s/Abbildungen/Empirie_Devisen_TrueFX_Dukascopy_Spread.tex",
     latexOutPath
 )
-texFilePricedifferences <- sprintf(
+texFilePriceDifferences <- sprintf(
     "%s/Abbildungen/Empirie_Devisen_TrueFX_Dukascopy_Preisunterschied.tex",
     latexOutPath
 )
@@ -71,6 +71,11 @@ if (file.exists("Cache/stats/forex-comparison-spread.fst")) {
             year(now), month(now)
         )
         
+        if (!file.exists(sourceFileTrueFX) || !file.exists(sourceFileDukascopy)) {
+            printf(" Datei nicht gefunden!\n")
+            break
+        }
+        
         # Daten lesen
         truefx <- read_fst(
             sourceFileTrueFX, columns=c("Time", "Bid", "Ask"), 
@@ -87,10 +92,14 @@ if (file.exists("Cache/stats/forex-comparison-spread.fst")) {
             Time = as.double(now),
             Source = "TrueFX",
             Min = truefx.spread[[1]],
-            Q1 = truefx.spread[[2]],
+            Q5 = quantile(truefx$Ask - truefx$Bid, 0.05),
+            Q10 = quantile(truefx$Ask - truefx$Bid, 0.1),
+            Q25 = truefx.spread[[2]],
             Median = truefx.spread[[3]],
             Mean = truefx.spread[[4]],
-            Q3 = truefx.spread[[5]],
+            Q75 = truefx.spread[[5]],
+            Q90 = quantile(truefx$Ask - truefx$Bid, 0.9),
+            Q95 = quantile(truefx$Ask - truefx$Bid, 0.95),
             Max = truefx.spread[[6]]
         ))
 
@@ -99,10 +108,14 @@ if (file.exists("Cache/stats/forex-comparison-spread.fst")) {
             Time = as.double(now),
             Source = "Dukascopy",
             Min = dukascopy.spread[[1]],
-            Q1 = dukascopy.spread[[2]],
+            Q5 = quantile(dukascopy$Ask - dukascopy$Bid, 0.05),
+            Q10 = quantile(dukascopy$Ask - dukascopy$Bid, 0.1),
+            Q25 = dukascopy.spread[[2]],
             Median = dukascopy.spread[[3]],
             Mean = dukascopy.spread[[4]],
-            Q3 = dukascopy.spread[[5]],
+            Q75 = dukascopy.spread[[5]],
+            Q90 = quantile(dukascopy$Ask - dukascopy$Bid, 0.9),
+            Q95 = quantile(dukascopy$Ask - dukascopy$Bid, 0.95),
             Max = dukascopy.spread[[6]]
         ))
         
@@ -124,14 +137,19 @@ if (file.exists("Cache/stats/forex-comparison-spread.fst")) {
         dukascopy <- dukascopy[Time %in% truefx$Time]
         
         # Q1, Median, Mean, Q3
-        mittel_diff <- summary(abs(truefx$Mittel - dukascopy$Mittel))
+        mittel_diff_data <- abs(truefx$Mittel - dukascopy$Mittel)
+        mittel_diff <- summary(mittel_diff_data)
         differences <- appendDT(differences, list(
             Time = as.double(now),
             Min = mittel_diff[[1]],
-            Q1 = mittel_diff[[2]],
+            Q5 = quantile(mittel_diff_data, 0.05),
+            Q10 = quantile(mittel_diff_data, 0.1),
+            Q25 = mittel_diff[[2]],
             Median = mittel_diff[[3]],
             Mean = mittel_diff[[4]],
-            Q3 = mittel_diff[[5]],
+            Q75 = mittel_diff[[5]],
+            Q90 = quantile(mittel_diff_data, 0.9),
+            Q95 = quantile(mittel_diff_data, 0.95),
             Max = mittel_diff[[6]]
         ))
         
@@ -194,7 +212,7 @@ if (plotAsLaTeX) {
 }
 print(
     ggplot(spread, aes(x=Time)) +
-        geom_line(aes(y=Median * 1e4, color=Source, linetype=Source), size=1) +
+        geom_line(aes(y=Median*1e4, color=Source, linetype=Source), size=1) +
         theme_minimal() +
         theme(
             legend.position = c(0.85, 0.85),
@@ -210,8 +228,8 @@ print(
             expand = expansion(mult = c(.01, .03))
         ) +
         scale_y_continuous(
-            breaks=seq(from=0, to=1.4, by=.2),
-            limits=c(0, 1.400001)
+            breaks = seq(from=0, to=1.4, by=.2),
+            limits = c(0, 1.400001)
         ) +
         scale_color_ptol() + 
         labs(
@@ -226,9 +244,9 @@ if (plotAsLaTeX) {
 
 # Preisunterschiede
 if (plotAsLaTeX) {
-    cat("Ausgabe in Datei", texFilePricedifferences, "\n")
+    cat("Ausgabe in Datei", texFilePriceDifferences, "\n")
     tikz(
-        file = texFilePricedifferences,
+        file = texFilePriceDifferences,
         width = documentPageWidth,
         height = 5 / 2.54, # cm -> Zoll
         sanitize = TRUE
@@ -236,22 +254,24 @@ if (plotAsLaTeX) {
 }
 print(
     ggplot(differences, aes(x=Time)) +
-        geom_ribbon(aes(ymin=Q1*1e4, ymax=Q3*1e4), alpha=.3) +
-        geom_line(aes(y=Median * 1e4, color="Difference"), size=1) +
+        geom_ribbon(aes(ymin=Q5, ymax=Q95), alpha=.3) +
+        geom_ribbon(aes(ymin=Q25, ymax=Q75), alpha=.3) +
+        geom_line(aes(y=Median, color="Difference"), size=1) +
         theme_minimal() +
         theme(
             legend.position = "none",
-            axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
-            axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
+            axis.title.x = element_text(margin=margin(t=10, r=0, b=0, l=0)),
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
         ) +
         scale_x_datetime(
             date_breaks="1 year",
             date_labels="%Y",
-            expand = expansion(mult = c(.01, .03))
+            expand = expansion(mult=c(.01, .03))
         ) +
         scale_y_continuous(
             #breaks=seq(from=0, to=20, by=2),
             #limits=c(0, 20.00001)
+            labels = function(x) { x*1e4 }
         ) +
         scale_color_ptol() + 
         labs(
@@ -271,14 +291,14 @@ if (plotAsLaTeX) {
 #         theme_minimal() +
 #         theme(
 #             legend.position = "none",
-#             axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
-#             axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
+#             axis.title.x = element_text(margin=margin(t=10, r=0, b=0, l=0)),
+#             axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
 #         ) +
 #         scale_x_datetime(
 #             date_breaks="1 year",
 #             #date_minor_breaks="1 sec",
 #             date_labels="%Y",
-#             expand = expansion(mult = c(.01, .03))
+#             expand = expansion(mult=c(.01, .03))
 #         ) +
 #         scale_y_continuous(
 #             #breaks=seq(from=0, to=20, by=2),
