@@ -51,7 +51,7 @@ currencyPairs <- c("btcusd", "btceur")
 # Intervalle zugerechnet
 breakpoints <- list(
     "btcusd" = c("2014-03-01", "2017-01-01", "2019-07-01"),
-    "btceur" = c("2017-01-01", "2019-07-01"),
+    "btceur" = c("2017-01-01", "2019-07-01")
 )
 
 #' Tabellen-Template mit `{tableContent}`, `{tableCaption` und `{tableLabel}` 
@@ -799,12 +799,12 @@ summariseDatasetAsTable <- function(
     label = NULL
 )
 {
-    tic()
-    printf("Erzeuge Überblickstabelle in %s", basename(outFile))
+    printf("Erzeuge Überblickstabelle in %s...\n", basename(outFile))
     numRowsTotal <- nrow(dataset)
     
     # Tabellenzeile erzeugen
     createRow <- function(numRows, dataSubset, end="\\\\\n\n") {
+        printf("Erzeuge Tabellenzeile...\n")
         intervalLengthHours <- 
             difftime(
                 last(dataSubset$Time),
@@ -880,8 +880,8 @@ summariseDatasetAsTable <- function(
         iterationCounter <- 0L
         for (i in seq_along(exchangeNames)) {
             exchange <- names(exchangeNames)[[i]]
-            numRows <- nrow(dataset[ExchangeHigh == exchange | ExchangeLow == exchange])
-            if (numRows > 0L) {
+            allRows <- dataset[ExchangeHigh == exchange | ExchangeLow == exchange, which=TRUE]
+            if (length(allRows) > 0L) {
                 iterationCounter <- iterationCounter + 1L
                 if (iterationCounter > 1L) {
                     vspace <- vspaceTemplate
@@ -896,11 +896,7 @@ summariseDatasetAsTable <- function(
                     "        \\rowcolor{white}\n",
                     vspace,
                     sprintf("        \\textbf{%s} &\n", exchangeNames[[i]]),
-                    createRow(
-                        numRows, 
-                        dataset[ExchangeHigh == exchange | ExchangeLow == exchange],
-                        end = "\n"
-                    ),
+                    createRow(length(allRows), dataset[allRows], end = "\n"),
                     "        \\global\\rownum=2\\relax\\\\\n\n"
                 )
                 
@@ -910,21 +906,16 @@ summariseDatasetAsTable <- function(
                         next
                     }
                     otherExchange <- names(exchangeNames)[[j]]
-                    numRows_withOtherExchange <- nrow(dataset[
+                    rowsWithOtherExchange <- dataset[
                         (ExchangeHigh == exchange & ExchangeLow == otherExchange) |
-                        (ExchangeHigh == otherExchange & ExchangeLow == exchange)
-                    ])
-                    if (numRows_withOtherExchange > 0L) {
+                        (ExchangeHigh == otherExchange & ExchangeLow == exchange),
+                        which = TRUE
+                    ]
+                    if (length(rowsWithOtherExchange) > 0L) {
                         tableContent <- paste0(
                             tableContent,
                             sprintf("        ~davon mit %s &\n", exchangeNames[[j]]),
-                            createRow(
-                                numRows_withOtherExchange, 
-                                dataset[
-                                    (ExchangeHigh == exchange & ExchangeLow == otherExchange) |
-                                    (ExchangeHigh == otherExchange & ExchangeLow == exchange)
-                                ]
-                            )
+                            createRow(length(rowsWithOtherExchange), dataset[rowsWithOtherExchange])
                         )
                     }
                 }
@@ -960,9 +951,6 @@ summariseDatasetAsTable <- function(
     
     # Vor versehentlichem Überschreiben schützen
     Sys.chmod(outFile, mode="0444")
-    
-    # Zeitmessung abschließen
-    toc()
     
     return(invisible(NULL))
 }
@@ -1167,8 +1155,9 @@ analysePriceDifferences <- function(
 # und die Verarbeitung viel Zeit in Anspruch nimmt.
 if (FALSE) {
     
-    #thresholds <- c(2L) # Testmodus/Entwicklugnsmodus
+    #thresholds <- c(2L) # Testmodus/Entwicklungsmodus
     thresholds <- c(1L, 2L, 5L, 10L)
+    mainInterval <- 2L
     
     # Achtung: Immenser Bedarf an Arbeitsspeicher!!! (> 20 GB)
     for (threshold in thresholds) {
@@ -1179,8 +1168,9 @@ if (FALSE) {
                 breakpoints[[pair]],
                 threshold,
                 plotTradingVolume = FALSE,
-                analysePartialIntervals = FALSE
+                analysePartialIntervals = (threshold == mainInterval)
             )
+            gc()
         }
     }
 }

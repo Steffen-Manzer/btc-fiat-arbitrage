@@ -143,6 +143,10 @@ for (pair in unique(metadata$currencyPair)) {
         metadata[currencyPair == pair & threshold == 1L, numRows]
     printf("     1s -> 10s: %s %%\n", format.percentage(result - 1, 1L))
     
+    result <- metadata[currencyPair == pair & threshold == 10L, numRows] /
+        metadata[currencyPair == pair & threshold == 2L, numRows]
+    printf("     2s -> 10s: %s %%\n", format.percentage(result - 1, 1L))
+    
     result <- metadata[currencyPair == pair & threshold == 2L, numRows] /
         metadata[currencyPair == pair & threshold == 1L, numRows]
     printf("     1s ->  2s: %s %%\n", format.percentage(result - 1, 1L))
