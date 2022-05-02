@@ -1167,7 +1167,7 @@ if (FALSE) {
                 pair,
                 breakpoints[[pair]],
                 threshold,
-                plotTradingVolume = FALSE,
+                plotTradingVolume = TRUE,
                 analysePartialIntervals = (threshold == mainInterval)
             )
             gc()
