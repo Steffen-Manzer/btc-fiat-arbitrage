@@ -967,14 +967,15 @@ summariseDatasetAsTable <- function(
 #' @param threshold Zeitliche Differenz zweier Ticks in Sekunden,
 #'                  ab der das Tick-Paar verworfen wird.
 #' @param plotTradingVolume Plot des Handelsvolumens erzeugen
-#' @param analysePartialIntervals Grafiken und Tabellen für 
-#'                                Teil-Intervalle erstellen
+#' @param analysePartialIntervals Grafiken und Tabellen für Teil-Intervalle erstellen
+#' @param appendThresholdToTableLabel Grenzwert an Tabellen-Label anhängen
 analysePriceDifferences <- function(
     pair,
     breakpoints,
     threshold,
     plotTradingVolume = TRUE,
-    analysePartialIntervals = TRUE
+    analysePartialIntervals = TRUE,
+    appendThresholdToTableLabel = FALSE
 )
 {
     # Parameter validieren
@@ -983,7 +984,8 @@ analysePriceDifferences <- function(
         is.character(pair), length(pair) == 1L, nchar(pair) == 6L,
         is.numeric(threshold), length(threshold) == 1L,
         is.logical(plotTradingVolume), length(plotTradingVolume) == 1L,
-        is.logical(analysePartialIntervals), length(analysePartialIntervals) == 1L
+        is.logical(analysePartialIntervals), length(analysePartialIntervals) == 1L,
+        is.logical(appendThresholdToTableLabel), length(appendThresholdToTableLabel) == 1L
     )
     
     # Vorherige Berechnungen ggf. aus dem Speicher bereinigen
@@ -1070,12 +1072,17 @@ analysePriceDifferences <- function(
     gc()
     
     # Beschreibende Statistiken
+    if (appendThresholdToTableLabel) {
+        tableLabelAppendix <- sprintf(" (Grenzwert %ds)", threshold)
+    } else {
+        tableLabelAppendix <- ""
+    }
     summariseDatasetAsTable(
         comparablePrices,
         outFile = sprintf("%s/Uebersicht.tex", tableOutPath),
         caption = sprintf(
-            "Zentrale Kenngrößen paarweiser Preisnotierungen für %s im Gesamtüberblick",
-            format.currencyPair(pair)
+            "Zentrale Kenngrößen paarweiser Preisnotierungen für %s im Gesamtüberblick%s",
+            format.currencyPair(pair), tableLabelAppendix
         ),
         label = sprintf("Raumarbitrage_%s_Ueberblick_%ds", toupper(pair), threshold)
     )
@@ -1169,7 +1176,8 @@ if (FALSE) {
                 breakpoints[[pair]],
                 threshold,
                 plotTradingVolume = TRUE,
-                analysePartialIntervals = (threshold == mainInterval)
+                analysePartialIntervals = (threshold == mainInterval),
+                appendThresholdToTableLabel = (threshold != mainInterval)
             )
             gc()
         }
