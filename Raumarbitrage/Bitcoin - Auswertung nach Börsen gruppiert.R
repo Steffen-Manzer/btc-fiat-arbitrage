@@ -799,12 +799,12 @@ summariseDatasetAsTable <- function(
     label = NULL
 )
 {
-    printf("Erzeuge Überblickstabelle in %s...\n", basename(outFile))
+    printf("Erzeuge Überblickstabelle in %s ", basename(outFile))
     numRowsTotal <- nrow(dataset)
     
     # Tabellenzeile erzeugen
     createRow <- function(numRows, dataSubset, end="\\\\\n\n") {
-        printf("Erzeuge Tabellenzeile...\n")
+        printf(".")
         intervalLengthHours <- 
             difftime(
                 last(dataSubset$Time),
@@ -930,6 +930,8 @@ summariseDatasetAsTable <- function(
             createRow(nrow(dataset), dataset)
         )
     }
+    
+    printf("\n")
     
     # Tabelle einfach ausgeben
     if (is.null(outFile)) {
@@ -1155,9 +1157,8 @@ analysePriceDifferences <- function(
 # und die Verarbeitung viel Zeit in Anspruch nimmt.
 if (FALSE) {
     
-    #thresholds <- c(2L) # Testmodus/Entwicklungsmodus
     thresholds <- c(1L, 2L, 5L, 10L)
-    mainInterval <- 2L
+    mainInterval <- 1L
     
     # Achtung: Immenser Bedarf an Arbeitsspeicher!!! (> 20 GB)
     for (threshold in thresholds) {
