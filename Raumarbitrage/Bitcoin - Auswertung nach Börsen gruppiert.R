@@ -27,7 +27,7 @@ library("fst")
 library("data.table")
 library("lubridate") # floor_date
 library("ggplot2")
-library("ggthemes")
+library("khroma") # Farbschemata von Paul Tol
 library("gridExtra") # grid.arrange
 library("readr") # read_file, write_file
 library("stringr") # str_replace
@@ -202,8 +202,10 @@ aggregatePriceDifferences <- function(
         ),
         by=.(Time=floor_date(Time, unit=floorUnits))
     ]
-    printf("Aggregation auf '%s' ergab %s Datensätze. ",
-                 floorUnits, format.number(nrow(priceDifferences)))
+    printf(
+        "Aggregation auf '%s' ergab %s Datensätze. ",
+        floorUnits, format.number(nrow(priceDifferences))
+    )
     toc()
     
     return(priceDifferences)
@@ -363,8 +365,10 @@ plotAggregatedPriceDifferencesOverTime <- function(
         scale_y_continuous(
             labels = function(x) paste(format.number(x * 100), "%")
         ) +
-        scale_color_ptol() +
-        scale_fill_ptol() +
+        # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
+        scale_color_highcontrast() +
+        # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
+        scale_fill_bright() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab)
@@ -391,6 +395,9 @@ plotAggregatedPriceDifferencesOverTime <- function(
 #' Zeichne Anzahl der Beobachtungen als Liniengrafik im Zeitverlauf
 #' 
 #' @param priceDifferences `data.table` mit den aggr. Preisen der verschiedenen Börsen
+#' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
+#' @param timeHorizon Aggregationsebene (für Beschriftung der Y-Achse)
+#' @param plotTitle Überschrift (optional)
 #' @return Der Plot (unsichtbar)
 plotNumDifferencesOverTime <- function(
     priceDifferences,
@@ -470,11 +477,14 @@ plotNumDifferencesOverTime <- function(
             labels = function(x) paste(format.number(x / roundFac))
             #breaks = breaks_extended(4L)
         ) +
-        scale_color_ptol() +
-        scale_fill_ptol() +
-            labs(
-                x = paste0(plotTextPrefix, plotXLab),
-                y = paste0(plotTextPrefix, plotYLab, " [", roundedTo, "]")
+        # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
+        scale_color_highcontrast() +
+        # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
+        scale_fill_bright() +
+        labs(
+            x = paste0(plotTextPrefix, plotXLab),
+            y = paste0(plotTextPrefix, plotYLab, " [", roundedTo, "]")
+        )
             )
     
     if (!is.null(plotTitle)) {
@@ -590,8 +600,10 @@ plotTotalVolumeOverTime <- function(
         scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
         coord_cartesian(ylim=c(0, maxValue)) +
         scale_y_continuous(labels = function(x) format.number(x/roundFac)) +
-        scale_color_ptol() +
-        scale_fill_ptol() +
+        # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
+        scale_color_highcontrast() +
+        # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
+        scale_fill_bright() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab, roundedTo)
@@ -760,8 +772,10 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
             axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
             axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
         ) +
-        scale_color_ptol() +
-        scale_fill_ptol() + 
+        # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
+        scale_color_highcontrast() +
+        # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
+        scale_fill_bright() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab)
@@ -784,11 +798,8 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
 
 #' Informationen über einen Datensatz als LaTeX-Tabelle ausgeben
 #' 
-#' TODO Funktionsaufruf mit großen Daten sehr langsam und speicherintensiv,
-#' ggf. optimieren
-#' 
-#' @param comparablePrices `data.table` aus `loadComparablePricesByCurrency`
-#'                         oder aus `aggregatePriceDifferences`
+#' @param dataset `data.table` aus `loadComparablePricesByCurrency`
+#'                             oder aus `aggregatePriceDifferences`
 #' @param outFile Zieldatei
 #' @param caption Tabellentitel
 #' @param label Tabellenlabel
@@ -806,17 +817,18 @@ summariseDatasetAsTable <- function(
     createRow <- function(numRows, dataSubset, end="\\\\\n\n") {
         printf(".")
         intervalLengthHours <- 
-            difftime(
-                last(dataSubset$Time),
-                first(dataSubset$Time),
-                units = "hours"
-            ) |>
+            difftime(last(dataSubset$Time), first(dataSubset$Time), units = "hours") |>
             round() |>
             as.double()
         numRowsPerHour <- numRows / intervalLengthHours
         numRowsPerDay <- numRows / (intervalLengthHours / 24)
+        
+        # Anzahl "vorteilhafter" Preisunterschiede bestimmen
+        # > 1 %
         numRowsLargerThan_A <- length(which(dataSubset$PriceDifference >= .01))
+        # > 2 %
         numRowsLargerThan_B <- length(which(dataSubset$PriceDifference >= .02))
+        # > 5 %
         numRowsLargerThan_C <- length(which(dataSubset$PriceDifference >= .05))
         s <- strrep(" ", 12) # Einrückung in der Ergebnisdatei
         return(paste0(
