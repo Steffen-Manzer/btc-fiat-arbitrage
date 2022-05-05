@@ -49,7 +49,7 @@ currencyPairs <- c("btcusd", "btceur")
 
 # Die Breakpoints selbst werden immer dem letzten der beiden entstehenden
 # Intervalle zugerechnet
-breakpoints <- list(
+breakpointsByCurrency <- list(
     "btcusd" = c("2014-03-01", "2017-01-01", "2019-07-01"),
     "btceur" = c("2017-01-01", "2019-07-01")
 )
@@ -198,7 +198,15 @@ aggregatePriceDifferences <- function(
             Median = median(PriceDifference),
             Q3 = quantile(PriceDifference, probs=.75, names=FALSE),
             Max = max(PriceDifference),
-            n = .N
+            n = .N,
+            
+            # Wieviele Preisunterschiede sind größer als...
+            # 1 %
+            nLargerThan1Pct = length(which(PriceDifference >= .01)),
+            # 2 %
+            nLargerThan2Pct = length(which(PriceDifference >= .02)),
+            # 5 %
+            nLargerThan5Pct = length(which(PriceDifference >= .05))
         ),
         by=.(Time=floor_date(Time, unit=floorUnits))
     ]
@@ -302,22 +310,13 @@ plotAggregatedPriceDifferencesOverTime <- function(
         # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
         plot <- plot + 
             geom_rect(
-                aes(
-                    xmin = From,
-                    xmax = To,
-                    ymin = 0,
-                    ymax = maxValue * 1.05,
-                    fill = Set
-                ),
+                aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
                 data = intervals,
-                alpha = .5
+                alpha = .5,
+                show.legend = FALSE
             ) +
             geom_text(
-                aes(
-                    x = From+(To-From)/2,
-                    y = maxValue,
-                    label = paste0(plotTextPrefix, Set)
-                ),
+                aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
                 data = intervals
             )
     }
@@ -438,22 +437,13 @@ plotNumDifferencesOverTime <- function(
         # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
         plot <- plot + 
             geom_rect(
-                aes(
-                    xmin = From,
-                    xmax = To,
-                    ymin = 0,
-                    ymax = maxValue * 1.05,
-                    fill = Set
-                ),
+                aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
                 data = intervals,
-                alpha = .5
+                alpha = .5,
+                show.legend = FALSE
             ) +
             geom_text(
-                aes(
-                    x = From+(To-From)/2,
-                    y = maxValue,
-                    label = paste0(plotTextPrefix, Set)
-                ),
+                aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
                 data = intervals
             )
     }
@@ -491,6 +481,121 @@ plotNumDifferencesOverTime <- function(
     }
     
     return(plot)
+}
+
+
+#' Anteil der "vorteilhaften" Preisabweichungen im Zeitverlauf darstellen
+#' 
+#' @param priceDifferences `data.table` mit den aggr. Preisen der verschiedenen Börsen
+#' @param latexOutPath Zieldatei
+#' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
+#' @param plotTitle Überschrift (optional)
+#' @return Der Plot (unsichtbar)
+plotProfitableDifferencesOverTime <- function(
+    priceDifferences,
+    latexOutPath = NULL,
+    breakpoints = NULL,
+    plotTitle = NULL
+)
+{
+    # Parameter validieren
+    stopifnot(
+        is.data.table(priceDifferences),
+        is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L),
+        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L)
+    )
+    
+    # Einige Bezeichnungen und Variablen
+    plotXLab <- "Datum"
+    plotYLab <- "Anteil"
+    plotTextPrefix <- "\\footnotesize "
+    
+    # Ausgabeoptionen
+    if (!is.null(latexOutPath)) {
+        source("Konfiguration/TikZ.R")
+        printf.debug("Ausgabe als LaTeX in Datei %s\n", basename(latexOutPath))
+        tikz(
+            file = latexOutPath,
+            width = documentPageWidth,
+            height = 6 / 2.54, # cm -> Zoll
+            sanitize = TRUE
+        )
+    }
+    
+    # 1. Gesamtübersicht, gruppiert nach Grenzwerten, aggregiert
+    plot <- ggplot(priceDifferences)
+    
+    # Maximalwert entsteht immer bei der geringsten Abweichung
+    maxValue <- with(priceDifferences, max(nLargerThan1Pct / n))
+    
+    # Bereiche zeichnen und Nummer anzeigen
+    if (!is.null(breakpoints)) {
+        
+        # Die hier bestimmten Intervalle der aggregierten Daten können
+        # von den Intervallen des gesamten Datensatzes abweichen
+        intervals <- calculateIntervals(priceDifferences$Time, breakpoints)
+        
+        # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
+        plot <- plot + 
+            geom_rect(
+                aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
+                data = intervals,
+                alpha = .5,
+                show.legend = FALSE
+            ) +
+            geom_text(
+                aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
+                data = intervals
+            )
+    }
+    
+    # Anzahl Datensätze zeichnen
+    plot <- plot +
+        geom_line(aes(x=Time, y=nLargerThan1Pct/n, color="1\\,%", linetype="1\\,%"), size = .5) + 
+        geom_line(aes(x=Time, y=nLargerThan2Pct/n, color="2\\,%", linetype="2\\,%"), size = .5) + 
+        geom_line(aes(x=Time, y=nLargerThan5Pct/n, color="5\\,%", linetype="5\\,%"), size = .5) + 
+        theme_minimal() +
+        theme(
+            plot.title.position = "plot",
+            axis.title.x = element_text(margin=margin(t=5)),
+            axis.title.y = element_text(margin=margin(r=10)),
+            legend.position = c(0.88, 0.58),
+            legend.background = element_rect(fill="white", size=0.2, linetype="solid"),
+            legend.margin = margin(0, 12, 5, 5),
+            legend.title = element_blank(),
+        ) +
+        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
+        coord_cartesian(ylim=c(0, maxValue)) +
+        scale_y_continuous(
+            labels = function(x) paste0(format.percentage(x, digits=0), "\\,%")
+        ) +
+        # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
+        scale_color_highcontrast() +
+        # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
+        scale_fill_pale() +
+        labs(
+            x = paste0(plotTextPrefix, plotXLab),
+            y = paste0(plotTextPrefix, plotYLab),
+            linetype = "\\footnotesize Grenzwert",
+            colour = "\\footnotesize Grenzwert"
+        )
+    
+    if (!is.null(plotTitle)) {
+        plot <- plot + ggtitle(paste0("\\small ", plotTitle))
+    }
+    
+    if (!is.null(latexOutPath)) {
+        # Plot zeichnen
+        print(plot)
+        dev.off()
+        return(invisible(plot))
+    } else {
+        return(plot)
+    }
+    
+    # 2. Übersicht nach Börsen, gruppiert nach Grenzwerten
+    # TODO Schwierig, müsste nochmals nach Börsenpaar aggregiert werden!
+    
 }
 
 
@@ -566,22 +671,13 @@ plotTotalVolumeOverTime <- function(
         # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
         plot <- plot + 
             geom_rect(
-                aes(
-                    xmin = From,
-                    xmax = To,
-                    ymin = 0,
-                    ymax = maxValue * 1.05,
-                    fill = Set
-                ),
+                aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
                 data = intervals,
-                alpha = .5
+                alpha = .5,
+                show.legend = FALSE
             ) +
             geom_text(
-                aes(
-                    x = From+(To-From)/2,
-                    y = maxValue,
-                    label = paste0(plotTextPrefix, Set)
-                ),
+                aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
                 data = intervals
             )
     }
@@ -771,10 +867,10 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
             axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
             axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
         ) +
-        # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
+        
+        # TODO Zurück zu _ptol() aus ggthemes?
         scale_color_highcontrast() +
-        # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
-        scale_fill_pale() +
+        scale_fill_highcontrast() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab)
@@ -1032,6 +1128,11 @@ analysePriceDifferences <- function(
         removeGaps = FALSE,
         plotTitle = "Preisabweichungen"
     )
+    p_profitable <- plotProfitableDifferencesOverTime(
+        aggregatedPriceDifferences,
+        breakpoints = breakpoints,
+        plotTitle = "Anteil der Preise mit einer Mindestabweichung von 1\\,%, 2\\,% und 5\\,%"
+    )
     p_nrow <- plotNumDifferencesOverTime(
         aggregatedPriceDifferences,
         breakpoints = breakpoints,
@@ -1046,10 +1147,6 @@ analysePriceDifferences <- function(
             plotTitle = "Handelsvolumen"
         )
     }
-    p_boxplot <- plotPriceDifferencesBoxplotByExchangePair(
-        comparablePrices,
-        plotTitle = "Lagemaße der Preisabweichungen nach Börsenpaar"
-    )
     
     # Als LaTeX-Dokument ausgeben
     source("Konfiguration/TikZ.R")
@@ -1061,7 +1158,7 @@ analysePriceDifferences <- function(
             sanitize = TRUE
         )
         grid.arrange(
-            p_diff, p_nrow, p_volume, p_boxplot,
+            p_diff, p_profitable, p_nrow, p_volume,
             layout_matrix = rbind(c(1),c(2),c(3),c(4))
         )
     } else {
@@ -1072,11 +1169,18 @@ analysePriceDifferences <- function(
             sanitize = TRUE
         )
         grid.arrange(
-            p_diff, p_nrow, p_boxplot,
+            p_diff, p_profitable, p_nrow,
             layout_matrix = rbind(c(1),c(2),c(3))
         )
     }
     dev.off()
+    
+    # Boxplot
+    plotPriceDifferencesBoxplotByExchangePair(
+        comparablePrices,
+        latexOutPath = sprintf("%s/Uebersicht_Boxplot.tex", plotOutPath)
+        #plotTitle = "Lagemaße der Preisabweichungen nach Börsenpaar"
+    )
     
     # Speicherdruck reduzieren
     rm(aggregatedPriceDifferences)
@@ -1184,7 +1288,7 @@ if (FALSE) {
             printf("\n\nBetrachte %s für den Schwellwert %ds...\n", pair, threshold)
             analysePriceDifferences(
                 pair,
-                breakpoints[[pair]],
+                breakpointsByCurrency[[pair]],
                 threshold,
                 plotTradingVolume = TRUE,
                 analysePartialIntervals = (threshold == mainInterval),
