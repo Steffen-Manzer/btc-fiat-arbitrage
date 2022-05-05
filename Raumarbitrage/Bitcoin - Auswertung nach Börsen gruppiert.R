@@ -310,7 +310,7 @@ plotAggregatedPriceDifferencesOverTime <- function(
                     fill = Set
                 ),
                 data = intervals,
-                alpha = .25
+                alpha = .5
             ) +
             geom_text(
                 aes(
@@ -368,7 +368,7 @@ plotAggregatedPriceDifferencesOverTime <- function(
         # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
         scale_color_highcontrast() +
         # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
-        scale_fill_bright() +
+        scale_fill_pale() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab)
@@ -446,7 +446,7 @@ plotNumDifferencesOverTime <- function(
                     fill = Set
                 ),
                 data = intervals,
-                alpha = .25
+                alpha = .5
             ) +
             geom_text(
                 aes(
@@ -480,12 +480,11 @@ plotNumDifferencesOverTime <- function(
         # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
         scale_color_highcontrast() +
         # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
-        scale_fill_bright() +
+        scale_fill_pale() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab, " [", roundedTo, "]")
         )
-            )
     
     if (!is.null(plotTitle)) {
         plot <- plot + ggtitle(paste0("\\small ", plotTitle))
@@ -575,7 +574,7 @@ plotTotalVolumeOverTime <- function(
                     fill = Set
                 ),
                 data = intervals,
-                alpha = .25
+                alpha = .5
             ) +
             geom_text(
                 aes(
@@ -603,7 +602,7 @@ plotTotalVolumeOverTime <- function(
         # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
         scale_color_highcontrast() +
         # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
-        scale_fill_bright() +
+        scale_fill_pale() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab, roundedTo)
@@ -775,7 +774,7 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
         # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
         scale_color_highcontrast() +
         # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
-        scale_fill_bright() +
+        scale_fill_pale() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab)
