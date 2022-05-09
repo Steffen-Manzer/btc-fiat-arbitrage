@@ -423,13 +423,11 @@ plotAggregatedPriceDifferencesOverTime <- function(
 #' 
 #' @param priceDifferences `data.table` mit den aggr. Preisen der verschiedenen Börsen
 #' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
-#' @param timeHorizon Aggregationsebene (für Beschriftung der Y-Achse)
 #' @param plotTitle Überschrift (optional)
 #' @return Der Plot (unsichtbar)
 plotNumDifferencesOverTime <- function(
     priceDifferences,
     breakpoints = NULL,
-    timeHorizon = "Monatliche",
     plotTitle = NULL
 ) {
     # Parameter validieren
@@ -440,7 +438,7 @@ plotNumDifferencesOverTime <- function(
     
     # Einige Bezeichnungen und Variablen
     plotXLab <- "Datum"
-    plotYLab <- paste0(timeHorizon, " Beobachtungen")
+    plotYLab <- "Beobachtungen"
     plotTextPrefix <- "\\footnotesize "
     maxValue <- max(priceDifferences$n)
     
@@ -1159,7 +1157,6 @@ analysePriceDifferences <- function(
     p_nrow <- plotNumDifferencesOverTime(
         aggregatedPriceDifferences,
         breakpoints = breakpoints,
-        timeHorizon = "",
         plotTitle = "Anzahl monatlicher Beobachtungen"
     )
     p_volume <- plotTotalVolumeOverTime(
