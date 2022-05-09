@@ -635,7 +635,8 @@ plotTotalVolumeOverTime <- function(
     pair,
     timeframe,
     breakpoints = NULL,
-    plotTitle = NULL
+    plotTitle = NULL,
+    aggregationLevel = "monthly"
 )
 {
     stopifnot(
@@ -652,8 +653,8 @@ plotTotalVolumeOverTime <- function(
     exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
     result <- data.table()
     for (exchange in exchanges) {
-        sourceFile <- sprintf("Cache/%1$s/%2$s/%1$s-%2$s-monthly.fst", 
-                              tolower(exchange), tolower(pair))
+        sourceFile <- sprintf("Cache/%1$s/%2$s/%1$s-%2$s-%3$s", 
+                              tolower(exchange), tolower(pair), aggregationLevel)
         
         if (!file.exists(sourceFile)) {
             # Dieses Paar wird an dieser Börse nicht gehandelt
@@ -1234,22 +1235,53 @@ analysePriceDifferences <- function(
         if (nrow(aggregatedPriceDifferences) > 50L) {
             
             # Variante 1: Aggregierte Liniengrafik: Nur sinnvoll, wenn keine/wenige Lücken
-            plotAggregatedPriceDifferencesOverTime(
+            p_diff <- plotAggregatedPriceDifferencesOverTime(
                 aggregatedPriceDifferences,
-                latexOutPath = sprintf("%s/Uebersicht_%d.tex", plotOutPath, segment)
+                plotTitle = "Preisabweichungen"
+                #latexOutPath = sprintf("%s/Uebersicht_%d.tex", plotOutPath, segment)
             )
             
         } else {
             
             # Variante 2: Punktgrafik: Sinnvoll auch bei vielen Lücken, nicht aber
             # bei großen Datenmengen. Zeichnet *alle* Daten, nicht aggregierte Daten
-            plotAggregatedPriceDifferencesOverTime(
+            p_diff <- plotAggregatedPriceDifferencesOverTime(
                 comparablePrices[Time %between% segmentInterval],
                 plotType = "point",
-                latexOutPath = sprintf("%s/Uebersicht_%d.tex", plotOutPath, segment)
+                plotTitle = "Preisabweichungen"
+                #latexOutPath = sprintf("%s/Uebersicht_%d.tex", plotOutPath, segment)
             )
             
         }
+        
+        p_profitable <- plotProfitableDifferencesOverTime(
+            aggregatedPriceDifferences,
+            plotTitle = "Anteil der Arbitrage-Paare mit einer Abweichung von min. 1\\,%, 2\\,% und 5\\,%"
+        )
+        p_nrow <- plotNumDifferencesOverTime(
+            aggregatedPriceDifferences,
+            plotTitle = "Anzahl täglicher Beobachtungen"
+        )
+        p_volume <- plotTotalVolumeOverTime(
+            pair,
+            aggregatedPriceDifferences$Time[c(1,nrow(aggregatedPriceDifferences))],
+            plotTitle = "Handelsvolumen",
+            aggregationLevel = "weekly"
+        )
+        
+        # Als LaTeX-Dokument ausgeben
+        source("Konfiguration/TikZ.R")
+        tikz(
+            file = sprintf("%s/Uebersicht_%d.tex", plotOutPath, segment),
+            width = documentPageWidth,
+            height = 22 / 2.54,
+            sanitize = TRUE
+        )
+        grid.arrange(
+            p_diff, p_profitable, p_nrow, p_volume,
+            layout_matrix = rbind(c(1),c(2),c(3),c(4))
+        )
+        dev.off()
         
         # Statistiken in Tabelle ausgeben
         summariseDatasetAsTable(
@@ -1284,7 +1316,7 @@ analysePriceDifferences <- function(
 # und die Verarbeitung viel Zeit in Anspruch nimmt.
 if (FALSE) {
     
-    # Achtung: Immenser Bedarf an Arbeitsspeicher!!! (> 20 GB)
+    # Achtung: Immenser Bedarf an Arbeitsspeicher! (> 20 GB)
     for (threshold in thresholds) {
         for (pair in currencyPairs) {
             printf("\n\nBetrachte %s für den Schwellwert %ds...\n", pair, threshold)
