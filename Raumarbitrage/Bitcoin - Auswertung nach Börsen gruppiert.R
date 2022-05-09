@@ -43,15 +43,24 @@ exchangeNames <- list(
     "kraken" = "Kraken"
 )
 
-# BTC/USD: ~11,5 GB
-# BTC/EUR: ~4,5 GB
+# Verfügbare Währungspaare. BTC/USD: ~11,5 GB, BTC/EUR: ~4,5 GB
 currencyPairs <- c("btcusd", "btceur")
 
+# Verfügbare Grenzwerte für Abschluss des Arbitragegeschäfts in Sekunden
+thresholds <- c(1L, 2L, 5L, 10L)
+
+# Haupt-Intervall zur Betrachtung innerhalb der Arbeit
+# (Rest: Nur Anhang, reduzierte Ansicht)
+mainThreshold <- 1L
+
+# Breakpoints für eine detailliertere Betrachtung einzelner Zeitabschnitte
 # Die Breakpoints selbst werden immer dem letzten der beiden entstehenden
 # Intervalle zugerechnet
 breakpointsByCurrency <- list(
+    # Intervall: 1.           2.             3.           4.
+    # Von/Bis: -> 2014 -- 2014-2017  --  2017-2019 -- 2019 ->
     "btcusd" = c("2014-03-01", "2017-01-01", "2019-07-01"),
-    "btceur" = c("2017-01-01", "2019-07-01")
+    "btceur" = c(              "2017-01-01", "2019-07-01")
 )
 
 #' Tabellen-Template mit `{tableContent}`, `{tableCaption` und `{tableLabel}` 
@@ -549,11 +558,11 @@ plotProfitableDifferencesOverTime <- function(
             )
     }
     
-    # Anzahl Datensätze zeichnen
+    # Grafik mit Anteilen zeichnen
     plot <- plot +
-        geom_line(aes(x=Time, y=nLargerThan1Pct/n, color="1\\,%", linetype="1\\,%"), size = .5) + 
-        geom_line(aes(x=Time, y=nLargerThan2Pct/n, color="2\\,%", linetype="2\\,%"), size = .5) + 
-        geom_line(aes(x=Time, y=nLargerThan5Pct/n, color="5\\,%", linetype="5\\,%"), size = .5) + 
+        geom_line(aes(x=Time, y=nLargerThan1Pct/n, color="1\\,%", linetype="1\\,%"), size = .5) +
+        geom_line(aes(x=Time, y=nLargerThan2Pct/n, color="2\\,%", linetype="2\\,%"), size = .5) +
+        geom_line(aes(x=Time, y=nLargerThan5Pct/n, color="5\\,%", linetype="5\\,%"), size = .5) +
         theme_minimal() +
         theme(
             plot.title.position = "plot",
@@ -569,9 +578,9 @@ plotProfitableDifferencesOverTime <- function(
         scale_y_continuous(
             labels = function(x) paste0(format.percentage(x, digits=0), "\\,%")
         ) +
-        # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
-        scale_color_highcontrast() +
-        # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
+        # Vor dem farbigen Hintergrund ist das "bright"-Schema am besten erkennbar.
+        # Resultierende kräftige Linienfarben: Blau, Rot, Grün
+        scale_color_bright() +
         scale_fill_pale() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
@@ -1131,7 +1140,7 @@ analysePriceDifferences <- function(
     p_profitable <- plotProfitableDifferencesOverTime(
         aggregatedPriceDifferences,
         breakpoints = breakpoints,
-        plotTitle = "Anteil der Preise mit einer Mindestabweichung von 1\\,%, 2\\,% und 5\\,%"
+        plotTitle = "Anteil der Arbitrage-Paare mit einer Abweichung von min. 1\\,%, 2\\,% und 5\\,%"
     )
     p_nrow <- plotNumDifferencesOverTime(
         aggregatedPriceDifferences,
@@ -1279,9 +1288,6 @@ analysePriceDifferences <- function(
 # und die Verarbeitung viel Zeit in Anspruch nimmt.
 if (FALSE) {
     
-    thresholds <- c(1L, 2L, 5L, 10L)
-    mainInterval <- 1L
-    
     # Achtung: Immenser Bedarf an Arbeitsspeicher!!! (> 20 GB)
     for (threshold in thresholds) {
         for (pair in currencyPairs) {
@@ -1291,8 +1297,8 @@ if (FALSE) {
                 breakpointsByCurrency[[pair]],
                 threshold,
                 plotTradingVolume = TRUE,
-                analysePartialIntervals = (threshold == mainInterval),
-                appendThresholdToTableLabel = (threshold != mainInterval)
+                analysePartialIntervals = (threshold == mainThreshold),
+                appendThresholdToTableLabel = (threshold != mainThreshold)
             )
             gc()
         }
