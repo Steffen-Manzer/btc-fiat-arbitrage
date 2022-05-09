@@ -15,6 +15,20 @@
 #' erste Ergebnisdatei und prüft nicht, ob weitere Ergebnisse vorliegen.
 #' Das Nachladen weiterer Ergebnisdateien müsste in Zukunft ergänzt werden, wenn
 #' einzelne Dateien die Schwelle von 100 Mio. Datensätzen überschreiten.
+#' 
+#' **Anmerkung:**
+#' Für die deckenden Hintergründe der hier erstellten Grafiken wird
+#' abweichend von den sonst genutzten Farben ein anderes Farbschema von Paul Tol
+#' (definiert im Paket `khroma`) verwendet, das besser als Hintergrund geeignet ist.
+#' 
+#' Im Panel
+#'   "Anteil der Arbitrage-Paare mit einer Abweichung von min. 1 %, 2 % und 5 %",
+#' erstellt in der Methode
+#'   `plotProfitableDifferencesOverTime`,
+#' wird zusätzlich für die Vordergrundfarben abweichend das Farbschema
+#'   **bright**
+#' aus dem selben Paket herangezogen.
+#' Darüber hinaus bleibt das Farbschema der Vordergrundfarben identisch.
 
 
 # Bibliotheken und externe Hilfsfunktionen laden ------------------------------
@@ -27,7 +41,8 @@ library("fst")
 library("data.table")
 library("lubridate") # floor_date
 library("ggplot2")
-library("khroma") # Farbschemata von Paul Tol
+library("ggthemes") # Einfaches Farbschema von Paul Tol
+library("khroma") # Weitere, detailliertere Farbschemata von Paul Tol
 library("gridExtra") # grid.arrange
 library("readr") # read_file, write_file
 library("stringr") # str_replace
@@ -234,6 +249,8 @@ calculateIntervals <- function(timeBoundaries, breakpoints)
 {
     breakpoints <- as.POSIXct(breakpoints)
     intervals <- data.table()
+    
+    # Erstes Intervall
     prevDate <- as.Date(min(timeBoundaries))
     for (i in seq_along(breakpoints)) {
         intervals <- rbindlist(list(intervals, data.table(
@@ -243,6 +260,8 @@ calculateIntervals <- function(timeBoundaries, breakpoints)
         )))
         prevDate <- as.Date(breakpoints[i])
     }
+    
+    # Letztes Intervall
     intervals <- rbindlist(list(intervals, data.table(
         From = c(prevDate),
         To = c(as.Date(max(timeBoundaries))),
@@ -876,10 +895,8 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
             axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
             axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))
         ) +
-        
-        # TODO Zurück zu _ptol() aus ggthemes?
-        scale_color_highcontrast() +
-        scale_fill_highcontrast() +
+        scale_color_ptol() +
+        scale_fill_ptol() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab)
@@ -1082,14 +1099,12 @@ summariseDatasetAsTable <- function(
 #' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
 #' @param threshold Zeitliche Differenz zweier Ticks in Sekunden,
 #'                  ab der das Tick-Paar verworfen wird.
-#' @param plotTradingVolume Plot des Handelsvolumens erzeugen
 #' @param analysePartialIntervals Grafiken und Tabellen für Teil-Intervalle erstellen
 #' @param appendThresholdToTableLabel Grenzwert an Tabellen-Label anhängen
 analysePriceDifferences <- function(
     pair,
     breakpoints,
     threshold,
-    plotTradingVolume = TRUE,
     analysePartialIntervals = TRUE,
     appendThresholdToTableLabel = FALSE
 )
@@ -1099,7 +1114,6 @@ analysePriceDifferences <- function(
         length(breakpoints) >= 1L,
         is.character(pair), length(pair) == 1L, nchar(pair) == 6L,
         is.numeric(threshold), length(threshold) == 1L,
-        is.logical(plotTradingVolume), length(plotTradingVolume) == 1L,
         is.logical(analysePartialIntervals), length(analysePartialIntervals) == 1L,
         is.logical(appendThresholdToTableLabel), length(appendThresholdToTableLabel) == 1L
     )
@@ -1148,51 +1162,36 @@ analysePriceDifferences <- function(
         timeHorizon = "",
         plotTitle = "Anzahl monatlicher Beobachtungen"
     )
-    if (plotTradingVolume) {
-        p_volume <- plotTotalVolumeOverTime(
-            pair,
-            aggregatedPriceDifferences$Time[c(1,nrow(aggregatedPriceDifferences))],
-            breakpoints = breakpoints,
-            plotTitle = "Handelsvolumen"
-        )
-    }
+    p_volume <- plotTotalVolumeOverTime(
+        pair,
+        aggregatedPriceDifferences$Time[c(1,nrow(aggregatedPriceDifferences))],
+        breakpoints = breakpoints,
+        plotTitle = "Handelsvolumen"
+    )
     
     # Als LaTeX-Dokument ausgeben
     source("Konfiguration/TikZ.R")
-    if (plotTradingVolume) {
-        tikz(
-            file = sprintf("%s/Uebersicht.tex", plotOutPath),
-            width = documentPageWidth,
-            height = 22 / 2.54,
-            sanitize = TRUE
-        )
-        grid.arrange(
-            p_diff, p_profitable, p_nrow, p_volume,
-            layout_matrix = rbind(c(1),c(2),c(3),c(4))
-        )
-    } else {
-        tikz(
-            file = sprintf("%s/Uebersicht.tex", plotOutPath),
-            width = documentPageWidth,
-            height = 16.5 / 2.54,
-            sanitize = TRUE
-        )
-        grid.arrange(
-            p_diff, p_profitable, p_nrow,
-            layout_matrix = rbind(c(1),c(2),c(3))
-        )
-    }
+    tikz(
+        file = sprintf("%s/Uebersicht_Gesamt.tex", plotOutPath),
+        width = documentPageWidth,
+        height = 22 / 2.54,
+        sanitize = TRUE
+    )
+    grid.arrange(
+        p_diff, p_profitable, p_nrow, p_volume,
+        layout_matrix = rbind(c(1),c(2),c(3),c(4))
+    )
     dev.off()
     
     # Boxplot
     plotPriceDifferencesBoxplotByExchangePair(
         comparablePrices,
-        latexOutPath = sprintf("%s/Uebersicht_Boxplot.tex", plotOutPath)
-        #plotTitle = "Lagemaße der Preisabweichungen nach Börsenpaar"
+        latexOutPath = sprintf("%s/Boxplot_Gesamt.tex", plotOutPath)
     )
     
     # Speicherdruck reduzieren
     rm(aggregatedPriceDifferences)
+    
     gc()
     
     # Beschreibende Statistiken
@@ -1203,12 +1202,12 @@ analysePriceDifferences <- function(
     }
     summariseDatasetAsTable(
         comparablePrices,
-        outFile = sprintf("%s/Uebersicht.tex", tableOutPath),
+        outFile = sprintf("%s/Uebersicht_Gesamt.tex", tableOutPath),
         caption = sprintf(
             "Zentrale Kenngrößen paarweiser Preisnotierungen für %s im Gesamtüberblick%s",
             format.currencyPair(pair), tableLabelAppendix
         ),
-        label = sprintf("Raumarbitrage_%s_Ueberblick_%ds", toupper(pair), threshold)
+        label = sprintf("Raumarbitrage_%s_%ds_Uebersicht_Gesamt", toupper(pair), threshold)
     )
     
     # Einzelne Segmente auswerten
@@ -1240,7 +1239,7 @@ analysePriceDifferences <- function(
             # Variante 1: Aggregierte Liniengrafik: Nur sinnvoll, wenn keine/wenige Lücken
             plotAggregatedPriceDifferencesOverTime(
                 aggregatedPriceDifferences,
-                latexOutPath = sprintf("%s/Abschnitt_%d.tex", plotOutPath, segment)
+                latexOutPath = sprintf("%s/Uebersicht_%d.tex", plotOutPath, segment)
             )
             
         } else {
@@ -1250,7 +1249,7 @@ analysePriceDifferences <- function(
             plotAggregatedPriceDifferencesOverTime(
                 comparablePrices[Time %between% segmentInterval],
                 plotType = "point",
-                latexOutPath = sprintf("%s/Abschnitt_%d.tex", plotOutPath, segment)
+                latexOutPath = sprintf("%s/Uebersicht_%d.tex", plotOutPath, segment)
             )
             
         }
@@ -1258,7 +1257,7 @@ analysePriceDifferences <- function(
         # Statistiken in Tabelle ausgeben
         summariseDatasetAsTable(
             comparablePrices[Time %between% segmentInterval],
-            outFile = sprintf("%s/Abschnitt_%d.tex", tableOutPath, segment),
+            outFile = sprintf("%s/Uebersicht_%d.tex", tableOutPath, segment),
             caption = sprintf(
                 "Zentrale Kenngrößen der Preisabweichungen für %s von %s bis %s",
                 format.currencyPair(pair),
@@ -1266,7 +1265,7 @@ analysePriceDifferences <- function(
                 format(segmentInterval[2], "%d.%m.%Y")
             ),
             label = sprintf(
-                "Raumarbitrage_%s_Ueberblick_%ds_%d",
+                "Raumarbitrage_%s_%ds_Uebersicht_%d",
                 toupper(pair), threshold, segment
             )
         )
@@ -1296,7 +1295,6 @@ if (FALSE) {
                 pair,
                 breakpointsByCurrency[[pair]],
                 threshold,
-                plotTradingVolume = TRUE,
                 analysePartialIntervals = (threshold == mainThreshold),
                 appendThresholdToTableLabel = (threshold != mainThreshold)
             )
