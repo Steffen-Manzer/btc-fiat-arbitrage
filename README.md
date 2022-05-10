@@ -5,17 +5,6 @@ von Bitcoin-Märkten sowie zwischen Bitcoin- und Devisenmärkten.
 
 ![Raumarbitrage BTC/USD](https://research.noecho.de/Logo@2x.png)
 
-
-## Versionshinweise
-
-- Die Auswertungsskripte wurden unter R 4.2.0 entwickelt.
-- Die in PHP geschriebenen Daten-Crawler wurden unter PHP 8.1 entwickelt.
-- Die in Python geschriebenen Daten-Crawler wurden unter Python 3.9 entwickelt.
-
-Abweichende Versionen können mit den vorliegenden Skripten ebenfalls funktionieren, wurden 
-jedoch nicht getestet.
-
-
 ## Ablauf der Analyse
 
 1. Daten erfassen: Skripte in `/Crawler/`
@@ -26,7 +15,6 @@ jedoch nicht getestet.
 4. Arbitrage-Paare (Intra- und Inter-Market-Analysen) berechnen und auswerten:
    - Intra-Market-Analysen in `/Raumarbitrage/`
    - Inter-Market-Analysen in `/Dreiecksarbitrage/`
-
 
 ## Verbindung zu LaTeX
 Für eine automatische Datenaktualisierung aus LaTeX heraus wird in einigen Skripten der
@@ -54,3 +42,11 @@ Bei Kompilierung der LaTeX-Dokumente (mit der Option -shell-escape) wird das ang
 R-Skript ausgeführt. Diese erstellen bzw. aktualisieren Statistiken in Textform,
 Abbildungen oder Tabellen, die in LaTeX eingebunden sind.
 
+## Versionshinweise
+
+- Die Auswertungsskripte wurden unter R 4.2.0 entwickelt.
+- Die in PHP geschriebenen Daten-Crawler wurden unter PHP 8.1 entwickelt.
+- Die in Python geschriebenen Daten-Crawler wurden unter Python 3.9 entwickelt.
+
+Abweichende Versionen können mit den vorliegenden Skripten ebenfalls funktionieren, wurden 
+jedoch nicht getestet.
