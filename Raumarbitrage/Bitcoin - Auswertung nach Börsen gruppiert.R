@@ -1238,8 +1238,7 @@ analysePriceDifferences <- function(
         segmentInterval <- c(intervals$From[segment], intervals$To[segment])
         
         printf(
-            "%s Datenpunkte im Intervall #%d von %s bis %s.\n",
-            format.number(nrow(comparablePrices[Time %between% segmentInterval])),
+            "Intervall #%d von %s bis %s.\n",
             segment,
             format(segmentInterval[1], "%d.%m.%Y"),
             format(segmentInterval[2], "%d.%m.%Y")
