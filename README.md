@@ -5,6 +5,7 @@ von Bitcoin-Märkten sowie zwischen Bitcoin- und Devisenmärkten.
 
 ![Raumarbitrage BTC/USD](https://research.noecho.de/Logo@2x.png)
 
+
 ## Versionshinweise
 
 - Die Auswertungsskripte wurden unter R 4.2.0 entwickelt.
@@ -14,12 +15,18 @@ von Bitcoin-Märkten sowie zwischen Bitcoin- und Devisenmärkten.
 Abweichende Versionen können mit den vorliegenden Skripten ebenfalls funktionieren, wurden 
 jedoch nicht getestet.
 
+
 ## Ablauf der Analyse
 
-1. Daten erfassen (Crawler)
-2. Daten einlesen und in einem effizienten Format (hier genutzt: `fst`) zwischenspeichern
-3. Preis-Paare (Intra- und Inter-Market-Analysen) berechnen
-4. Auswertungen erzeugen
+1. Daten erfassen: Skripte in `/Crawler/`
+2. GZip-komprimierte Rohdaten (i.d.R. .csv.gz, selten .zip) in `/Daten/` hinterlegen:
+   - Getrennt nach Datenquelle, Kurs und Monat
+   - Beispiel: `/Daten/bitfinex/btceur/bitfinex-tick-btceur-2021-12.csv.gz`
+3. Daten einlesen und in ein effizient lesbares Format (hier: `fst`) überführen: Skripte in `/Datenaufbereitung/`
+4. Arbitrage-Paare (Intra- und Inter-Market-Analysen) berechnen und auswerten:
+   - Intra-Market-Analysen in `/Raumarbitrage/`
+   - Inter-Market-Analysen in `/Dreiecksarbitrage/`
+
 
 ## Verbindung zu LaTeX
 Für eine automatische Datenaktualisierung aus LaTeX heraus wird in einigen Skripten der
