@@ -97,8 +97,7 @@ loadComparablePricesByCurrencyPair <- function(currencyPair, threshold)
 {
     # Parameter validieren
     stopifnot(
-        is.character(currencyPair), length(currencyPair) == 1L,
-        nchar(currencyPair) == 6L,
+        is.character(currencyPair), length(currencyPair) == 1L, nchar(currencyPair) == 6L,
         is.numeric(threshold), length(threshold) == 1L
     )
     
@@ -198,7 +197,6 @@ aggregatePriceDifferences <- function(
     floorUnits,
     interval = NULL
 ) {
-    
     # Parameter validieren
     stopifnot(
         is.data.table(comparablePrices), nrow(comparablePrices) > 0L,
@@ -247,6 +245,12 @@ aggregatePriceDifferences <- function(
 #' Intervalle mit den angegebenen Breakpoints berechnen
 calculateIntervals <- function(timeBoundaries, breakpoints)
 {
+    # Parameter validieren
+    stopifnot(
+        length(timeBoundaries) > 1L, (is.POSIXct(timeBoundaries) || is.Date(timeBoundaries)),
+        length(breakpoints) > 0L
+    )
+    
     breakpoints <- as.POSIXct(breakpoints)
     intervals <- data.table()
     
@@ -293,10 +297,12 @@ plotAggregatedPriceDifferencesOverTime <- function(
 ) {
     # Parameter validieren
     stopifnot(
-        is.data.table(priceDifferences), nrow(priceDifferences) > 0L,
-        !is.null(priceDifferences$Time),
+        is.data.table(priceDifferences), nrow(priceDifferences) > 0L, !is.null(priceDifferences$Time),
         is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L),
-        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L)
+        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L),
+        is.logical(removeGaps), length(removeGaps) == 1L,
+        is.character(plotType), length(plotType) == 1L,
+        is.null(plotTitle) || (is.character(plotTitle) && length(plotTitle) == 1L)
     )
     
     # Ausgabeoptionen
@@ -432,8 +438,9 @@ plotNumDifferencesOverTime <- function(
 ) {
     # Parameter validieren
     stopifnot(
-        is.data.table(priceDifferences), nrow(priceDifferences) > 0L,
-        !is.null(priceDifferences$Time)
+        is.data.table(priceDifferences), nrow(priceDifferences) > 0L, !is.null(priceDifferences$Time),
+        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L),
+        is.null(plotTitle) || (is.character(plotTitle) && length(plotTitle) == 1L)
     )
     
     # Einige Bezeichnungen und Variablen
@@ -528,7 +535,8 @@ plotProfitableDifferencesOverTime <- function(
     stopifnot(
         is.data.table(priceDifferences),
         is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L),
-        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L)
+        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L),
+        is.null(plotTitle) || (is.character(plotTitle) && length(plotTitle) == 1L)
     )
     
     # Einige Bezeichnungen und Variablen
@@ -641,8 +649,10 @@ plotTotalVolumeOverTime <- function(
 {
     stopifnot(
         is.character(pair), length(pair) == 1L,
-        length(timeframe) == 2L, is.POSIXct(timeframe)
-        # TODO Breakpoints (auch oben)
+        length(timeframe) == 2L, is.POSIXct(timeframe),
+        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L),
+        is.null(plotTitle) || (length(plotTitle) == 1L && is.character(plotTitle)),
+        length(aggregationLevel) == 1L, is.character(aggregationLevel)
     )
     
     plotXLab = "Datum"
@@ -752,7 +762,8 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
     # Parameter validieren
     stopifnot(
         is.data.table(comparablePrices), nrow(comparablePrices) > 0L,
-        is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L)
+        is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L),
+        is.null(plotTitle) || (length(plotTitle) == 1L && is.character(plotTitle))
     )
     
     # Ausgabeoptionen
@@ -930,6 +941,14 @@ summariseDatasetAsTable <- function(
     label = NULL
 )
 {
+    # Parameter validieren
+    stopifnot(
+        is.data.table(dataset), nrow(dataset) > 0L,
+        is.null(outFile) || (length(outFile) == 1L && is.character(outFile)),
+        is.null(caption) || (length(caption) == 1L && is.character(caption)),
+        is.null(label) || (length(label) == 1L && is.character(label))
+    )
+    
     printf("Erzeuge Überblickstabelle in %s ", basename(outFile))
     numRowsTotal <- nrow(dataset)
     
@@ -1219,8 +1238,9 @@ analysePriceDifferences <- function(
         segmentInterval <- c(intervals$From[segment], intervals$To[segment])
         
         printf(
-            "%s Datenpunkte im Intervall von %s bis %s.\n",
+            "%s Datenpunkte im Intervall #%d von %s bis %s.\n",
             format.number(nrow(comparablePrices[Time %between% segmentInterval])),
+            segment,
             format(segmentInterval[1], "%d.%m.%Y"),
             format(segmentInterval[2], "%d.%m.%Y")
         )
