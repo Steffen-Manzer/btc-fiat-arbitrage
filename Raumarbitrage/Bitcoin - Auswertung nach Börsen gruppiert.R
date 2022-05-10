@@ -384,6 +384,14 @@ plotAggregatedPriceDifferencesOverTime <- function(
         stop(sprintf("Unbekannter Plot-Typ: %s", plotType))
     }
     
+    # Datumsachse bestimmen
+    if (difftime(max(priceDifferences$Time), min(priceDifferences$Time), units = "weeks") > 2*52) {
+        date_breaks <- "1 year"
+        date_labels <- "%Y"
+    } else {
+        date_breaks <- expr(waiver())
+        date_labels <- "%m/%Y"
+    }
     
     plot <- plot + 
         theme_minimal() +
@@ -393,8 +401,12 @@ plotAggregatedPriceDifferencesOverTime <- function(
             axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
             axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
         ) +
-        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
         coord_cartesian(ylim=c(0, maxValue)) +
+        scale_x_datetime(
+            date_breaks = eval(date_breaks),
+            date_labels = date_labels,
+            expand = expansion(mult=c(.01, .05))
+        ) +
         scale_y_continuous(
             labels = function(x) paste(format.number(x * 100), "%")
         ) +
@@ -481,6 +493,15 @@ plotNumDifferencesOverTime <- function(
             )
     }
     
+    # Datumsachse bestimmen
+    if (difftime(max(priceDifferences$Time), min(priceDifferences$Time), units = "weeks") > 2*52) {
+        date_breaks <- "1 year"
+        date_labels <- "%Y"
+    } else {
+        date_breaks <- expr(waiver())
+        date_labels <- "%m/%Y"
+    }
+    
     # Anzahl Datensätze zeichnen
     plot <- plot +
         geom_line(
@@ -494,8 +515,12 @@ plotNumDifferencesOverTime <- function(
             axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
             axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
         ) +
-        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
         coord_cartesian(ylim=c(0, maxValue)) +
+        scale_x_datetime(
+            date_breaks = eval(date_breaks),
+            date_labels = date_labels,
+            expand = expansion(mult=c(.01, .05))
+        ) +
         scale_y_continuous(
             labels = function(x) paste(format.number(x / roundFac))
             #breaks = breaks_extended(4L)
@@ -583,6 +608,15 @@ plotProfitableDifferencesOverTime <- function(
             )
     }
     
+    # Datumsachse bestimmen
+    if (difftime(max(priceDifferences$Time), min(priceDifferences$Time), units = "weeks") > 2*52) {
+        date_breaks <- "1 year"
+        date_labels <- "%Y"
+    } else {
+        date_breaks <- expr(waiver())
+        date_labels <- "%m/%Y"
+    }
+    
     # Grafik mit Anteilen zeichnen
     plot <- plot +
         geom_line(aes(x=Time, y=nLargerThan1Pct/n, color="1\\,%", linetype="1\\,%"), size = .5) +
@@ -600,8 +634,12 @@ plotProfitableDifferencesOverTime <- function(
             legend.margin = margin(t=-5),
             legend.title = element_blank(),
         ) +
-        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
         coord_cartesian(ylim=c(0, maxValue)) +
+        scale_x_datetime(
+            date_breaks = eval(date_breaks),
+            date_labels = date_labels,
+            expand = expansion(mult=c(.01, .05))
+        ) +
         scale_y_continuous(
             labels = function(x) paste0(format.percentage(x, digits=0), "\\,%")
         ) +
@@ -657,6 +695,8 @@ plotTotalVolumeOverTime <- function(
         length(aggregationLevel) == 1L, is.character(aggregationLevel)
     )
     
+    timeframe <- as.POSIXct(timeframe, tz="UTC")
+    
     plotXLab = "Datum"
     plotYLab = "Volumen"
     plotTextPrefix <- "\\footnotesize "
@@ -688,7 +728,7 @@ plotTotalVolumeOverTime <- function(
         }
         
         dataset <- read_fst(sourceFile, columns=c("Time", "Amount"), as.data.table=TRUE)
-        dataset[,Time:=as.POSIXct(Time)]
+        dataset[,Time:=as.POSIXct(Time, tz="UTC")]
         result <- rbindlist(list(result, dataset[Time %between% timeframe]))
     }
     
@@ -744,6 +784,15 @@ plotTotalVolumeOverTime <- function(
             )
     }
     
+    # Datumsachse bestimmen
+    if (difftime(timeframe[2], timeframe[1], units = "weeks") > 2*52) {
+        date_breaks <- "1 year"
+        date_labels <- "%Y"
+    } else {
+        date_breaks <- expr(waiver())
+        date_labels <- "%m/%Y"
+    }
+    
     # Volumen zeichnen
     plot <- plot +
         geom_line(aes(x=Time, y=Amount, color="1", linetype="1"), size=.5) +
@@ -754,8 +803,12 @@ plotTotalVolumeOverTime <- function(
             axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
             axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
         ) +
-        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
         coord_cartesian(ylim=c(0, maxValue)) +
+        scale_x_datetime(
+            date_breaks = eval(date_breaks),
+            date_labels = date_labels,
+            expand = expansion(mult=c(.01, .05))
+        ) +
         scale_y_continuous(labels = function(x) format.number(x/roundFac)) +
         # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
         scale_color_highcontrast() +
@@ -1285,6 +1338,7 @@ analysePriceDifferences <- function(
             p_diff <- plotAggregatedPriceDifferencesOverTime(
                 aggregatedPriceDifferences,
                 plotTitle = "Preisabweichungen",
+                # Lücken nicht entfernen, da 1w-Daten, keine Tagesdaten
                 removeGaps = FALSE,
                 #latexOutPath = sprintf("%s/Preisabweichungen_%d.tex", plotOutPath, segment)
             )
