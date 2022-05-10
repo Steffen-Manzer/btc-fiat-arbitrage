@@ -661,28 +661,51 @@ plotTotalVolumeOverTime <- function(
     plotYLab = "Volumen"
     plotTextPrefix <- "\\footnotesize "
     
+    # Datenquelle auswählen
+    if (aggregationLevel == "monthly") {
+        aggregationSourceLevel <- "monthly"
+    } else if (
+        aggregationLevel == "weekly" ||
+        aggregationLevel == "daily"
+    ) {
+        aggregationSourceLevel <- "daily"
+    } else {
+        stop(sprintf("Ungültiges Aggregationslevel: %s",))
+    }
+    
     # Handelsvolumen berechnen
     exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
     result <- data.table()
     for (exchange in exchanges) {
-        sourceFile <- sprintf("Cache/%1$s/%2$s/%1$s-%2$s-%3$s", 
-                              tolower(exchange), tolower(pair), aggregationLevel)
+        sourceFile <- sprintf(
+            "Cache/%1$s/%2$s/%1$s-%2$s-%3$s.fst",
+            tolower(exchange), tolower(pair), aggregationSourceLevel
+        )
         
         if (!file.exists(sourceFile)) {
             # Dieses Paar wird an dieser Börse nicht gehandelt
             next
         }
         
-        dataset <- read_fst(
-            sourceFile, 
-            columns = c("Time", "Amount"), 
-            as.data.table = TRUE
-        )
-        dataset$Time <- as.POSIXct(dataset$Time, tz="UTC")
+        dataset <- read_fst(sourceFile, columns=c("Time", "Amount"), as.data.table=TRUE)
+        dataset[,Time:=as.POSIXct(Time)]
         result <- rbindlist(list(result, dataset[Time %between% timeframe]))
     }
     
-    result <- result[j=.(Amount=sum(Amount)), by=Time]
+    if (nrow(result) == 0L) {
+        stop(sprintf(
+            "Datensatz (Handelsvolumen) ist leer. Daten für Aggregationslevel %s vorhanden?",
+            aggregationLevel
+        ))
+    }
+    
+    if (aggregationLevel == "weekly") {
+        # Auf Wochendaten aggregieren
+        result <- result[j=.(Amount=sum(Amount)), by=.(Time=floor_date(Time, "1 week"))]
+    } else {
+        # Direkt zusammenfassen
+        result <- result[j=.(Amount=sum(Amount)), by=Time]
+    }
     setorder(result, Time)
     
     # Achseneigenschaften
@@ -1249,10 +1272,10 @@ analysePriceDifferences <- function(
             format(segmentInterval[2], "%d.%m.%Y")
         )
         
-        # Daten auf einen Tag aggregieren
+        # Daten auf eine Woche aggregieren (besser lesbar mit größeren Intervallen)
         aggregatedPriceDifferences <- aggregatePriceDifferences(
             comparablePrices,
-            floorUnits = "1 day",
+            floorUnits = "1 week",
             interval = segmentInterval
         )
         
@@ -1261,8 +1284,9 @@ analysePriceDifferences <- function(
             # Variante 1: Aggregierte Liniengrafik: Nur sinnvoll, wenn keine/wenige Lücken
             p_diff <- plotAggregatedPriceDifferencesOverTime(
                 aggregatedPriceDifferences,
-                plotTitle = "Preisabweichungen"
-                #latexOutPath = sprintf("%s/Uebersicht_%d.tex", plotOutPath, segment)
+                plotTitle = "Preisabweichungen",
+                removeGaps = FALSE,
+                #latexOutPath = sprintf("%s/Preisabweichungen_%d.tex", plotOutPath, segment)
             )
             
         } else {
