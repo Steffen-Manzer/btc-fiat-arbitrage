@@ -593,9 +593,11 @@ plotProfitableDifferencesOverTime <- function(
             plot.title.position = "plot",
             axis.title.x = element_text(margin=margin(t=5)),
             axis.title.y = element_text(margin=margin(r=10)),
-            legend.position = c(0.88, 0.58),
-            legend.background = element_rect(fill="white", size=0.2, linetype="solid"),
-            legend.margin = margin(0, 12, 5, 5),
+            # legend.position = c(0.88, 0.58),
+            # legend.background = element_rect(fill="white", size=0.2, linetype="solid"),
+            # legend.margin = margin(0, 12, 5, 5),
+            legend.position = "bottom",
+            legend.margin = margin(t=-5),
             legend.title = element_blank(),
         ) +
         scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
@@ -1159,7 +1161,7 @@ analysePriceDifferences <- function(
     
     # Monatsdaten berechnen
     aggregatedPriceDifferences <- aggregatePriceDifferences(comparablePrices, "1 month")
-    
+
     # Überblicksgrafik (Ganze Seite) erstellen
     p_diff <- plotAggregatedPriceDifferencesOverTime(
         aggregatedPriceDifferences,
@@ -1172,12 +1174,12 @@ analysePriceDifferences <- function(
     p_profitable <- plotProfitableDifferencesOverTime(
         aggregatedPriceDifferences,
         breakpoints = breakpoints,
-        plotTitle = "Anteil der Arbitrage-Paare mit einer Abweichung von min. 1\\,%, 2\\,% und 5\\,%"
+        plotTitle = "Arbitrage-Paare mit einer Abweichung von min. 1\\,%, 2\\,% und 5\\,%"
     )
     p_nrow <- plotNumDifferencesOverTime(
         aggregatedPriceDifferences,
         breakpoints = breakpoints,
-        plotTitle = "Anzahl monatlicher Beobachtungen"
+        plotTitle = "Anzahl Beobachtungen"
     )
     p_volume <- plotTotalVolumeOverTime(
         pair,
@@ -1185,7 +1187,7 @@ analysePriceDifferences <- function(
         breakpoints = breakpoints,
         plotTitle = "Handelsvolumen"
     )
-    
+
     # Als LaTeX-Dokument ausgeben
     source("Konfiguration/TikZ.R")
     tikz(
@@ -1196,21 +1198,24 @@ analysePriceDifferences <- function(
     )
     grid.arrange(
         p_diff, p_profitable, p_nrow, p_volume,
-        layout_matrix = rbind(c(1),c(2),c(3),c(4))
+        # Plot mit Label unter der Grafik etwas größer machen,
+        # damit die Höhe der Zeichenfläche etwa identisch ist
+        heights = c(1, 1.15, 1, 1),
+        ncol = 1L
     )
     dev.off()
-    
+
     # Boxplot
     plotPriceDifferencesBoxplotByExchangePair(
         comparablePrices,
         latexOutPath = sprintf("%s/Boxplot_Gesamt.tex", plotOutPath)
     )
-    
+
     # Speicherdruck reduzieren
     rm(aggregatedPriceDifferences)
-    
+
     gc()
-    
+
     # Beschreibende Statistiken
     if (appendThresholdToTableLabel) {
         tableLabelAppendix <- sprintf(" (Grenzwert %ds)", threshold)
@@ -1226,7 +1231,7 @@ analysePriceDifferences <- function(
         ),
         label = sprintf("Raumarbitrage_%s_%ds_Uebersicht_Gesamt", toupper(pair), threshold)
     )
-    
+
     # Einzelne Segmente auswerten
     if (!analysePartialIntervals) {
         return(invisible(NULL))
@@ -1268,18 +1273,18 @@ analysePriceDifferences <- function(
                 comparablePrices[Time %between% segmentInterval],
                 plotType = "point",
                 plotTitle = "Preisabweichungen"
-                #latexOutPath = sprintf("%s/Uebersicht_%d.tex", plotOutPath, segment)
+                #latexOutPath = sprintf("%s/Preisabweichungen_%d.tex", plotOutPath, segment)
             )
             
         }
         
         p_profitable <- plotProfitableDifferencesOverTime(
             aggregatedPriceDifferences,
-            plotTitle = "Anteil der Arbitrage-Paare mit einer Abweichung von min. 1\\,%, 2\\,% und 5\\,%"
+            plotTitle = "Arbitrage-Paare mit einer Abweichung von min. 1\\,%, 2\\,% und 5\\,%"
         )
         p_nrow <- plotNumDifferencesOverTime(
             aggregatedPriceDifferences,
-            plotTitle = "Anzahl täglicher Beobachtungen"
+            plotTitle = "Anzahl Beobachtungen"
         )
         p_volume <- plotTotalVolumeOverTime(
             pair,
@@ -1298,7 +1303,10 @@ analysePriceDifferences <- function(
         )
         grid.arrange(
             p_diff, p_profitable, p_nrow, p_volume,
-            layout_matrix = rbind(c(1),c(2),c(3),c(4))
+            # Plot mit Label unter der Grafik etwas größer machen,
+            # damit die Höhe der Zeichenfläche etwa identisch ist
+            heights = c(1, 1.15, 1, 1),
+            ncol = 1L
         )
         dev.off()
         
