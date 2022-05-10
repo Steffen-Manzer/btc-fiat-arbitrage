@@ -80,10 +80,26 @@
     lastResults$bitcoins <- lastVisible$bitcoins + (lastResults$bitcoins - lastVisible$bitcoins) / 2
     
     plot <- ggplot(results, aes(x=block, y=bitcoins)) +
-        geom_line(aes(y=bitcoinsMinusAttrition, color="Produktion abzüglich Verluste"), size = 1) +
-        geom_line(data=lastResults, aes(x=block, y=bitcoinsMinusAttrition, color="Produktion abzüglich Verluste"), linetype="dotted", size = 1) +
-        geom_line(aes(color="Insgesamt produziert"), size = 1) +
-        geom_line(data=lastResults, aes(x=block, y=bitcoins, color="Insgesamt produziert"), linetype="dotted", size = 1) +
+        geom_line(
+            aes(y=bitcoinsMinusAttrition, color="Produktion abzüglich Verluste", linetype="Produktion abzüglich Verluste"),
+            size = 1
+        ) +
+        geom_line(
+            data=lastResults,
+            aes(x=block, y=bitcoinsMinusAttrition, color="Produktion abzüglich Verluste"),
+            linetype="dotted",
+            size = 1
+        ) +
+        geom_line(
+            aes(color="Insgesamt produziert", linetype="Insgesamt produziert"),
+            size = 1
+        ) +
+        geom_line(
+            data=lastResults,
+            aes(x=block, y=bitcoins, color="Insgesamt produziert"),
+            linetype="dotted",
+            size = 1
+        ) +
         scale_x_continuous(
             breaks = results$block,
             minor_breaks = NULL,
@@ -108,7 +124,7 @@
             axis.title.y = element_text(size = 9, margin = margin(r = 14)),
         ) +
         scale_color_ptol() + 
-        labs(x="Blockhöhe", y="Bitcoin-Menge")
+        labs(x="Blockhöhe", y="Bitcoin-Menge", colour="Art", linetype="Art")
     
     print(plot)
     if (plotAsLaTeX) {
