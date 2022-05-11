@@ -1031,12 +1031,18 @@ summariseDatasetAsTable <- function(
     numRowsTotal <- nrow(dataset)
     
     # Tabellenzeile erzeugen
-    createRow <- function(numRows, dataSubset, end="\\\\\n\n") {
+    createRow <- function(numRows, dataSubset, lineEnd="\\\\\n\n") {
+        
+        # Fortschrittsanzeige
         printf(".")
+        
+        # Intervalldauer berechnen
         intervalLengthHours <- 
             difftime(last(dataSubset$Time), first(dataSubset$Time), units = "hours") |>
             round() |>
             as.double()
+        
+        # Anzahl Paare pro Stunde bzw. pro Tag
         numRowsPerHour <- numRows / intervalLengthHours
         numRowsPerDay <- numRows / (intervalLengthHours / 24)
         
@@ -1047,26 +1053,58 @@ summariseDatasetAsTable <- function(
         numRowsLargerThan_B <- length(which(dataSubset$PriceDifference >= .02))
         # > 5 %
         numRowsLargerThan_C <- length(which(dataSubset$PriceDifference >= .05))
-        s <- strrep(" ", 12) # Einrückung in der Ergebnisdatei
+        
+        # Einrückung in der Ergebnisdatei
+        s <- strrep(" ", 12)
+        
+        # Zeile erzeugen
         return(paste0(
-            sprintf("%s%% %s Datensätze pro Tag\n", s,
-                    format.numberWithFixedDigits(numRowsPerDay, digits=1L)),
-            sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
-                    format.number(numRows),
-                    format.percentage(numRows / numRowsTotal, 1L)),
-            sprintf("%s%s &\n", s, format.numberWithFixedDigits(numRowsPerHour, 1)),
-            sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
-                    format.number(numRowsLargerThan_A),
-                    format.percentage(numRowsLargerThan_A / numRows, 1L)),
-            sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
-                    format.number(numRowsLargerThan_B),
-                    format.percentage(numRowsLargerThan_B / numRows, 1L)),
-            sprintf("%s\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n", s, 
-                    format.number(numRowsLargerThan_C),
-                    format.percentage(numRowsLargerThan_C / numRows, 1L)),
-            sprintf("%s%s\\,\\%% ", s, 
-                    format.percentage(max(dataSubset$PriceDifference), 1)),
-            end
+            
+            # Anzahl Datensätze pro Tag (nur Kommentar)
+            s, sprintf(
+                "%% %s Datensätze pro Tag\n",
+                format.numberWithFixedDigits(numRowsPerDay, digits=1L)
+            ),
+            
+            # Anzahl Datensätze (absolut/relativ)
+            s, sprintf(
+                "\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n",
+                format.number(numRows),
+                format.percentage(numRows / numRowsTotal, 1L)
+            ),
+            
+            # Anzahl Datensätze pro Stunde
+            s, sprintf("%s &\n", format.numberWithFixedDigits(numRowsPerHour, 1)),
+            
+            # Anzahl/Anteil Datensätze > 1%
+            s, sprintf(
+                "\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n",
+                format.number(numRowsLargerThan_A),
+                format.percentage(numRowsLargerThan_A / numRows, 1L)
+            ),
+            
+            # Anzahl/Anteil Datensätze > 2%
+            s, sprintf(
+                "\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n",
+                format.number(numRowsLargerThan_B),
+                format.percentage(numRowsLargerThan_B / numRows, 1L)
+            ),
+            
+            # Anzahl/Anteil Datensätze > 5%
+            s, sprintf(
+                "\\makecell*[r]{%s\\\\(%s\\,\\%%)} &\n",
+                format.number(numRowsLargerThan_C),
+                format.percentage(numRowsLargerThan_C / numRows, 1L)
+            ),
+            
+            # Median
+            s, sprintf(
+                "%s\\,\\%% ",
+                format.percentage(median(dataSubset$PriceDifference), 1)
+            ),
+            
+            # Zeilenende
+            lineEnd
         ))
     }
     
@@ -1125,7 +1163,7 @@ summariseDatasetAsTable <- function(
                     "        \\rowcolor{white}\n",
                     vspace,
                     sprintf("        \\textbf{%s} &\n", exchangeNames[[i]]),
-                    createRow(length(allRows), dataset[allRows], end = "\n"),
+                    createRow(length(allRows), dataset[allRows], lineEnd = "\n"),
                     "        \\global\\rownum=2\\relax\\\\\n\n"
                 )
                 
@@ -1289,10 +1327,9 @@ analysePriceDifferences <- function(
 
     # Speicherdruck reduzieren
     rm(aggregatedPriceDifferences)
-
     gc()
-
-    # Beschreibende Statistiken
+    
+    # Tabellen
     if (appendThresholdToTableLabel) {
         tableLabelAppendix <- sprintf(" (Grenzwert %ds)", threshold)
     } else {
@@ -1388,6 +1425,12 @@ analysePriceDifferences <- function(
         )
         dev.off()
         
+        # Boxplot mit Daten des Intervalls
+        plotPriceDifferencesBoxplotByExchangePair(
+            comparablePrices[Time %between% segmentInterval],
+            latexOutPath = sprintf("%s/Boxplot_%d.tex", plotOutPath, segment)
+        )
+        
         # Statistiken in Tabelle ausgeben
         summariseDatasetAsTable(
             comparablePrices[Time %between% segmentInterval],
@@ -1402,12 +1445,6 @@ analysePriceDifferences <- function(
                 "Raumarbitrage_%s_%ds_Uebersicht_%d",
                 toupper(pair), threshold, segment
             )
-        )
-        
-        # Boxplot mit Daten des Intervalls
-        plotPriceDifferencesBoxplotByExchangePair(
-            comparablePrices[Time %between% segmentInterval],
-            latexOutPath = sprintf("%s/Boxplot_%d.tex", plotOutPath, segment)
         )
     }
     
@@ -1424,7 +1461,7 @@ if (FALSE) {
     # Achtung: Immenser Bedarf an Arbeitsspeicher! (> 20 GB)
     for (threshold in thresholds) {
         for (pair in currencyPairs) {
-            printf("\n\nBetrachte %s für den Schwellwert %ds...\n", pair, threshold)
+            printf("\n\n=== Betrachte %s für den Schwellwert %ds... ===\n", pair, threshold)
             analysePriceDifferences(
                 pair,
                 breakpointsByCurrency[[pair]],
