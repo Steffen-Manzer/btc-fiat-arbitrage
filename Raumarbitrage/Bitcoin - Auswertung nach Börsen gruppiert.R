@@ -24,7 +24,7 @@
 #' Im Panel
 #'   "Anteil der Arbitrage-Paare mit einer Abweichung von min. 1 %, 2 % und 5 %",
 #' erstellt in der Methode
-#'   `plotProfitableDifferencesOverTime`,
+#'   `plotProfitableDifferencesByTime`,
 #' wird zusätzlich für die Vordergrundfarben abweichend das Farbschema
 #'   **bright**
 #' aus dem selben Paket herangezogen.
@@ -287,7 +287,7 @@ calculateIntervals <- function(timeBoundaries, breakpoints)
 #' @param plotType Plot-Typ: line oder point
 #' @param plotTitle Überschrift (optional)
 #' @return Der Plot (unsichtbar)
-plotAggregatedPriceDifferencesOverTime <- function(
+plotAggregatedPriceDifferencesByTime <- function(
     priceDifferences,
     latexOutPath = NULL,
     breakpoints = NULL,
@@ -443,7 +443,7 @@ plotAggregatedPriceDifferencesOverTime <- function(
 #' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
 #' @param plotTitle Überschrift (optional)
 #' @return Der Plot (unsichtbar)
-plotNumDifferencesOverTime <- function(
+plotNumDifferencesByTime <- function(
     priceDifferences,
     breakpoints = NULL,
     plotTitle = NULL
@@ -549,7 +549,7 @@ plotNumDifferencesOverTime <- function(
 #' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
 #' @param plotTitle Überschrift (optional)
 #' @return Der Plot (unsichtbar)
-plotProfitableDifferencesOverTime <- function(
+plotProfitableDifferencesByTime <- function(
     priceDifferences,
     latexOutPath = NULL,
     breakpoints = NULL,
@@ -679,7 +679,7 @@ plotProfitableDifferencesOverTime <- function(
 #' @param pair Das gewünschte Kurspaar, bspw. btcusd
 #' @param timeframe POSIXct-Vektor der Länge 2 mit den Grenzen des Intervalls (inkl.)
 #' @return Plot
-plotTotalVolumeOverTime <- function(
+plotTradingVolumeByTime <- function(
     pair,
     timeframe,
     breakpoints = NULL,
@@ -1284,7 +1284,7 @@ analysePriceDifferences <- function(
     aggregatedPriceDifferences <- aggregatePriceDifferences(comparablePrices, "1 month")
 
     # Überblicksgrafik (Ganze Seite) erstellen
-    p_diff <- plotAggregatedPriceDifferencesOverTime(
+    p_diff <- plotAggregatedPriceDifferencesByTime(
         aggregatedPriceDifferences,
         breakpoints = breakpoints,
         # Lücken werden immer auf 1d-Basis entfernt.
@@ -1292,17 +1292,17 @@ analysePriceDifferences <- function(
         removeGaps = FALSE,
         plotTitle = "Preisabweichungen"
     )
-    p_profitable <- plotProfitableDifferencesOverTime(
+    p_profitable <- plotProfitableDifferencesByTime(
         aggregatedPriceDifferences,
         breakpoints = breakpoints,
         plotTitle = "Arbitrage-Paare mit einer Abweichung von min. 1\\,%, 2\\,% und 5\\,%"
     )
-    p_nrow <- plotNumDifferencesOverTime(
+    p_nrow <- plotNumDifferencesByTime(
         aggregatedPriceDifferences,
         breakpoints = breakpoints,
         plotTitle = "Anzahl Beobachtungen"
     )
-    p_volume <- plotTotalVolumeOverTime(
+    p_volume <- plotTradingVolumeByTime(
         pair,
         aggregatedPriceDifferences$Time[c(1,nrow(aggregatedPriceDifferences))],
         breakpoints = breakpoints,
@@ -1375,46 +1375,46 @@ analysePriceDifferences <- function(
             floorUnits = "1 week",
             interval = segmentInterval
         )
-        
+
         if (nrow(aggregatedPriceDifferences) > 50L) {
-            
+
             # Variante 1: Aggregierte Liniengrafik: Nur sinnvoll, wenn keine/wenige Lücken
-            p_diff <- plotAggregatedPriceDifferencesOverTime(
+            p_diff <- plotAggregatedPriceDifferencesByTime(
                 aggregatedPriceDifferences,
                 plotTitle = "Preisabweichungen",
                 # Lücken nicht entfernen, da 1w-Daten, keine Tagesdaten
                 removeGaps = FALSE,
                 #latexOutPath = sprintf("%s/Preisabweichungen_%d.tex", plotOutPath, segment)
             )
-            
+
         } else {
-            
+
             # Variante 2: Punktgrafik: Sinnvoll auch bei vielen Lücken, nicht aber
             # bei großen Datenmengen. Zeichnet *alle* Daten, nicht aggregierte Daten
-            p_diff <- plotAggregatedPriceDifferencesOverTime(
+            p_diff <- plotAggregatedPriceDifferencesByTime(
                 comparablePrices[Time %between% segmentInterval],
                 plotType = "point",
                 plotTitle = "Preisabweichungen"
                 #latexOutPath = sprintf("%s/Preisabweichungen_%d.tex", plotOutPath, segment)
             )
-            
+
         }
-        
-        p_profitable <- plotProfitableDifferencesOverTime(
+
+        p_profitable <- plotProfitableDifferencesByTime(
             aggregatedPriceDifferences,
             plotTitle = "Arbitrage-Paare mit einer Abweichung von min. 1\\,%, 2\\,% und 5\\,%"
         )
-        p_nrow <- plotNumDifferencesOverTime(
+        p_nrow <- plotNumDifferencesByTime(
             aggregatedPriceDifferences,
             plotTitle = "Anzahl Beobachtungen"
         )
-        p_volume <- plotTotalVolumeOverTime(
+        p_volume <- plotTradingVolumeByTime(
             pair,
             aggregatedPriceDifferences$Time[c(1,nrow(aggregatedPriceDifferences))],
             plotTitle = "Handelsvolumen",
             aggregationLevel = "weekly"
         )
-        
+
         # Als LaTeX-Dokument ausgeben
         source("Konfiguration/TikZ.R")
         tikz(
@@ -1431,7 +1431,7 @@ analysePriceDifferences <- function(
             ncol = 1L
         )
         dev.off()
-        
+
         # Boxplot mit Daten des Intervalls
         plotPriceDifferencesBoxplotByExchangePair(
             comparablePrices[Time %between% segmentInterval],
