@@ -78,7 +78,7 @@ breakpointsByCurrency <- list(
     "btceur" = c(              "2017-01-01", "2019-07-01")
 )
 
-#' Tabellen-Template mit `{tableContent}`, `{tableCaption` und `{tableLabel}` 
+#' Tabellen-Template mit `{tableContent}`, `{tableCaption}` und `{tableLabel}` 
 #' als Platzhalter
 summaryTableTemplateFile <- 
     sprintf("%s/Tabellen/Templates/Raumarbitrage_Uebersicht_nach_Boerse.tex",
@@ -1011,11 +1011,13 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
 #'                             oder aus `aggregatePriceDifferences`
 #' @param outFile Zieldatei
 #' @param caption Tabellentitel
+#' @param indexCaption Tabellentitel für Tabellenverzeichnis
 #' @param label Tabellenlabel
 summariseDatasetAsTable <- function(
     dataset,
     outFile = NULL,
     caption = NULL,
+    indexCaption = NULL,
     label = NULL
 )
 {
@@ -1024,8 +1026,12 @@ summariseDatasetAsTable <- function(
         is.data.table(dataset), nrow(dataset) > 0L,
         is.null(outFile) || (length(outFile) == 1L && is.character(outFile)),
         is.null(caption) || (length(caption) == 1L && is.character(caption)),
+        is.null(indexCaption) || (length(indexCaption) == 1L && is.character(indexCaption)),
         is.null(label) || (length(label) == 1L && is.character(label))
     )
+    if (is.null(indexCaption) && !is.null(caption)) {
+        indexCaption <- caption
+    }
     
     printf("Erzeuge Überblickstabelle in %s ", basename(outFile))
     numRowsTotal <- nrow(dataset)
@@ -1214,6 +1220,7 @@ summariseDatasetAsTable <- function(
         read_file() |>
         str_replace(coll("{tablePosition}"), tablePosition) |>
         str_replace(coll("{tableCaption}"), caption) |>
+        str_replace(coll("{tableIndexCaption}"), indexCaption) |>
         str_replace(coll("{tableContent}"), tableContent) |>
         str_replace(coll("{tableLabel}"), label) |>
         write_file(outFile)
@@ -1339,7 +1346,7 @@ analysePriceDifferences <- function(
         comparablePrices,
         outFile = sprintf("%s/Uebersicht_Gesamt.tex", tableOutPath),
         caption = sprintf(
-            "Zentrale Kenngrößen paarweiser Preisnotierungen für %s im Gesamtüberblick%s",
+            "Kenngrößen der Preisabweichungen von %s%s",
             format.currencyPair(pair), tableLabelAppendix
         ),
         label = sprintf("Raumarbitrage_%s_%ds_Uebersicht_Gesamt", toupper(pair), threshold)
@@ -1436,10 +1443,16 @@ analysePriceDifferences <- function(
             comparablePrices[Time %between% segmentInterval],
             outFile = sprintf("%s/Uebersicht_%d.tex", tableOutPath, segment),
             caption = sprintf(
-                "Zentrale Kenngrößen der Preisabweichungen für %s von %s bis %s",
+                "Kenngrößen der Preisabweichungen von %s (%s bis %s)",
                 format.currencyPair(pair),
-                format(segmentInterval[1], "%d.%m.%Y"),
-                format(segmentInterval[2], "%d.%m.%Y")
+                format(segmentInterval[1], "%B~%Y"),
+                format(segmentInterval[2], "%B~%Y")
+            ),
+            indexCaption = sprintf(
+                "Kenngrößen der Preisabweichungen von %s (%s -- %s)",
+                format.currencyPair(pair),
+                format(segmentInterval[1], "%m/%Y"),
+                format(segmentInterval[2], "%m/%Y")
             ),
             label = sprintf(
                 "Raumarbitrage_%s_%ds_Uebersicht_%d",
