@@ -268,11 +268,7 @@ print(
             date_labels="%Y",
             expand = expansion(mult=c(.01, .03))
         ) +
-        scale_y_continuous(
-            #breaks=seq(from=0, to=20, by=2),
-            #limits=c(0, 20.00001)
-            labels = function(x) { x*1e4 }
-        ) +
+        scale_y_continuous(labels=function(x) { x*1e4 }) +
         scale_color_ptol() + 
         labs(
             x="\\footnotesize Datum",
@@ -283,31 +279,4 @@ print(
 if (plotAsLaTeX) {
     dev.off()
 }
-
-# Preisunterschiede als Tages-Median: Nicht genutzt
-# print(
-#     ggplot(median_per_day, aes(x=Time)) +
-#         geom_line(aes(y=MedianDifference * 1e4, color="Difference"), size=1) +
-#         theme_minimal() +
-#         theme(
-#             legend.position = "none",
-#             axis.title.x = element_text(margin=margin(t=10, r=0, b=0, l=0)),
-#             axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
-#         ) +
-#         scale_x_datetime(
-#             date_breaks="1 year",
-#             #date_minor_breaks="1 sec",
-#             date_labels="%Y",
-#             expand = expansion(mult=c(.01, .03))
-#         ) +
-#         scale_y_continuous(
-#             #breaks=seq(from=0, to=20, by=2),
-#             #limits=c(0, 20.00001)
-#         ) +
-#         scale_color_ptol() + 
-#         labs(
-#             x="\\footnotesize Datum",
-#             y="\\footnotesize Median des Preisunterschiedes in Pip [USD]"
-#         )
-# )
 
