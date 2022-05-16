@@ -1003,51 +1003,46 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
 #' Zeichne Verteilung der Beobachtungen als Histogramm
 #' 
 #' @param priceDifferences `data.table` mit den aggr. Preisen der verschiedenen Börsen
-#' @param roundToNumberOfDigits Auf wieviele Nachkommastellen soll gerundet werden?
-#'                              Achtung: Mehr als 3 ergibt einen sehr unübersichtlichen Plot!
-#' @param cutoffThreshold Bis zu welchem Preisunterschied (inklusive)
-#'                        soll das Histogramm dargestellt werden?
+#' @param latexOutPath Ausgabepfad als LaTeX-Datei
 #' @param plotTitle Optionaler Plot-Titel
 #' @return Der Plot (unsichtbar)
 plotDistribution <- function(
     priceDifferences,
-    roundToNumberOfDigits = 3L,
-    cutoffThreshold = 0.05,
+    latexOutPath = NULL,
     plotTitle = NULL
 ) {
     # Parameter validieren
     stopifnot(
         is.data.table(priceDifferences), nrow(priceDifferences) > 0L,
         !is.null(priceDifferences$PriceDifference),
-        is.numeric(roundToNumberOfDigits), length(roundToNumberOfDigits) == 1L,
-        is.numeric(cutoffThreshold), length(cutoffThreshold) == 1L,
+        is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L),
         is.null(plotTitle) || (length(plotTitle) == 1L && is.character(plotTitle))
     )
     
     # Berechnung der Verteilung
+    floorToNumberOfDigits <- 4L
+    cutoffThreshold <- 0.01
+    
     distribution <- priceDifferences[
         # Nur Preisunterschiede unterhalb des Grenzwertes anzeigen
         i = PriceDifference <= cutoffThreshold,
         # Häufigkeit zählen
         j = .(n = .N),
         # Gruppieren nach dem gerundeten Wert
-        by = .(PriceDifference = round(PriceDifference, roundToNumberOfDigits))
+        by = .(
+            PriceDifference = floor(
+                PriceDifference * 10^floorToNumberOfDigits
+            ) / 10^floorToNumberOfDigits
+        )
     ]
     
     # Sortierung nur optional für schönere Darstellung im Terminal etc.
     #setorder(distribution, PriceDifference)
     
-    # distribution:
     #      PriceDifference        n
     # 1:             0.000 53159730
     # 2:             0.001 43115724
-    # 3:             0.002 15686987
-    # 4:             0.003  8206759
-    # 5:             0.004  4799702
-    # ---                         
-    # 684:           1.550        1
-    # 685:           1.652        1
-    # 686:           1.728        1
+    # ---
     # 687:           1.960        1
     # 688:           9.319        1
     
@@ -1067,8 +1062,9 @@ plotDistribution <- function(
     }
     
     # Histogramm zeichnen
+    barWidth <- 0.75
     plot <- ggplot(distribution) +
-        geom_col(aes(PriceDifference, n)) +
+        geom_col(aes(PriceDifference, n), width=1/nrow(distribution)/100*barWidth) +
         theme_minimal() +
         theme(
             legend.position = "none",
@@ -1078,9 +1074,8 @@ plotDistribution <- function(
         ) +
         #coord_cartesian(ylim=c(0, maxValue)) +
         scale_x_continuous(
-            labels = function(x) { paste0(format.percentage(x, 0), "\\,\\%") },
-            # TODO Automatisch - nur passend für Preisunterschiede bis 5%
-            breaks = c(0,.01,.02,.03,.04,.05),
+            labels = function(x) { paste0(format.percentage(x, 1L), "\\,\\%") },
+            breaks = seq(from=0, to=0.01, by=0.002),
             expand = expansion(mult=c(.01, .03))
         ) +
         scale_y_continuous(labels=function(x) format.number(x / roundFac)) +
@@ -1095,7 +1090,23 @@ plotDistribution <- function(
         plot <- plot + ggtitle(paste0("\\small ", plotTitle))
     }
     
-    return(plot)
+    # Ausgabeoptionen
+    if (!is.null(latexOutPath)) {
+        source("Konfiguration/TikZ.R")
+        printf.debug("Ausgabe als LaTeX in Datei %s\n", basename(latexOutPath))
+        tikz(
+            file = latexOutPath,
+            width = documentPageWidth,
+            height = 6 / 2.54, # cm -> Zoll
+            sanitize = TRUE
+        )
+        print(plot)
+        dev.off()
+        
+        return(invisible(plot))
+    } else {
+        return(plot)
+    }
 }
 
 
@@ -1426,6 +1437,12 @@ analysePriceDifferences <- function(
         comparablePrices,
         latexOutPath = sprintf("%s/Boxplot_Gesamt.tex", plotOutPath)
     )
+    
+    # Verteilungs-Histogramm
+    plotDistribution(
+        comparablePrices,
+        latexOutPath = sprintf("%s/Histogramm_Gesamt.tex", plotOutPath)
+    )
 
     # Speicherdruck reduzieren
     rm(aggregatedPriceDifferences)
@@ -1531,6 +1548,12 @@ analysePriceDifferences <- function(
         plotPriceDifferencesBoxplotByExchangePair(
             comparablePrices[Time %between% segmentInterval],
             latexOutPath = sprintf("%s/Boxplot_%d.tex", plotOutPath, segment)
+        )
+        
+        # Verteilungs-Histogramm mit Daten des Intervalls
+        plotDistribution(
+            comparablePrices,
+            latexOutPath = sprintf("%s/Histogramm_%d.tex", plotOutPath, segment)
         )
         
         # Statistiken in Tabelle ausgeben
