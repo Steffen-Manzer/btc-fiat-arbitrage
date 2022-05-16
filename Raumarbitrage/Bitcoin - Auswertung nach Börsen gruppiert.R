@@ -192,8 +192,7 @@ aggregatePriceDifferences <- function(
     stopifnot(
         is.data.table(comparablePrices), nrow(comparablePrices) > 0L,
         !is.null(comparablePrices$Time), !is.null(comparablePrices$PriceDifference),
-        is.character(floorUnits), length(floorUnits) == 1L,
-        is.null(interval) || length(interval) == 2L
+        is.character(floorUnits), length(floorUnits) == 1L
     )
     
     tic()
@@ -257,6 +256,9 @@ calculateIntervals <- function(timeBoundaries, breakpoints)
         To = c(as.Date(max(timeBoundaries))),
         Set = c(as.character(i+1))
     )))
+    
+    intervals$From <- as.POSIXct(intervals$From)
+    intervals$To <- as.POSIXct(intervals$To)
     
     return(intervals)
 }
@@ -1007,7 +1009,7 @@ plotDistribution <- function(
     
     # Berechnung der Verteilung
     floorToNumberOfDigits <- 4L
-    cutoffThreshold <- 0.01
+    cutoffThreshold <- 0.02
     
     distribution <- priceDifferences[
         # Nur Preisunterschiede unterhalb des Grenzwertes anzeigen
@@ -1048,9 +1050,13 @@ plotDistribution <- function(
     }
     
     # Histogramm zeichnen
-    barWidth <- 0.75
+    barWidth <- 0.75 # Standardwert: 90% = 0.9
     plot <- ggplot(distribution) +
-        geom_col(aes(PriceDifference, n), width=1/nrow(distribution)/100*barWidth) +
+        geom_col(
+            aes(x = PriceDifference, y = n, fill = "Häufigkeit"),
+            width = 1 / nrow(distribution) / 100 * barWidth,
+            show.legend = FALSE
+        ) +
         theme_minimal() +
         theme(
             legend.position = "none",
@@ -1061,7 +1067,7 @@ plotDistribution <- function(
         #coord_cartesian(ylim=c(0, maxValue)) +
         scale_x_continuous(
             labels = function(x) { paste0(format.percentage(x, 1L), "\\,\\%") },
-            breaks = seq(from=0, to=0.01, by=0.002),
+            breaks = seq(from=0, to=0.02, by=0.002),
             expand = expansion(mult=c(.01, .03))
         ) +
         scale_y_continuous(labels=function(x) format.number(x / roundFac)) +
@@ -1083,7 +1089,7 @@ plotDistribution <- function(
         tikz(
             file = latexOutPath,
             width = documentPageWidth,
-            height = 6 / 2.54, # cm -> Zoll
+            height = 5 / 2.54, # cm -> Zoll
             sanitize = FALSE
         )
         print(plot)
@@ -1104,13 +1110,15 @@ plotDistribution <- function(
 #' @param outFile Zieldatei
 #' @param caption Tabellentitel
 #' @param indexCaption Tabellentitel für Tabellenverzeichnis
+#' @param forceTablePosition Bestimmte Tabellenposition erzwingen
 #' @param label Tabellenlabel
 summariseDatasetAsTable <- function(
     dataset,
     outFile = NULL,
     caption = NULL,
     indexCaption = NULL,
-    label = NULL
+    label = NULL,
+    forceTablePosition = NULL
 )
 {
     # Parameter validieren
@@ -1119,7 +1127,9 @@ summariseDatasetAsTable <- function(
         is.null(outFile) || (length(outFile) == 1L && is.character(outFile)),
         is.null(caption) || (length(caption) == 1L && is.character(caption)),
         is.null(indexCaption) || (length(indexCaption) == 1L && is.character(indexCaption)),
-        is.null(label) || (length(label) == 1L && is.character(label))
+        is.null(label) || (length(label) == 1L && is.character(label)),
+        is.null(forceTablePosition) ||
+            (length(forceTablePosition) == 1L && is.character(forceTablePosition))
     )
     if (is.null(indexCaption) && !is.null(caption)) {
         indexCaption <- caption
@@ -1217,7 +1227,9 @@ summariseDatasetAsTable <- function(
     )
     
     
-    if (length(exchangePairsInThisSubset) < 4L) {
+    if (!is.null(forceTablePosition)) {
+        tablePosition <- forceTablePosition
+    } else if (length(exchangePairsInThisSubset) < 4L) {
         # Tabelle kann im Fließtext unterkommen
         tablePosition <- "tbh"
     } else {
@@ -1334,12 +1346,16 @@ summariseDatasetAsTable <- function(
 #'                  ab der das Tick-Paar verworfen wird.
 #' @param analysePartialIntervals Grafiken und Tabellen für Teil-Intervalle erstellen
 #' @param appendThresholdToTableLabel Grenzwert an Tabellen-Label anhängen
+#' @param overviewImageHeight Höhe der Überblicksgrafik überschreiben
+#' @param forceTablePosition Bestimmte Tabellenposition erzwingen
 analysePriceDifferences <- function(
     pair,
     breakpoints,
     threshold,
     analysePartialIntervals = TRUE,
-    appendThresholdToTableLabel = FALSE
+    appendThresholdToTableLabel = FALSE,
+    overviewImageHeight = NULL,
+    forceTablePosition = NULL
 )
 {
     # Parameter validieren
@@ -1348,7 +1364,8 @@ analysePriceDifferences <- function(
         is.character(pair), length(pair) == 1L, nchar(pair) == 6L,
         is.numeric(threshold), length(threshold) == 1L,
         is.logical(analysePartialIntervals), length(analysePartialIntervals) == 1L,
-        is.logical(appendThresholdToTableLabel), length(appendThresholdToTableLabel) == 1L
+        is.logical(appendThresholdToTableLabel), length(appendThresholdToTableLabel) == 1L,
+        (is.null(overviewImageHeight) || is.numeric(overviewImageHeight))
     )
     
     # Vorherige Berechnungen ggf. aus dem Speicher bereinigen
@@ -1402,11 +1419,15 @@ analysePriceDifferences <- function(
     )
 
     # Als LaTeX-Dokument ausgeben
+    if (is.null(overviewImageHeight)) {
+        overviewImageHeight <- 22L
+    }
+    
     source("Konfiguration/TikZ.R")
     tikz(
         file = sprintf("%s/Uebersicht_Gesamt.tex", plotOutPath),
         width = documentPageWidth,
-        height = 22 / 2.54,
+        height = overviewImageHeight / 2.54,
         sanitize = TRUE
     )
     grid.arrange(
@@ -1447,7 +1468,8 @@ analysePriceDifferences <- function(
             "Kenngrößen der Preisabweichungen von %s%s",
             format.currencyPair(pair), tableLabelAppendix
         ),
-        label = sprintf("Raumarbitrage_%s_%ds_Uebersicht_Gesamt", toupper(pair), threshold)
+        label = sprintf("Raumarbitrage_%s_%ds_Uebersicht_Gesamt", toupper(pair), threshold),
+        forceTablePosition = forceTablePosition
     )
 
     # Einzelne Segmente auswerten
@@ -1496,7 +1518,7 @@ analysePriceDifferences <- function(
                 plotTitle = "Preisabweichungen"
                 #latexOutPath = sprintf("%s/Preisabweichungen_%d.tex", plotOutPath, segment)
             )
-
+            
         }
 
         p_profitable <- plotProfitableDifferencesByTime(
@@ -1562,7 +1584,8 @@ analysePriceDifferences <- function(
             label = sprintf(
                 "Raumarbitrage_%s_%ds_Uebersicht_%d",
                 toupper(pair), threshold, segment
-            )
+            ),
+            forceTablePosition = forceTablePosition
         )
     }
     
@@ -1580,12 +1603,23 @@ if (FALSE) {
     for (threshold in thresholds) {
         for (pair in currencyPairs) {
             printf("\n\n=== Betrachte %s für den Schwellwert %ds... ===\n", pair, threshold)
+            
+            if (threshold != mainThreshold) {
+                overviewImageHeight <- 20L
+                forceTablePosition <- "H"
+            } else {
+                overviewImageHeight <- NULL
+                forceTablePosition <- NULL
+            }
+            
             analysePriceDifferences(
                 pair,
                 breakpointsByCurrency[[pair]],
                 threshold,
                 analysePartialIntervals = (threshold == mainThreshold),
-                appendThresholdToTableLabel = (threshold != mainThreshold)
+                appendThresholdToTableLabel = (threshold != mainThreshold),
+                overviewImageHeight = overviewImageHeight,
+                forceTablePosition = forceTablePosition
             )
             gc()
         }
