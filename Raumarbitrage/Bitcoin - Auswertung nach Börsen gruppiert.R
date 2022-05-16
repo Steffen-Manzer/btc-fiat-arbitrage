@@ -271,8 +271,6 @@ calculateIntervals <- function(timeBoundaries, breakpoints)
         To = c(as.Date(max(timeBoundaries))),
         Set = c(as.character(i+1))
     )))
-    intervals$From <- as.POSIXct(intervals$From)
-    intervals$To <- as.POSIXct(intervals$To)
     
     return(intervals)
 }
@@ -695,8 +693,6 @@ plotTradingVolumeByTime <- function(
         length(aggregationLevel) == 1L, is.character(aggregationLevel)
     )
     
-    timeframe <- as.POSIXct(timeframe, tz="UTC")
-    
     plotXLab = "Datum"
     plotYLab = "Volumen"
     plotTextPrefix <- "\\footnotesize "
@@ -728,7 +724,6 @@ plotTradingVolumeByTime <- function(
         }
         
         dataset <- read_fst(sourceFile, columns=c("Time", "Amount"), as.data.table=TRUE)
-        dataset[,Time:=as.POSIXct(Time, tz="UTC")]
         result <- rbindlist(list(result, dataset[Time %between% timeframe]))
     }
     
@@ -1057,7 +1052,7 @@ plotDistribution <- function(
     # 688:           9.319        1
     
     # Einige Bezeichnungen und Variablen
-    plotXLab <- "Preisunterschied"
+    plotXLab <- "Preisabweichung"
     plotYLab <- "Beobachtungen"
     plotTextPrefix <- "\\footnotesize "
     maxValue <- max(distribution$n)
