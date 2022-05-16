@@ -173,14 +173,6 @@ loadComparablePricesByCurrencyPair <- function(currencyPair, threshold)
         format(first(combinedPriceDifferences$Time), "%d.%m.%Y"),
         format(last(combinedPriceDifferences$Time), "%d.%m.%Y")
     )
-    maxDifference <- combinedPriceDifferences[which.max(PriceDifference)]
-    with(maxDifference, printf(
-        "Höchstwert: %s (%s <-> %s) am %s\n",
-        format.number(PriceDifference),
-        format.money(PriceLow),
-        format.money(PriceHigh),
-        formatPOSIXctWithFractionalSeconds(Time, "%d.%m.%Y %H:%M:%OS")
-    ))
     
     return(combinedPriceDifferences)
 }
@@ -194,8 +186,7 @@ loadComparablePricesByCurrencyPair <- function(currencyPair, threshold)
 #' @return `data.table` mit Q1, Median, Mean, Q3, Max
 aggregatePriceDifferences <- function(
     comparablePrices,
-    floorUnits,
-    interval = NULL
+    floorUnits
 ) {
     # Parameter validieren
     stopifnot(
@@ -206,11 +197,6 @@ aggregatePriceDifferences <- function(
     )
     
     tic()
-    
-    # Zeitraum eingrenzen
-    if (!is.null(interval)) {
-        comparablePrices <- comparablePrices[Time %between% interval]
-    }
     
     # Aggregation aller gefundener Tauschmöglichkeiten
     priceDifferences <- comparablePrices[
@@ -1098,7 +1084,7 @@ plotDistribution <- function(
             file = latexOutPath,
             width = documentPageWidth,
             height = 6 / 2.54, # cm -> Zoll
-            sanitize = TRUE
+            sanitize = FALSE
         )
         print(plot)
         dev.off()
@@ -1444,7 +1430,7 @@ analysePriceDifferences <- function(
         latexOutPath = sprintf("%s/Histogramm_Gesamt.tex", plotOutPath)
     )
 
-    # Speicherdruck reduzieren
+    # Speicher freigeben
     rm(aggregatedPriceDifferences)
     gc()
     
@@ -1473,9 +1459,11 @@ analysePriceDifferences <- function(
     intervals <- calculateIntervals(comparablePrices$Time, breakpoints)
     for (segment in seq_len(nrow(intervals))) {
         segmentInterval <- c(intervals$From[segment], intervals$To[segment])
+        comparablePricesSubset <- comparablePrices[Time %between% segmentInterval]
         
         printf(
-            "Intervall #%d von %s bis %s.\n",
+            "%s Datensätze im Intervall #%d von %s bis %s.\n",
+            format.number(nrow(comparablePricesSubset)),
             segment,
             format(segmentInterval[1], "%d.%m.%Y"),
             format(segmentInterval[2], "%d.%m.%Y")
@@ -1483,9 +1471,8 @@ analysePriceDifferences <- function(
         
         # Daten auf eine Woche aggregieren (besser lesbar mit größeren Intervallen)
         aggregatedPriceDifferences <- aggregatePriceDifferences(
-            comparablePrices,
-            floorUnits = "1 week",
-            interval = segmentInterval
+            comparablePricesSubset,
+            floorUnits = "1 week"
         )
 
         if (nrow(aggregatedPriceDifferences) > 50L) {
@@ -1504,7 +1491,7 @@ analysePriceDifferences <- function(
             # Variante 2: Punktgrafik: Sinnvoll auch bei vielen Lücken, nicht aber
             # bei großen Datenmengen. Zeichnet *alle* Daten, nicht aggregierte Daten
             p_diff <- plotAggregatedPriceDifferencesByTime(
-                comparablePrices[Time %between% segmentInterval],
+                comparablePricesSubset,
                 plotType = "point",
                 plotTitle = "Preisabweichungen"
                 #latexOutPath = sprintf("%s/Preisabweichungen_%d.tex", plotOutPath, segment)
@@ -1546,19 +1533,19 @@ analysePriceDifferences <- function(
 
         # Boxplot mit Daten des Intervalls
         plotPriceDifferencesBoxplotByExchangePair(
-            comparablePrices[Time %between% segmentInterval],
+            comparablePricesSubset,
             latexOutPath = sprintf("%s/Boxplot_%d.tex", plotOutPath, segment)
         )
         
         # Verteilungs-Histogramm mit Daten des Intervalls
         plotDistribution(
-            comparablePrices,
+            comparablePricesSubset,
             latexOutPath = sprintf("%s/Histogramm_%d.tex", plotOutPath, segment)
         )
         
         # Statistiken in Tabelle ausgeben
         summariseDatasetAsTable(
-            comparablePrices[Time %between% segmentInterval],
+            comparablePricesSubset,
             outFile = sprintf("%s/Uebersicht_%d.tex", tableOutPath, segment),
             caption = sprintf(
                 "Kenngrößen der Preisabweichungen von %s (%s bis %s)",
