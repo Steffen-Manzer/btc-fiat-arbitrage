@@ -78,6 +78,18 @@ breakpointsByCurrency <- list(
     "btceur" = c(              "2017-01-01", "2019-07-01")
 )
 
+# Spezielle Plot-Optionen für einzelne Intervalle
+plotConfiguration <- list(
+    # Plot: Anteil Abweichungen > 1/2/5%
+    "profitableDifferencesByTime" = list(
+        # Paar: BTC/USD
+        "btcusd" = list(
+            # Segment 3: Legende unter der Grafik anzeigen
+            "3" = TRUE
+        )
+    )
+)
+
 #' Tabellen-Template mit `{tableContent}`, `{tableCaption}` und `{tableLabel}` 
 #' als Platzhalter
 summaryTableTemplateFile <- 
@@ -534,12 +546,14 @@ plotNumDifferencesByTime <- function(
 #' @param latexOutPath Zieldatei
 #' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
 #' @param plotTitle Überschrift (optional)
+#' @param legendBelowGraph Position der Legende (optional)
 #' @return Der Plot (unsichtbar)
 plotProfitableDifferencesByTime <- function(
     priceDifferences,
     latexOutPath = NULL,
     breakpoints = NULL,
-    plotTitle = NULL
+    plotTitle = NULL,
+    legendBelowGraph = NULL
 )
 {
     # Parameter validieren
@@ -547,7 +561,8 @@ plotProfitableDifferencesByTime <- function(
         is.data.table(priceDifferences),
         is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L),
         is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L),
-        is.null(plotTitle) || (is.character(plotTitle) && length(plotTitle) == 1L)
+        is.null(plotTitle) || (is.character(plotTitle) && length(plotTitle) == 1L),
+        is.null(legendBelowGraph) || (is.logical(legendBelowGraph) && length(legendBelowGraph) == 1L)
     )
     
     # Einige Bezeichnungen und Variablen
@@ -567,10 +582,10 @@ plotProfitableDifferencesByTime <- function(
         )
     }
     
-    # 1. Gesamtübersicht, gruppiert nach Grenzwerten, aggregiert
+    # Gesamtübersicht, gruppiert nach Grenzwerten, aggregiert
     plot <- ggplot(priceDifferences)
     
-    # Maximalwert entsteht immer bei der geringsten Abweichung
+    # Maximalwert entsteht immer bei der geringsten Abweichung (Hier: 1%)
     maxValue <- with(priceDifferences, max(nLargerThan1Pct / n))
     
     # Bereiche zeichnen und Nummer anzeigen
@@ -603,6 +618,21 @@ plotProfitableDifferencesByTime <- function(
         date_labels <- "%m/%Y"
     }
     
+    # Legende einrichten
+    if (isTRUE(legendBelowGraph)) {
+        legendPosition <- "bottom"
+        legendMargin <- margin(t=-5)
+        legendBackground <- element_blank()
+    } else if (is.null(breakpoints)) {
+        legendPosition <- c(0.88, 0.7)
+        legendMargin <- margin(0, 12, 5, 5)
+        legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+    } else {
+        legendPosition <- c(0.88, 0.58)
+        legendMargin <- margin(0, 12, 5, 5)
+        legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+    }
+    
     # Grafik mit Anteilen zeichnen
     plot <- plot +
         geom_line(aes(x=Time, y=nLargerThan1Pct/n, color="1\\,%", linetype="1\\,%"), size = .5) +
@@ -613,11 +643,9 @@ plotProfitableDifferencesByTime <- function(
             plot.title.position = "plot",
             axis.title.x = element_text(margin=margin(t=5)),
             axis.title.y = element_text(margin=margin(r=10)),
-            # legend.position = c(0.88, 0.58),
-            # legend.background = element_rect(fill="white", size=0.2, linetype="solid"),
-            # legend.margin = margin(0, 12, 5, 5),
-            legend.position = "bottom",
-            legend.margin = margin(t=-5),
+            legend.position = legendPosition,
+            legend.background = legendBackground,
+            legend.margin = legendMargin,
             legend.title = element_blank(),
         ) +
         coord_cartesian(ylim=c(0, maxValue)) +
@@ -652,10 +680,6 @@ plotProfitableDifferencesByTime <- function(
     } else {
         return(plot)
     }
-    
-    # 2. Übersicht nach Börsen, gruppiert nach Grenzwerten
-    # TODO Schwierig, müsste nochmals nach Börsenpaar aggregiert werden!
-    
 }
 
 
@@ -680,6 +704,9 @@ plotTradingVolumeByTime <- function(
         is.null(plotTitle) || (length(plotTitle) == 1L && is.character(plotTitle)),
         length(aggregationLevel) == 1L, is.character(aggregationLevel)
     )
+    
+    # Zeitzone ist UTC, fehlt aber in `timeframe` aus unbekannten Gründen
+    setattr(timeframe, "tzone", "UTC")
     
     plotXLab = "Datum"
     plotYLab = "Volumen"
@@ -1432,9 +1459,6 @@ analysePriceDifferences <- function(
     )
     grid.arrange(
         p_diff, p_profitable, p_nrow, p_volume,
-        # Plot mit Label unter der Grafik etwas größer machen,
-        # damit die Höhe der Zeichenfläche etwa identisch ist
-        heights = c(1, 1.15, 1, 1),
         ncol = 1L
     )
     dev.off()
@@ -1484,9 +1508,9 @@ analysePriceDifferences <- function(
         comparablePricesSubset <- comparablePrices[Time %between% segmentInterval]
         
         printf(
-            "%s Datensätze im Intervall #%d von %s bis %s.\n",
-            format.number(nrow(comparablePricesSubset)),
+            "Intervall #%d: %s Datensätze von %s bis %s.\n",
             segment,
+            format.number(nrow(comparablePricesSubset)),
             format(segmentInterval[1], "%d.%m.%Y"),
             format(segmentInterval[2], "%d.%m.%Y")
         )
@@ -1521,9 +1545,12 @@ analysePriceDifferences <- function(
             
         }
 
+        # Spezielle Grafikkonfiguration abrufen, falls vorhanden
+        legendBelowGraph <- plotConfiguration[["profitableDifferencesByTime"]][[pair]][[as.character(segment)]]
         p_profitable <- plotProfitableDifferencesByTime(
             aggregatedPriceDifferences,
-            plotTitle = "Arbitrage-Paare mit einer Abweichung von min. 1\\,%, 2\\,% und 5\\,%"
+            plotTitle = "Arbitrage-Paare mit einer Abweichung von min. 1\\,%, 2\\,% und 5\\,%",
+            legendBelowGraph = legendBelowGraph
         )
         p_nrow <- plotNumDifferencesByTime(
             aggregatedPriceDifferences,
