@@ -1005,6 +1005,106 @@ plotPriceDifferencesBoxplotByExchangePair <- function(
 }
 
 
+#' Zeichne Verteilung der Beobachtungen als Histogramm
+#' 
+#' @param priceDifferences `data.table` mit den aggr. Preisen der verschiedenen Börsen
+#' @param roundToNumberOfDigits Auf wieviele Nachkommastellen soll gerundet werden?
+#'                              Achtung: Mehr als 3 ergibt einen sehr unübersichtlichen Plot!
+#' @param cutoffThreshold Bis zu welchem Preisunterschied (inklusive)
+#'                        soll das Histogramm dargestellt werden?
+#' @param plotTitle Optionaler Plot-Titel
+#' @return Der Plot (unsichtbar)
+plotDistribution <- function(
+    priceDifferences,
+    roundToNumberOfDigits = 3L,
+    cutoffThreshold = 0.05,
+    plotTitle = NULL
+) {
+    # Parameter validieren
+    stopifnot(
+        is.data.table(priceDifferences), nrow(priceDifferences) > 0L,
+        !is.null(priceDifferences$PriceDifference),
+        is.numeric(roundToNumberOfDigits), length(roundToNumberOfDigits) == 1L,
+        is.numeric(cutoffThreshold), length(cutoffThreshold) == 1L,
+        is.null(plotTitle) || (length(plotTitle) == 1L && is.character(plotTitle))
+    )
+    
+    # Berechnung der Verteilung
+    distribution <- priceDifferences[
+        # Nur Preisunterschiede unterhalb des Grenzwertes anzeigen
+        i = PriceDifference <= cutoffThreshold,
+        # Häufigkeit zählen
+        j = .(n = .N),
+        # Gruppieren nach dem gerundeten Wert
+        by = .(PriceDifference = round(PriceDifference, roundToNumberOfDigits))
+    ]
+    
+    # Sortierung nur optional für schönere Darstellung im Terminal etc.
+    #setorder(distribution, PriceDifference)
+    
+    # distribution:
+    #      PriceDifference        n
+    # 1:             0.000 53159730
+    # 2:             0.001 43115724
+    # 3:             0.002 15686987
+    # 4:             0.003  8206759
+    # 5:             0.004  4799702
+    # ---                         
+    # 684:           1.550        1
+    # 685:           1.652        1
+    # 686:           1.728        1
+    # 687:           1.960        1
+    # 688:           9.319        1
+    
+    # Einige Bezeichnungen und Variablen
+    plotXLab <- "Preisunterschied"
+    plotYLab <- "Beobachtungen"
+    plotTextPrefix <- "\\footnotesize "
+    maxValue <- max(distribution$n)
+    
+    # Achseneigenschaften
+    if (maxValue > 1e6) {
+        roundedTo <- "Mio."
+        roundFac <- 1e6
+    } else {
+        roundedTo <- "Tsd."
+        roundFac <- 1e3
+    }
+    
+    # Histogramm zeichnen
+    plot <- ggplot(distribution) +
+        geom_col(aes(PriceDifference, n)) +
+        theme_minimal() +
+        theme(
+            legend.position = "none",
+            plot.title.position = "plot",
+            axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
+        ) +
+        #coord_cartesian(ylim=c(0, maxValue)) +
+        scale_x_continuous(
+            labels = function(x) { paste0(format.percentage(x, 0), "\\,\\%") },
+            # TODO Automatisch - nur passend für Preisunterschiede bis 5%
+            breaks = c(0,.01,.02,.03,.04,.05),
+            expand = expansion(mult=c(.01, .03))
+        ) +
+        scale_y_continuous(labels=function(x) format.number(x / roundFac)) +
+        scale_color_ptol() +
+        scale_fill_ptol() +
+        labs(
+            x = paste0(plotTextPrefix, plotXLab),
+            y = paste0(plotTextPrefix, plotYLab, " [", roundedTo, "]")
+        )
+    
+    if (!is.null(plotTitle)) {
+        plot <- plot + ggtitle(paste0("\\small ", plotTitle))
+    }
+    
+    return(plot)
+}
+
+
+
 #' Informationen über einen Datensatz als LaTeX-Tabelle ausgeben
 #' 
 #' @param dataset `data.table` aus `loadComparablePricesByCurrency`
