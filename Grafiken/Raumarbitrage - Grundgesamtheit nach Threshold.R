@@ -114,7 +114,7 @@ p <-
         axis.title.y = element_text(size = 9, margin = margin(r = 10)),
         legend.title = element_text(size = 9)
     ) +
-    labs(x="Kurspaar", y="Tauschmöglichkeiten [Mio.]", fill="Grenzwert")
+    labs(x="Kurspaar", y="Arbitrage-Paare [Mio.]", fill="Grenzwert")
 
 if (plotAsLaTeX) {
     source("Konfiguration/TikZ.R")

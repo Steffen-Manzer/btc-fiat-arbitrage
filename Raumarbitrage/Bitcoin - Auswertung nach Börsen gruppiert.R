@@ -1732,7 +1732,7 @@ if (FALSE) {
             
             if (threshold != mainThreshold) {
                 overviewImageHeight <- 20L
-                forceTablePosition <- "H"
+                forceTablePosition <- "p"
             } else {
                 overviewImageHeight <- NULL
                 forceTablePosition <- NULL
