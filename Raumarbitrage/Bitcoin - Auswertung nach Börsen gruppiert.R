@@ -1155,7 +1155,8 @@ plotPercentageHighLowByExchange <- function(
         result <- rbindlist(list(result, list(
             exchange = exchange,
             exchangeName = exchangeNames[[i]],
-            n = priceDifferences[ExchangeHigh == exchange | ExchangeLow == exchange, .N]
+            n = priceDifferences[ExchangeHigh == exchange, .N] +
+                priceDifferences[ExchangeLow == exchange, .N]
         )))
     }
     
@@ -1186,7 +1187,7 @@ plotPercentageHighLowByExchange <- function(
     
     # Histogramm zeichnen
     plot <- ggplot(result) +
-        geom_col(aes(x=exchangeName, y=ratio, fill=type), width=.75) +
+        geom_col(aes(x=exchangeName, y=ratio, fill=type), position="dodge", width=.75) +
         theme_minimal() +
         theme(
             plot.title.position = "plot",
