@@ -1091,7 +1091,6 @@ plotDistribution <- function(
             axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
             axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
         ) +
-        #coord_cartesian(ylim=c(0, maxValue)) +
         scale_x_continuous(
             labels = function(x) { paste0(format.percentage(x, 1L), "\\,\\%") },
             breaks = seq(from=0, to=0.02, by=0.002),
@@ -1128,6 +1127,103 @@ plotDistribution <- function(
     }
 }
 
+
+#' Zeichne Anteil positiver/negativer Preisabweichungen je Börse
+#' 
+#' @param priceDifferences `data.table` mit den aggr. Preisen der verschiedenen Börsen
+#' @param latexOutPath Ausgabepfad als LaTeX-Datei
+#' @param plotTitle Optionaler Plot-Titel
+#' @return Der Plot (unsichtbar)
+plotPercentageHighLowByExchange <- function(
+    priceDifferences,
+    latexOutPath = NULL,
+    plotTitle = NULL
+) {
+    # Parameter validieren
+    stopifnot(
+        is.data.table(priceDifferences), nrow(priceDifferences) > 0L,
+        is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L),
+        is.null(plotTitle) || (length(plotTitle) == 1L && is.character(plotTitle))
+    )
+    
+    # Ergebnis berechnen
+    result <- data.table()
+    
+    # 1. Anzahl gesamter Tauschpaare zählen
+    for (i in seq_along(exchangeNames)) {
+        exchange <- names(exchangeNames)[[i]]
+        result <- rbindlist(list(result, list(
+            exchange = exchange,
+            exchangeName = exchangeNames[[i]],
+            n = priceDifferences[ExchangeHigh == exchange | ExchangeLow == exchange, .N]
+        )))
+    }
+    
+    # 2. Absolute Anzahl Höchst-/Tiefstkurse
+    # Hier als Einzelschritte zur besseren Lesbarkeit
+    resultHigh <- priceDifferences[j=.(nHigh=.N), by=ExchangeHigh]
+    result <- result[resultHigh, on=.(exchange=ExchangeHigh)]
+    
+    # 3. Anteile berechnen
+    result <- result[, `:=`(ratioHigh=nHigh/n, ratioLow=(n-nHigh)/n)]
+    result[, `:=`(exchange=NULL, n=NULL, nHigh=NULL)]
+    
+    # 4. Melt für ggplot
+    result <- melt(result, id.vars=c("exchangeName"), variable.name="type", value.name="ratio")
+    setorder(result, exchangeName)
+    result[, type:=factor(
+        type,
+        levels = c("ratioHigh", "ratioLow"),
+        labels = c("Höchstpreis", "Tiefstpreis")
+    )]
+    
+    # Plot
+    # Einige Bezeichnungen und Variablen
+    plotXLab <- "Börse"
+    plotYLab <- "Anteil"
+    plotFillLab <- "Art"
+    plotTextPrefix <- "\\footnotesize "
+    
+    # Histogramm zeichnen
+    plot <- ggplot(result) +
+        geom_col(aes(x=exchangeName, y=ratio, fill=type), width=.75) +
+        theme_minimal() +
+        theme(
+            plot.title.position = "plot",
+            axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
+        ) +
+        scale_y_continuous(labels=function(x) paste0(format.percentage(x, 0L), "\\,\\%")) +
+        scale_color_ptol() +
+        scale_fill_ptol() +
+        labs(
+            x = paste0(plotTextPrefix, plotXLab),
+            y = paste0(plotTextPrefix, plotYLab),
+            fill = plotFillLab
+        )
+    
+    if (!is.null(plotTitle)) {
+        plot <- plot + ggtitle(paste0("\\small ", plotTitle))
+    }
+    
+    # Ausgabeoptionen
+    if (!is.null(latexOutPath)) {
+        source("Konfiguration/TikZ.R")
+        printf.debug("Ausgabe als LaTeX in Datei %s\n", basename(latexOutPath))
+        tikz(
+            file = latexOutPath,
+            width = documentPageWidth,
+            height = 5 / 2.54, # cm -> Zoll
+            sanitize = FALSE
+        )
+        print(plot)
+        dev.off()
+        
+        return(invisible(plot))
+    } else {
+        return(plot)
+    }
+}
 
 
 #' Informationen über einen Datensatz als LaTeX-Tabelle ausgeben
@@ -1247,12 +1343,8 @@ summariseDatasetAsTable <- function(
     
     # Anzahl Börsenpaare
     exchangePairsInThisSubset <- unique(
-        c(
-            unique(dataset$ExchangeHigh),
-            unique(dataset$ExchangeLow)
-        )
+        c(unique(dataset$ExchangeHigh), unique(dataset$ExchangeLow))
     )
-    
     
     if (!is.null(forceTablePosition)) {
         tablePosition <- forceTablePosition
@@ -1473,6 +1565,12 @@ analysePriceDifferences <- function(
     plotDistribution(
         comparablePrices,
         latexOutPath = sprintf("%s/Histogramm_Gesamt.tex", plotOutPath)
+    )
+    
+    # Anteil Höchst-/Tiefstpreise nach Börse
+    plotPercentageHighLowByExchange(
+        comparablePrices,
+        latexOutPath = sprintf("%s/Anteile_Hoechst_Tiefst_nach_Boerse_Gesamt.tex", plotOutPath)
     )
 
     # Speicher freigeben
