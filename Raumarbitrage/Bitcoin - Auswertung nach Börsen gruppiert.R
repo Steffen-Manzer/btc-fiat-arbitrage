@@ -73,8 +73,8 @@ mainThreshold <- 1L
 # Intervalle zugerechnet
 breakpointsByCurrency <- list(
     # Intervall: 1.           2.             3.           4.
-    # Von/Bis: -> 2014 -- 2014-2017  --  2017-2019 -- 2019 ->
-    "btcusd" = c("2014-03-01", "2017-01-01", "2019-07-01"),
+    # Von/Bis: -> 2015 -- 2015-2017  --  2017-2019 -- 2019 ->
+    "btcusd" = c("2015-04-01", "2017-01-01", "2019-07-01"),
     "btceur" = c(              "2017-01-01", "2019-07-01")
 )
 
@@ -84,7 +84,9 @@ plotConfiguration <- list(
     "profitableDifferencesByTime" = list(
         # Paar: BTC/USD
         "btcusd" = list(
-            # Segment 3: Legende unter der Grafik anzeigen
+            # Segmente 1, 2 und 3: Legende unter der Grafik anzeigen
+            "1" = TRUE,
+            "2" = TRUE,
             "3" = TRUE
         )
     )
