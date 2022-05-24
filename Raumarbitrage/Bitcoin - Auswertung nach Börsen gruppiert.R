@@ -43,7 +43,7 @@ library("lubridate") # floor_date
 library("ggplot2")
 library("ggthemes") # Einfaches Farbschema von Paul Tol
 library("khroma") # Weitere, detailliertere Farbschemata von Paul Tol
-library("gridExtra") # grid.arrange
+library("cowplot") # plot_grid
 library("readr") # read_file, write_file
 library("stringr") # str_replace
 library("tictoc")
@@ -1836,9 +1836,10 @@ analysePriceDifferences <- function(
         height = overviewImageHeight / 2.54,
         sanitize = TRUE
     )
-    grid.arrange(
-        ncol = 1L
+    plot_grid(
         p_diff, p_profitable, p_nrow, p_vola,
+        ncol = 1L,
+        align = "v"
     )
     dev.off()
     
@@ -1982,12 +1983,13 @@ analysePriceDifferences <- function(
             height = 22 / 2.54,
             sanitize = TRUE
         )
-        grid.arrange(
+        plot_grid(
             p_diff, p_profitable, p_nrow, p_volume,
             # Plot mit Label unter der Grafik etwas größer machen,
             # damit die Höhe der Zeichenfläche etwa identisch ist
-            heights = c(1, 1.15, 1, 1),
-            ncol = 1L
+            rel_heights = c(1, 1.15, 1, 1),
+            ncol = 1L,
+            align = "v"
         )
         dev.off()
 
