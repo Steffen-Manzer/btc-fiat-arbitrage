@@ -1750,7 +1750,7 @@ summariseDatasetAsTable <- function(
 #' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
 #' @param threshold Zeitliche Differenz zweier Ticks in Sekunden,
 #'                  ab der das Tick-Paar verworfen wird.
-#' @param analysePartialIntervals Grafiken und Tabellen für Teil-Intervalle erstellen
+#' @param onlyMainGraphAndTable Grafiken und Tabellen für Teil-Intervalle erstellen
 #' @param appendThresholdToTableLabel Grenzwert an Tabellen-Label anhängen
 #' @param overviewImageHeight Höhe der Überblicksgrafik überschreiben
 #' @param forceTablePosition Bestimmte Tabellenposition erzwingen
@@ -1758,7 +1758,7 @@ analysePriceDifferences <- function(
     pair,
     breakpoints,
     threshold,
-    analysePartialIntervals = TRUE,
+    onlyMainGraphAndTable = FALSE,
     appendThresholdToTableLabel = FALSE,
     overviewImageHeight = NULL,
     forceTablePosition = NULL
@@ -1769,7 +1769,7 @@ analysePriceDifferences <- function(
         length(breakpoints) >= 1L,
         is.character(pair), length(pair) == 1L, nchar(pair) == 6L,
         is.numeric(threshold), length(threshold) == 1L,
-        is.logical(analysePartialIntervals), length(analysePartialIntervals) == 1L,
+        is.logical(onlyMainGraphAndTable), length(onlyMainGraphAndTable) == 1L,
         is.logical(appendThresholdToTableLabel), length(appendThresholdToTableLabel) == 1L,
         (is.null(overviewImageHeight) || is.numeric(overviewImageHeight))
     )
@@ -1821,7 +1821,7 @@ analysePriceDifferences <- function(
         pair,
         aggregatedPriceDifferences[c(1,.N), Time],
         breakpoints = breakpoints,
-        plotTitle = "Rollierende, annualisierte 10-Tage-Volatilität"
+        plotTitle = "Rollierende, annualisierte 10-Tage-Volatilität der Preise"
     )
 
     # Als LaTeX-Dokument ausgeben
@@ -1836,62 +1836,68 @@ analysePriceDifferences <- function(
         height = overviewImageHeight / 2.54,
         sanitize = TRUE
     )
-    plot_grid(
+    print(plot_grid(
         p_diff, p_profitable, p_nrow, p_vola,
         ncol = 1L,
         align = "v"
-    )
+    ))
     dev.off()
     
-    # Überblicksgrafik, Variante mit Preisniveau + Volatilität
-    p_pricelevel <- plotPriceLevelByTime(
-        pair,
-        aggregatedPriceDifferences[c(1,.N), Time],
-        breakpoints = breakpoints,
-        plotTitle = "Preisniveau"
-    )
-    p_volume <- plotTradingVolumeByTime(
-        pair,
-        aggregatedPriceDifferences[c(1,.N), Time],
-        breakpoints = breakpoints,
-        plotTitle = "Handelsvolumen"
-    )
+    # Weitere Auswertungsgrafiken
+    if (!onlyMainGraphAndTable) {
+        
+        # Überblicksgrafik, Variante mit Preisniveau + Volumen
+        p_pricelevel <- plotPriceLevelByTime(
+            pair,
+            aggregatedPriceDifferences[c(1,.N), Time],
+            breakpoints = breakpoints,
+            plotTitle = "Preisniveau"
+        )
+        p_volume <- plotTradingVolumeByTime(
+            pair,
+            aggregatedPriceDifferences[c(1,.N), Time],
+            breakpoints = breakpoints,
+            plotTitle = "Handelsvolumen"
+        )
+        
+        tikz(
+            file = sprintf("%s/Uebersicht_Gesamt_PreisVolumen.tex", plotOutPath),
+            width = documentPageWidth,
+            height = 20L / 2.54,
+            sanitize = TRUE
+        )
+        print(plot_grid(
+            p_diff, p_profitable, p_pricelevel, p_volume,
+            ncol = 1L,
+            align = "v"
+        ))
+        dev.off()
+        
+        # Boxplot
+        plotPriceDifferencesBoxplotByExchangePair(
+            comparablePrices,
+            latexOutPath = sprintf("%s/Boxplot_Gesamt.tex", plotOutPath)
+        )
+        
+        # Verteilungs-Histogramm
+        plotDistribution(
+            comparablePrices,
+            latexOutPath = sprintf("%s/Histogramm_Gesamt.tex", plotOutPath)
+        )
+        
+        # Anteil Höchst-/Tiefstpreise nach Börse
+        plotPercentageHighLowByExchange(
+            comparablePrices,
+            latexOutPath = sprintf("%s/Anteile_Hoechst_Tiefst_nach_Boerse_Gesamt.tex", plotOutPath)
+        )
+    }
     
-    tikz(
-        file = sprintf("%s/Uebersicht_Gesamt_PreisVolumen.tex", plotOutPath),
-        width = documentPageWidth,
-        height = 20L / 2.54,
-        sanitize = TRUE
-    )
-    grid.arrange(
-        ncol = 1L
-        p_diff, p_profitable, p_pricelevel, p_volume,
-    )
-    dev.off()
-
-    # Boxplot
-    plotPriceDifferencesBoxplotByExchangePair(
-        comparablePrices,
-        latexOutPath = sprintf("%s/Boxplot_Gesamt.tex", plotOutPath)
-    )
-    
-    # Verteilungs-Histogramm
-    plotDistribution(
-        comparablePrices,
-        latexOutPath = sprintf("%s/Histogramm_Gesamt.tex", plotOutPath)
-    )
-    
-    # Anteil Höchst-/Tiefstpreise nach Börse
-    plotPercentageHighLowByExchange(
-        comparablePrices,
-        latexOutPath = sprintf("%s/Anteile_Hoechst_Tiefst_nach_Boerse_Gesamt.tex", plotOutPath)
-    )
-
     # Speicher freigeben
     rm(aggregatedPriceDifferences)
     gc()
     
-    # Tabellen
+    
+    # Überblickstabelle
     if (appendThresholdToTableLabel) {
         tableLabelAppendix <- sprintf(" (Grenzwert %ds)", threshold)
     } else {
@@ -1907,9 +1913,9 @@ analysePriceDifferences <- function(
         label = sprintf("Raumarbitrage_%s_%ds_Uebersicht_Gesamt", toupper(pair), threshold),
         forceTablePosition = forceTablePosition
     )
-
-    # Einzelne Segmente auswerten
-    if (!analysePartialIntervals) {
+    
+    # Keine weitere Auswertung
+    if (onlyMainGraphAndTable) {
         return(invisible(NULL))
     }
     
@@ -1968,29 +1974,27 @@ analysePriceDifferences <- function(
             aggregatedPriceDifferences,
             plotTitle = "Anzahl Beobachtungen"
         )
-        p_volume <- plotTradingVolumeByTime(
+        p_vola <- plotVolatilityByTime(
             pair,
-            aggregatedPriceDifferences$Time[c(1,nrow(aggregatedPriceDifferences))],
-            plotTitle = "Handelsvolumen",
-            aggregationLevel = "weekly"
+            aggregatedPriceDifferences[c(1,.N), Time],
+            plotTitle = "Rollierende, annualisierte 10-Tage-Volatilität der Preise"
         )
-
+        
         # Als LaTeX-Dokument ausgeben
-        source("Konfiguration/TikZ.R")
         tikz(
             file = sprintf("%s/Uebersicht_%d.tex", plotOutPath, segment),
             width = documentPageWidth,
             height = 22 / 2.54,
             sanitize = TRUE
         )
-        plot_grid(
-            p_diff, p_profitable, p_nrow, p_volume,
+        print(plot_grid(
+            p_diff, p_profitable, p_nrow, p_vola,
             # Plot mit Label unter der Grafik etwas größer machen,
             # damit die Höhe der Zeichenfläche etwa identisch ist
             rel_heights = c(1, 1.15, 1, 1),
             ncol = 1L,
             align = "v"
-        )
+        ))
         dev.off()
 
         # Boxplot mit Daten des Intervalls
@@ -2056,7 +2060,7 @@ if (FALSE) {
                 pair,
                 breakpointsByCurrency[[pair]],
                 threshold,
-                analysePartialIntervals = (threshold == mainThreshold),
+                onlyMainGraphAndTable = (threshold != mainThreshold),
                 appendThresholdToTableLabel = (threshold != mainThreshold),
                 overviewImageHeight = overviewImageHeight,
                 forceTablePosition = forceTablePosition
