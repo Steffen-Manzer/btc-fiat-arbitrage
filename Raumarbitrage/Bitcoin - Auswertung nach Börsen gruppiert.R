@@ -1817,11 +1817,11 @@ analysePriceDifferences <- function(
         breakpoints = breakpoints,
         plotTitle = "Anzahl Beobachtungen"
     )
-    p_volume <- plotTradingVolumeByTime(
+    p_vola <- plotVolatilityByTime(
         pair,
         aggregatedPriceDifferences[c(1,.N), Time],
         breakpoints = breakpoints,
-        plotTitle = "Handelsvolumen"
+        plotTitle = "Rollierende, annualisierte 10-Tage-Volatilität"
     )
 
     # Als LaTeX-Dokument ausgeben
@@ -1837,8 +1837,8 @@ analysePriceDifferences <- function(
         sanitize = TRUE
     )
     grid.arrange(
-        p_diff, p_profitable, p_nrow, p_volume,
         ncol = 1L
+        p_diff, p_profitable, p_nrow, p_vola,
     )
     dev.off()
     
@@ -1849,23 +1849,22 @@ analysePriceDifferences <- function(
         breakpoints = breakpoints,
         plotTitle = "Preisniveau"
     )
-    p_vola <- plotVolatilityByTime(
+    p_volume <- plotTradingVolumeByTime(
         pair,
         aggregatedPriceDifferences[c(1,.N), Time],
         breakpoints = breakpoints,
-        plotTitle = "Rollierende, annualisierte 10-Tage-Volatilität"
+        plotTitle = "Handelsvolumen"
     )
     
-    source("Konfiguration/TikZ.R")
     tikz(
-        file = sprintf("%s/Uebersicht_Gesamt_PreisniveauVolatilitaet.tex", plotOutPath),
+        file = sprintf("%s/Uebersicht_Gesamt_PreisVolumen.tex", plotOutPath),
         width = documentPageWidth,
         height = 20L / 2.54,
         sanitize = TRUE
     )
     grid.arrange(
-        p_diff, p_profitable, p_pricelevel, p_vola,
         ncol = 1L
+        p_diff, p_profitable, p_pricelevel, p_volume,
     )
     dev.off()
 
