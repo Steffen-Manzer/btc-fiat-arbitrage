@@ -47,6 +47,7 @@ library("gridExtra") # grid.arrange
 library("readr") # read_file, write_file
 library("stringr") # str_replace
 library("tictoc")
+library("TTR") # volatility
 
 
 # Konfiguration ---------------------------------------------------------------
@@ -839,6 +840,289 @@ plotTradingVolumeByTime <- function(
 }
 
 
+#' Preisniveau (Mittelwert) eines Kurspaares an allen Börsen für den
+#' angegebenen Zeitabschnitt
+#' 
+#' @param pair Das gewünschte Kurspaar, bspw. btcusd
+#' @param timeframe POSIXct-Vektor der Länge 2 mit den Grenzen des Intervalls (inkl.)
+#' @return Plot
+plotPriceLevelByTime <- function(
+    pair,
+    timeframe,
+    breakpoints = NULL,
+    plotTitle = NULL,
+    aggregationLevel = "weekly"
+)
+{
+    stopifnot(
+        is.character(pair), length(pair) == 1L,
+        length(timeframe) == 2L, is.POSIXct(timeframe),
+        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L),
+        is.null(plotTitle) || (length(plotTitle) == 1L && is.character(plotTitle)),
+        length(aggregationLevel) == 1L, is.character(aggregationLevel)
+    )
+    
+    # Zeitzone ist UTC, fehlt aber in `timeframe` aus unbekannten Gründen
+    setattr(timeframe, "tzone", "UTC")
+    
+    plotXLab <- "Datum"
+    plotYLab <- "Preis"
+    plotTextPrefix <- "\\footnotesize "
+    units <- pair |> toupper() |> substr(4, 6)
+    
+    # Datenquelle auswählen
+    if (aggregationLevel == "monthly") {
+        aggregationSourceLevel <- "monthly"
+    } else if (
+        aggregationLevel == "weekly" ||
+        aggregationLevel == "daily"
+    ) {
+        aggregationSourceLevel <- "daily"
+    } else {
+        stop(sprintf("Ungültiges Aggregationslevel: %s",))
+    }
+    
+    # Preisniveau
+    exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
+    result <- data.table()
+    for (exchange in exchanges) {
+        sourceFile <- sprintf(
+            "Cache/%1$s/%2$s/%1$s-%2$s-%3$s.fst",
+            tolower(exchange), tolower(pair), aggregationSourceLevel
+        )
+        
+        if (!file.exists(sourceFile)) {
+            # Dieses Paar wird an dieser Börse nicht gehandelt
+            next
+        }
+        
+        dataset <- read_fst(sourceFile, columns=c("Time", "Mean"), as.data.table=TRUE)
+        result <- rbindlist(list(result, dataset[Time %between% timeframe]))
+    }
+    
+    if (nrow(result) == 0L) {
+        stop(sprintf(
+            "Datensatz ist leer. Daten für Aggregationslevel %s vorhanden?",
+            aggregationLevel
+        ))
+    }
+    
+    if (aggregationLevel == "weekly") {
+        # Auf Wochendaten aggregieren
+        result <- result[j=.(Mean=mean(Mean)), by=.(Time=floor_date(Time, "1 week"))]
+    } else {
+        # Direkt zusammenfassen
+        result <- result[j=.(Mean=mean(Mean)), by=Time]
+    }
+    setorder(result, Time)
+    
+    # Achseneigenschaften
+    maxValue <- max(result$Mean)
+    if (maxValue > 1e6) {
+        roundedTo <- sprintf(" [Mio. %s]", units)
+        roundFac <- 1e6
+    } else if (maxValue > 1e3) {
+        roundedTo <- sprintf(" [Tsd. %s]", units)
+        roundFac <- 1e3
+    } else {
+        roundedTo <- sprintf(" [%s]", units)
+        roundFac <- 1
+    }
+    
+    plot <- ggplot(result)
+    
+    # Bereiche zeichnen und Nummer anzeigen
+    if (!is.null(breakpoints)) {
+        
+        # Die hier bestimmten Intervalle der aggregierten Daten können
+        # von den Intervallen des gesamten Datensatzes abweichen
+        intervals <- calculateIntervals(result$Time, breakpoints)
+        
+        # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
+        plot <- plot + 
+            geom_rect(
+                aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
+                data = intervals,
+                alpha = .5,
+                show.legend = FALSE
+            ) +
+            geom_text(
+                aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
+                data = intervals
+            )
+    }
+    
+    # Datumsachse bestimmen
+    if (difftime(timeframe[2], timeframe[1], units = "weeks") > 2*52) {
+        date_breaks <- "1 year"
+        date_labels <- "%Y"
+    } else {
+        date_breaks <- expr(waiver())
+        date_labels <- "%m/%Y"
+    }
+    
+    # Volumen zeichnen
+    plot <- plot +
+        geom_line(aes(x=Time, y=Mean, color="1", linetype="1"), size=.5) +
+        theme_minimal() +
+        theme(
+            legend.position = "none",
+            plot.title.position = "plot",
+            axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
+        ) +
+        coord_cartesian(ylim=c(0, maxValue)) +
+        scale_x_datetime(
+            date_breaks = eval(date_breaks),
+            date_labels = date_labels,
+            expand = expansion(mult=c(.01, .05))
+        ) +
+        scale_y_continuous(labels = function(x) format.number(x/roundFac)) +
+        # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
+        scale_color_highcontrast() +
+        # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
+        scale_fill_pale() +
+        labs(
+            x = paste0(plotTextPrefix, plotXLab),
+            y = paste0(plotTextPrefix, plotYLab, roundedTo)
+        )
+    
+    if (!is.null(plotTitle)) {
+        plot <- plot + ggtitle(paste0("\\small ", plotTitle))
+    }
+    
+    return(plot)
+}
+
+
+#' Volatilität (Mittelwert) eines Kurspaares an allen Börsen für den
+#' angegebenen Zeitabschnitt
+#' 
+#' @param pair Das gewünschte Kurspaar, bspw. btcusd
+#' @param timeframe POSIXct-Vektor der Länge 2 mit den Grenzen des Intervalls (inkl.)
+#' @param n Anzahl Perioden für die Vola.-Abschätzung
+#' @return Plot
+plotVolatilityByTime <- function(
+    pair,
+    timeframe,
+    numPeriodsForEstimate = 10L,
+    breakpoints = NULL,
+    plotTitle = NULL
+)
+{
+    stopifnot(
+        is.character(pair), length(pair) == 1L,
+        length(timeframe) == 2L, is.POSIXct(timeframe),
+        is.numeric(numPeriodsForEstimate), length(numPeriodsForEstimate) == 1L,
+        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L),
+        is.null(plotTitle) || (length(plotTitle) == 1L && is.character(plotTitle))
+    )
+    
+    # Zeitzone ist UTC, fehlt aber in `timeframe` aus unbekannten Gründen
+    setattr(timeframe, "tzone", "UTC")
+    
+    plotXLab <- "Datum"
+    plotYLab <- "Volatilität"
+    plotTextPrefix <- "\\footnotesize "
+    
+    # Volatilität berechnen
+    exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
+    result <- data.table()
+    for (exchange in exchanges) {
+        sourceFile <- sprintf(
+            "Cache/%1$s/%2$s/%1$s-%2$s-daily.fst",
+            tolower(exchange), tolower(pair)
+        )
+        
+        if (!file.exists(sourceFile)) {
+            # Dieses Paar wird an dieser Börse nicht gehandelt
+            next
+        }
+        
+        dataset <- read_fst(sourceFile, columns=c("Time", "Mean"), as.data.table=TRUE)
+        dataset[, Volatility:=volatility(dataset$Mean, n=numPeriodsForEstimate, N=365)]
+        result <- rbindlist(list(result, dataset[Time %between% timeframe & !is.na(Volatility)]))
+    }
+    
+    if (nrow(result) == 0L) {
+        stop(sprintf(
+            "Datensatz ist leer. Daten für Aggregationslevel %s vorhanden?",
+            aggregationLevel
+        ))
+    }
+    
+    result <- result[j=.(Volatility=mean(Volatility)), by=Time]
+    setorder(result, Time)
+    
+    # Achseneigenschaften
+    maxValue <- max(result$Volatility)
+    
+    plot <- ggplot(result)
+    
+    # Bereiche zeichnen und Nummer anzeigen
+    if (!is.null(breakpoints)) {
+        
+        # Die hier bestimmten Intervalle der aggregierten Daten können
+        # von den Intervallen des gesamten Datensatzes abweichen
+        intervals <- calculateIntervals(result$Time, breakpoints)
+        
+        # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
+        plot <- plot + 
+            geom_rect(
+                aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
+                data = intervals,
+                alpha = .5,
+                show.legend = FALSE
+            ) +
+            geom_text(
+                aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
+                data = intervals
+            )
+    }
+    
+    # Datumsachse bestimmen
+    if (difftime(timeframe[2], timeframe[1], units = "weeks") > 2*52) {
+        date_breaks <- "1 year"
+        date_labels <- "%Y"
+    } else {
+        date_breaks <- expr(waiver())
+        date_labels <- "%m/%Y"
+    }
+    
+    # Volumen zeichnen
+    plot <- plot +
+        geom_line(aes(x=Time, y=Volatility, color="1", linetype="1"), size=.5) +
+        theme_minimal() +
+        theme(
+            legend.position = "none",
+            plot.title.position = "plot",
+            axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
+        ) +
+        coord_cartesian(ylim=c(0, maxValue)) +
+        scale_x_datetime(
+            date_breaks = eval(date_breaks),
+            date_labels = date_labels,
+            expand = expansion(mult=c(.01, .05))
+        ) +
+        scale_y_continuous(labels = format.number) +
+        # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
+        scale_color_highcontrast() +
+        # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
+        scale_fill_pale() +
+        labs(
+            x = paste0(plotTextPrefix, plotXLab),
+            y = paste0(plotTextPrefix, plotYLab)
+        )
+    
+    if (!is.null(plotTitle)) {
+        plot <- plot + ggtitle(paste0("\\small ", plotTitle))
+    }
+    
+    return(plot)
+}
+
+
 #' Zeichne Preisabweichungen als Boxplot nach Börsenpaar gruppiert
 #' 
 #' @param comparablePrices `data.table` mit den Preisen der verschiedenen Börsen
@@ -1535,7 +1819,7 @@ analysePriceDifferences <- function(
     )
     p_volume <- plotTradingVolumeByTime(
         pair,
-        aggregatedPriceDifferences$Time[c(1,nrow(aggregatedPriceDifferences))],
+        aggregatedPriceDifferences[c(1,.N), Time],
         breakpoints = breakpoints,
         plotTitle = "Handelsvolumen"
     )
@@ -1544,7 +1828,7 @@ analysePriceDifferences <- function(
     if (is.null(overviewImageHeight)) {
         overviewImageHeight <- 22L
     }
-    
+
     source("Konfiguration/TikZ.R")
     tikz(
         file = sprintf("%s/Uebersicht_Gesamt.tex", plotOutPath),
@@ -1554,6 +1838,33 @@ analysePriceDifferences <- function(
     )
     grid.arrange(
         p_diff, p_profitable, p_nrow, p_volume,
+        ncol = 1L
+    )
+    dev.off()
+    
+    # Überblicksgrafik, Variante mit Preisniveau + Volatilität
+    p_pricelevel <- plotPriceLevelByTime(
+        pair,
+        aggregatedPriceDifferences[c(1,.N), Time],
+        breakpoints = breakpoints,
+        plotTitle = "Preisniveau"
+    )
+    p_vola <- plotVolatilityByTime(
+        pair,
+        aggregatedPriceDifferences[c(1,.N), Time],
+        breakpoints = breakpoints,
+        plotTitle = "Rollierende, annualisierte 10-Tage-Volatilität"
+    )
+    
+    source("Konfiguration/TikZ.R")
+    tikz(
+        file = sprintf("%s/Uebersicht_Gesamt_PreisniveauVolatilitaet.tex", plotOutPath),
+        width = documentPageWidth,
+        height = 20L / 2.54,
+        sanitize = TRUE
+    )
+    grid.arrange(
+        p_diff, p_profitable, p_pricelevel, p_vola,
         ncol = 1L
     )
     dev.off()
