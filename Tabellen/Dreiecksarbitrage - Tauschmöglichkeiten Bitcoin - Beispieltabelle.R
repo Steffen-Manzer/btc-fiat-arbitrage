@@ -6,14 +6,13 @@ source("Funktionen/FormatPOSIXctWithFractionalSeconds.R")
 source("Funktionen/FindLastDatasetBeforeTimestamp.R")
 source("Funktionen/printf.R")
 
-# Betrachtetes Zeitfenster
-# Unterscheidet sich von der Raumarbitrage, da bei dem dortigen Zeitfenster
-# kein Devisenhandel stattfand
-timeframe      <- c("2021-12-05 22:30:03.320500", "2021-12-05 22:30:04.259")
-timeframeForex <- c("2021-12-05 22:30:03",        "2021-12-05 22:30:04.3")
+# Betrachtetes Zeitfenster unterscheidet sich von der Raumarbitrage, 
+# da bei dem dortigen Zeitfenster kein Devisenhandel stattfand
+timeframe      <- c("2021-12-05 23:06:01.086400", "2021-12-05 23:06:02.176700")
+timeframeForex <- c("2021-12-05 23:05:59.9", "2021-12-05 23:06:02.176700")
 
 # Schwellwert
-bitcoinComparisonThresholdSeconds <- 5L
+bitcoinComparisonThresholdSeconds <- 1L
 
 # Beispieldaten laden
 # Hier: Coinbase Pro, da dort anschaulich auch mehrere
@@ -49,19 +48,6 @@ a <- a[j=.(PriceLow=min(Price), PriceHigh=max(Price), n=.N), by=Time]
 a[, CurrencyPair:="btcusd"]
 b <- b[j=.(PriceLow=min(Price), PriceHigh=max(Price), n=.N), by=Time]
 b[, CurrencyPair:="btceur"]
-
-# Schönen Zeitpunkt für Darstellung finden
-# a_ <- a[j=.(Time)]
-# a_$Type <- "BTC/USD"
-# b_ <- b[j=.(Time)]
-# b_$Type <- "BTC/EUR"
-# c_ <- forex[j=.(Time)]
-# c_$Type = "EUR/USD"
-# abc <- rbindlist(list(b_, c_))
-# setorder(abc, Time)
-# View(abc)
-# rm(a_, b_, c_, abc)
-# stop()
 
 # Beide Tabellen zusammenführen, hier nach Kurspaar.
 # Dokumentation: Siehe `Funktionen/MergeSortAndFilter.R`

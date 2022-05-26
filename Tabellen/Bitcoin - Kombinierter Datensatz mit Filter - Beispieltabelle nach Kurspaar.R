@@ -8,19 +8,19 @@ source("Funktionen/printf.R")
 # Betrachtetes Zeitfenster
 # Unterscheidet sich von der Raumarbitrage, da bei dem dortigen Zeitfenster
 # kein Devisenhandel stattfand
-timeframe <- c("2021-12-05 22:30:03.320500", "2021-12-05 22:30:04.259")
+timeframe <- c("2021-12-05 23:06:01.086400", "2021-12-05 23:06:02.17022")
 
 # Beispieldaten laden
 # Hier: Coinbase Pro, da dort anschaulich auch mehrere
 # Ticks zum selben Zeitpunkt auftreten
 a <- read_fst(
     "Cache/coinbase/btcusd/tick/coinbase-btcusd-tick-2021-12.fst",
-    columns = c("ID", "Time", "Price"), 
+    columns = c("Time", "Price"), 
     as.data.table = TRUE
 )
 b <- read_fst(
     "Cache/coinbase/btceur/tick/coinbase-btceur-tick-2021-12.fst",
-    columns = c("ID", "Time", "Price"), 
+    columns = c("Time", "Price"), 
     as.data.table = TRUE
 )
 
@@ -65,13 +65,15 @@ for (i in seq_len(nrow(ab))) {
         tabIndent, format.money(tick$PriceLow, digits=2), substr(tick$CurrencyPair, 5, 7)
     )
     printf("%s%d &\n", tabIndent, tick$n)
-    printf("%s%s &\n", tabIndent, tick$CurrencyPair)
+    # Keine Ticks gefiltert, daher hier einfach abbrechen
+    #printf("%s%s &\n", tabIndent, tick$CurrencyPair)
+    printf("%s%s \\\\\n", tabIndent, tick$CurrencyPair)
     
-    if (isTRUE(triplets[i])) {
-        printf("%s* \\\\\n", tabIndent)
-    } else {
-        printf("%s\\\\\n", tabIndent)
-    }
+    # if (isTRUE(triplets[i])) {
+    #     printf("%s* \\\\\n", tabIndent)
+    # } else {
+    #     printf("%s\\\\\n", tabIndent)
+    # }
     
     printf("\n")
 }

@@ -4,31 +4,32 @@ source("Funktionen/printf.R")
 source("Funktionen/FormatNumber.R")
 source("Funktionen/FormatPOSIXctWithFractionalSeconds.R")
 
-#### TODO Copy&Paste aus Kolloquium-Skript, anpassen
-
 # Dieses Beispiel entspricht der Route EUR -> BTC -> USD -> EUR
 #                                 bzw. USD -> EUR -> BTC -> USD
-arbitrageOpportunity <- as.POSIXct("2021-12-05 22:30:03.355915")
+arbitrageOpportunity <- as.POSIXct("2021-12-05 23:06:01.292391")
 
 # Beispielzeilen
-exampleTimeframe <- as.POSIXct(c("2021-12-05 22:30:03.355", "2021-12-05 22:30:05"))
+exampleTimeframe <- c("2021-12-05 23:06:01.086400", "2021-12-05 23:06:02.17022")
 
-# 39199305 rows, 10 columns (coinbase-usd-eur-1.fst)
-# Position 37.600.000 entspricht dem 03.12.2021, 17:19
-# Position 37.700.000 entspricht dem 06.12.2021, 15:28
-fst_from <- 37600000L
+# 31400114 rows, 10 columns (coinbase-usd-eur-1.fst)
+# Position 29.900.000 entspricht dem 03.12.2021, 20:52:48
+# Position 30.000.000 entspricht dem 06.12.2021, 21:56:10
+fst_from <- 29900000L
 fst_to <- fst_from + 1e5
 
 data_total <- read_fst(
-    path = "Cache/Dreiecksarbitrage/5s/coinbase-usd-eur-1.fst",
+    path = "Cache/Dreiecksarbitrage/1s/coinbase-usd-eur-1.fst",
     from = fst_from,
     to = fst_to,
     as.data.table = TRUE
 )
 
+# Beispieltabelle
 data_reduced <- data_total[Time %between% exampleTimeframe]
 
+# Berechnungsbeispiel
 data_example <- data_total[Time == arbitrageOpportunity]
+rm(data_total)
 
 # Route: [ USD -> ] EUR -> BTC -> USD [ -> EUR ]
 stopifnot(data_example$firstTick == "a")
@@ -41,8 +42,10 @@ printf(
     round(data_example$b_PriceLow / data_example$a_PriceHigh * data_example$ab_Bid, 9L)
 )
 
+
+# Beispiel als LaTeX-Tabelle ausgeben
 printf("\n\nBeispieltabelle:\n")
-# Als LaTeX-Tabelle ausgeben
+
 # Spalten: Zeit, BTC/USD Low/High, BTC/EUR Low/High, EUR/USD Bid/Ask
 tabIndentFirst <- strrep(" ", 8)
 tabIndent <- strrep(" ", 12)
@@ -54,19 +57,17 @@ for (i in seq_len(nrow(data_reduced))) {
         formatPOSIXctWithFractionalSeconds(priceTriple$Time, "%d.%m.%Y, %H:%M:%OS")
     )
     
-    #### In diesem kurzen Beispiel sind Höchst- und Tiefstkurse identisch.
-    #### Zeige daher nur einen aus Gründen der Übersichtlichkeit
     # BTC/USD
-    printf("%s%s\\,USD &\n", tabIndent, format.money(priceTriple$a_PriceLow, digits=2))
-    #printf("%s%s &\n", tabIndent, format.money(priceTriple$a_PriceHigh, digits=2))
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$a_PriceHigh, digits=2))
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$a_PriceLow, digits=2))
     
     # BTC/EUR
-    printf("%s%s\\,EUR &\n", tabIndent, format.money(priceTriple$b_PriceLow, digits=2))
-    #printf("%s%s &\n", tabIndent, format.money(priceTriple$b_PriceHigh, digits=2))
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$b_PriceHigh, digits=2))
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$b_PriceLow, digits=2))
     
     # EUR/USD
-    printf("%s%s\\,USD &\n", tabIndent, format.money(priceTriple$ab_Bid, digits=5))
-    printf("%s%s\\,USD \\\\\n", tabIndent, format.money(priceTriple$ab_Ask, digits=5))
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$ab_Bid, digits=5))
+    printf("%s%s \\\\\n", tabIndent, format.money(priceTriple$ab_Ask, digits=5))
     
     printf("\n")
 }

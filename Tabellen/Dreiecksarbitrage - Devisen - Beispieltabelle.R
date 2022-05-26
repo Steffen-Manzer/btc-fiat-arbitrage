@@ -8,12 +8,12 @@ source("Funktionen/printf.R")
 # Betrachtetes Zeitfenster
 # Unterscheidet sich von der Raumarbitrage, da bei dem dortigen Zeitfenster
 # kein Devisenhandel stattfand
-timeframe <- c("2021-12-05 22:30:03", "2021-12-05 22:30:04.3")
+timeframe <- c("2021-12-05 23:06:00.9", "2021-12-05 23:06:02.176700")
 
 # Beispieldaten laden
 forex <- read_fst(
     "Cache/forex-combined/eurusd/tick/forex-combined-eurusd-tick-2021-12.fst",
-    columns = c("Time", "Bid", "Ask"),
+    columns = c("Time", "Bid", "Ask", "Mittel"),
     as.data.table = TRUE
 )
 
@@ -34,8 +34,12 @@ for (i in seq_len(nrow(forex))) {
         tabIndent, format.money(tick$Bid, digits=5), "USD"
     )
     printf(
-        "%s%s\\,%s \\\\\n",
+        "%s%s\\,%s &\n",
         tabIndent, format.money(tick$Ask, digits=5), "USD"
+    )
+    printf(
+        "%s%s\\,%s \\\\\n",
+        tabIndent, format.money(tick$Mittel, digits=6), "USD"
     )
     
     printf("\n")
