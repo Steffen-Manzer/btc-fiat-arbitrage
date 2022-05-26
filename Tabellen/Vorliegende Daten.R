@@ -19,8 +19,7 @@ exchanges <- list(
     "bitstamp"="Bitstamp",
     "coinbase"="Coinbase Pro",
     "kraken"="Kraken",
-    "dukascopy"="Dukascopy",
-    "truefx"="TrueFX"
+    "dukascopy"="Dukascopy"
 )
 
 #' Zeitliche Auflösung
@@ -29,8 +28,7 @@ resolutionByExchange <- list(
     "bitstamp"="1 s",
     "coinbase"="1 µs",
     "kraken"="100 µs",
-    "dukascopy"="1 ms",
-    "truefx"="1 ms"
+    "dukascopy"="1 ms"
 )
 
 #' Genutzte Kurspaare (Kleinbuchstaben)

@@ -161,7 +161,7 @@ calculateTriangularArbitragePriceTriples <- function(
     # Wird genutzt, um bereits beim Einlesen der Bitcoin-Daten die
     # Abschnitte handelsfreier Zeiten zu überspringen.
     trading_hours_a_b <- read_fst(
-        sprintf("Cache/forex-combined/%s/forex-combined-%1$s-hourly.fst", pair_a_b),
+        sprintf("Cache/dukascopy/%s/dukascopy-%1$s-hourly.fst", pair_a_b),
         as.data.table = TRUE,
         columns = c("Time")
     )[Time >= startDate, Time]
@@ -174,7 +174,7 @@ calculateTriangularArbitragePriceTriples <- function(
         "Dataset",
         CurrencyPair = pair_a_b,
         PathPrefix = sprintf(
-            "Cache/forex-combined/%1$s/tick/forex-combined-%1$s-tick", 
+            "Cache/dukascopy/%1$s/tick/dukascopy-%1$s-tick",
             pair_a_b
         ),
         EndDate = endDate,
@@ -651,6 +651,9 @@ if (FALSE) {
     calculateTriangularArbitragePriceTriples("bitfinex", "usd", "eur", "2017-05-21", endDate)
     
     # Bitstamp
+    # 1s: 1h11min. 7.984.800 Datensätze in 638.8 MB (unkomprimiert).
+    #     6.255.518 Ticks verworfen, da außerhalb des Bitcoin-Zeitfensters von 1 s.
+    #           732 Ticks verworfen, da Wechselkurs älter als 1 h.
     # 5s: 1h50min. 11.992.966 Datensätze in 959.4 MB (unkomprimiert).
     calculateTriangularArbitragePriceTriples("bitstamp", "usd", "eur", "2016-04-16", endDate)
     

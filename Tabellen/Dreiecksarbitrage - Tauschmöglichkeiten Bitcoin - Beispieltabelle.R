@@ -32,7 +32,7 @@ b <- read_fst(
 pair_btc_b <- "btceur"
 
 forex <- read_fst(
-    "Cache/forex-combined/eurusd/tick/forex-combined-eurusd-tick-2021-12.fst",
+    "Cache/dukascopy/eurusd/tick/dukascopy-eurusd-tick-2021-12.fst",
     columns = c("Time", "Bid", "Ask"),
     as.data.table = TRUE
 )

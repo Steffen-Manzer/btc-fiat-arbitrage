@@ -8,7 +8,7 @@ setRefClass(
     fields=list(
     
         # Börse (Bitcoin) oder Datenquelle (Devisen) in Kleinbuchstaben,
-        # z.B. `bitfinex` oder `truefx`.
+        # z.B. `bitfinex` oder `dukascopy`.
         Exchange = "character",
         
         # Kurspaar in Kleinbuchstaben, z.B. `btcusd` oder `eurusd`.

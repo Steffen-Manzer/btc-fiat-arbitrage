@@ -12,7 +12,7 @@ timeframe <- c("2021-12-05 23:06:00.9", "2021-12-05 23:06:02.176700")
 
 # Beispieldaten laden
 forex <- read_fst(
-    "Cache/forex-combined/eurusd/tick/forex-combined-eurusd-tick-2021-12.fst",
+    "Cache/dukascopy/eurusd/tick/dukascopy-eurusd-tick-2021-12.fst",
     columns = c("Time", "Bid", "Ask", "Mittel"),
     as.data.table = TRUE
 )
