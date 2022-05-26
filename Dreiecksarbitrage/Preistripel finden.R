@@ -117,7 +117,7 @@ calculateTriangularArbitragePriceTriples <- function(
     currency_b,
     startDate,
     endDate,
-    bitcoinComparisonThresholdSeconds = 5L,
+    bitcoinComparisonThresholdSeconds = 1L,
     forexComparisonThresholdHours = 1L
 ) {
     if (!is.POSIXct(startDate)) {
@@ -515,7 +515,7 @@ calculateTriangularArbitragePriceTriples <- function(
         tick_ab <- findLastDatasetBeforeTimestamp(dataset_a_b$data, tick_btc_2$Time)
         
         # (Noch) kein passender Wechselkurs gefunden
-        if (length(tick_ab) == 0L || is.na(tick_ab)) {
+        if (nrow(tick_ab) == 0L || (length(tick_ab) == 1L && is.na(tick_ab))) {
             if (nrowDT(result) > 0L && result_set_index > 1L) {
                 warning("Wechselkurs-Tick nicht gefunden!")
                 printf.debug("!!! Wechselkurs-Tick nicht gefunden: %s\n", tick_btc_b$Time)
