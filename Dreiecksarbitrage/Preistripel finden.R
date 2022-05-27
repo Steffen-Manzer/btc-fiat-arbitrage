@@ -647,22 +647,27 @@ if (FALSE) {
     endDate <- as.POSIXct("2022-01-01 00:00:00") - .000001
     
     # Bitfinex
-    # 5s: 2h37min. 19.764.955 Datensätze in 1.6 GB (unkomprimiert).
+    # 1s: 2h06min. 18.174.296 Datensätze in 1.5 GB (unkomprimiert).
+    #     2.416.344 Ticks verworfen, da außerhalb des Bitcoin-Zeitfensters von 1 s.
+    #         2.611 Ticks verworfen, da Wechselkurs älter als 1 h.
     calculateTriangularArbitragePriceTriples("bitfinex", "usd", "eur", "2017-05-21", endDate)
     
     # Bitstamp
     # 1s: 1h11min. 7.984.800 Datensätze in 638.8 MB (unkomprimiert).
     #     6.255.518 Ticks verworfen, da außerhalb des Bitcoin-Zeitfensters von 1 s.
     #           732 Ticks verworfen, da Wechselkurs älter als 1 h.
-    # 5s: 1h50min. 11.992.966 Datensätze in 959.4 MB (unkomprimiert).
     calculateTriangularArbitragePriceTriples("bitstamp", "usd", "eur", "2016-04-16", endDate)
     
     # Coinbase Pro
-    # 5s: 5h. 39.199.305 Datensätze in 3.1 GB (unkomprimiert).
+    # 1s: 4h06min. 31.392.364 Datensätze in 2.5 GB (unkomprimiert).
+    #     9.414.822 Ticks verworfen, da außerhalb des Bitcoin-Zeitfensters von 1 s.
+    #         3.270 Ticks verworfen, da Wechselkurs älter als 1 h.
     calculateTriangularArbitragePriceTriples("coinbase", "usd", "eur", "2015-04-23", endDate)
     
     # Kraken
-    # 5s: 15.120.958 Datensätze in 1.2 GB (unkomprimiert).
+    # 1s: 1h37min. 9.148.354 Datensätze in 731.9 MB (unkomprimiert).
+    #     8.829.345 Ticks verworfen, da außerhalb des Bitcoin-Zeitfensters von 1 s.
+    #           836 Ticks verworfen, da Wechselkurs älter als 1 h.
     calculateTriangularArbitragePriceTriples("kraken",   "usd", "eur", "2013-10-06", endDate)
 }
 
