@@ -55,7 +55,8 @@ for (i in seq_len(nrow(ab))) {
     )
     printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceHigh, digits=2))
     printf("%s%s\\,USD &\n", tabIndent, format.money(tick$PriceLow, digits=2))
-    printf("%s%d &\n", tabIndent, tick$n)
+    # Anzahl Ticks ist für die Raumarbitrage nicht von Interesse
+    #printf("%s%d &\n", tabIndent, tick$n)
     printf("%s%s &\n", tabIndent, tick$Exchange)
     
     if (isTRUE(triplets[i])) {
