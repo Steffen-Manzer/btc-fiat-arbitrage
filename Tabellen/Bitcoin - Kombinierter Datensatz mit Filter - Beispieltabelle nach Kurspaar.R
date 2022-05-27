@@ -64,8 +64,11 @@ for (i in seq_len(nrow(ab))) {
         "%s%s\\,%s &\n",
         tabIndent, format.money(tick$PriceLow, digits=2), substr(tick$CurrencyPair, 5, 7)
     )
-    printf("%s%d &\n", tabIndent, tick$n)
-    # Keine Ticks gefiltert, daher hier einfach abbrechen
+    
+    # Anzahl Ticks interessiert für Dreiecksarbitrage nicht
+    #printf("%s%d &\n", tabIndent, tick$n)
+    
+    # Keine Ticks gefiltert, daher hier nicht einblenden
     #printf("%s%s &\n", tabIndent, tick$CurrencyPair)
     printf("%s%s \\\\\n", tabIndent, tick$CurrencyPair)
     
