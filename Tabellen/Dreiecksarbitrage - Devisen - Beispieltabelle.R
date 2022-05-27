@@ -27,7 +27,7 @@ for (i in seq_len(nrow(forex))) {
     tick <- forex[i]
     printf(
         "%s%s &\n",
-        tabIndentFirst, formatPOSIXctWithFractionalSeconds(tick$Time, "%d.%m.%Y, %H:%M:%OS")
+        tabIndentFirst, formatPOSIXctWithFractionalSeconds(tick$Time, "%d.%m.%Y, %H:%M:%OS3")
     )
     printf(
         "%s%s\\,%s &\n",
