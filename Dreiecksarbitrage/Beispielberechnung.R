@@ -40,46 +40,47 @@ rm(data_total)
 
 # Route: EUR -> BTC -> USD -> EUR
 #        USD -> EUR -> BTC -> USD
-# result <- data_example$btcusd_PriceHigh / data_example$btceur_PriceLow / data_example$eurusd_Ask
-# printf(
-#     "Arbitragegewinn: 1 EUR => %s EUR (%s %%)\n",
-#     round(result, 9L), format.percentage(result - 1, 7L)
-# )
+printf("Route 1: EUR -> BTC -> USD -> EUR\n")
+printf("         USD -> EUR -> BTC -> USD\n")
+printf("Beispielrechnung ausgehend von 1 Mio. EUR:\n")
+
+# 1. EUR -> BTC
+result <- round(1e6 / data_example$btceur_PriceLow, 8L)
+printf(
+    "   [Kauf BTC gegen EUR] 1 BTC = %s EUR => %.08f BTC\n",
+    format.money(data_example$btceur_PriceLow), result
+)
+
+# 2. BTC -> USD
+result <- round(result * data_example$btcusd_PriceHigh, 4L)
+printf(
+    "[Verkauf BTC gegen USD] 1 BTC = %s USD => %s USD\n",
+    format.money(data_example$btcusd_PriceHigh), format.money(result)
+)
+
+# 3. USD -> EUR
+result <- round(result / data_example$eurusd_Ask, 4L)
+printf(
+    "[Verkauf USD gegen EUR] 1 EUR = %s USD => %s EUR\n",
+    format.money(data_example$eurusd_Ask, digits = 5L), format.money(result)
+)
+
+printf(
+    "Arbitragegewinn (mit Zwischenrundung): 1.000.000 EUR => %s EUR (%+07f %%)\n",
+    format.money(result), result/1e4 - 100
+)
 
 # Route: EUR -> USD -> BTC -> EUR
 #        USD -> BTC -> EUR -> USD
+# Hier noch ohne Zwischenrundung, aber diese Route wird in der Arbeit ohnehin nicht dargestellt
+# printf("Route 2: EUR -> USD -> BTC -> EUR\n")
+# printf("         USD -> BTC -> EUR -> USD\n")
+# printf("   [Kauf BTC gegen USD] 1 BTC = %s USD\n", format.money(data_example$btcusd_PriceLow))
+# printf("[Verkauf BTC gegen EUR] 1 BTC = %s EUR\n", format.money(data_example$btceur_PriceHigh))
+# printf("   [Kauf USD gegen EUR] 1 EUR = %s USD\n", format.money(data_example$eurusd_Bid, digits = 5L))
+# 
 # result <- data_example$btceur_PriceHigh / data_example$btcusd_PriceLow * data_example$eurusd_Bid
 # printf(
 #     "Arbitragegewinn: 1 USD => %s USD (%s %%)\n",
 #     round(result, 9L), format.percentage(result - 1, 7L)
 # )
-
-# Beispiel als LaTeX-Tabelle ausgeben
-
-# Spalten: Nr., Zeit, BTC/USD High/Low, BTC/EUR High/Low, EUR/USD Geld/Brief
-tabIndentFirst <- strrep(" ", 8)
-tabIndent <- strrep(" ", 12)
-for (i in seq_len(nrow(data_reduced))) {
-    priceTriple <- data_reduced[i]
-    
-    printf("%s%d &\n", tabIndentFirst, i)
-    
-    printf(
-        "%s%s &\n",
-        tabIndent, formatPOSIXctWithFractionalSeconds(priceTriple$Time, "%H:%M:%OS")
-    )
-    
-    # BTC/USD
-    printf("%s%s &\n", tabIndent, format.money(priceTriple$btcusd_PriceHigh, digits=2))
-    printf("%s%s &\n", tabIndent, format.money(priceTriple$btcusd_PriceLow, digits=2))
-    
-    # BTC/EUR
-    printf("%s%s &\n", tabIndent, format.money(priceTriple$btceur_PriceHigh, digits=2))
-    printf("%s%s &\n", tabIndent, format.money(priceTriple$btceur_PriceLow, digits=2))
-    
-    # EUR/USD
-    printf("%s%s &\n", tabIndent, format.money(priceTriple$eurusd_Bid, digits=5))
-    printf("%s%s \\\\\n", tabIndent, format.money(priceTriple$eurusd_Ask, digits=5))
-    
-    printf("\n")
-}
