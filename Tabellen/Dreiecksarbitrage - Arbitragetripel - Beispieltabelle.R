@@ -1,5 +1,7 @@
 library("fst")
 library("data.table")
+library("stringr") # str_replace
+source("Dreiecksarbitrage/Auswertung nach Börsen gruppiert.R") # calculateResult
 source("Funktionen/printf.R")
 source("Funktionen/FormatNumber.R")
 source("Funktionen/FormatPOSIXctWithFractionalSeconds.R")
@@ -17,7 +19,7 @@ exampleTimeframe <- c("2021-12-05 23:06:01.086400", "2021-12-05 23:06:02.17022")
 fst_from <- 29900000L
 fst_to <- fst_from + 1e5
 
-data_total <- read_fst(
+dataset <- read_fst(
     path = "Cache/Dreiecksarbitrage/1s/coinbase-usd-eur-1.fst",
     columns = c("Time", "a_PriceLow", "a_PriceHigh", "b_PriceLow", "b_PriceHigh", "ab_Bid", "ab_Ask"),
     from = fst_from,
@@ -25,42 +27,15 @@ data_total <- read_fst(
     as.data.table = TRUE
 )
 
-# Spaltennamen für Beispielberechnung weit intuitiver gestalten
-# coinbase-usd-eur-1 -> a = usd, b = eur, ab = eurusd (gemäß Konvention)
-old <- c("a_PriceLow",      "a_PriceHigh",      "b_PriceLow",      "b_PriceHigh",      "ab_Bid",     "ab_Ask")
-new <- c("btcusd_PriceLow", "btcusd_PriceHigh", "btceur_PriceLow", "btceur_PriceHigh", "eurusd_Bid", "eurusd_Ask")
-setnames(data_total, old, new)
-
-# Beispieltabelle
-data_reduced <- data_total[Time %between% exampleTimeframe]
-
-# Berechnungsbeispiel
-data_example <- data_total[Time == arbitrageOpportunity]
-rm(data_total)
-
-# Route: EUR -> BTC -> USD -> EUR
-#        USD -> EUR -> BTC -> USD
-# result <- data_example$btcusd_PriceHigh / data_example$btceur_PriceLow / data_example$eurusd_Ask
-# printf(
-#     "Arbitragegewinn: 1 EUR => %s EUR (%s %%)\n",
-#     round(result, 9L), format.percentage(result - 1, 7L)
-# )
-
-# Route: EUR -> USD -> BTC -> EUR
-#        USD -> BTC -> EUR -> USD
-# result <- data_example$btceur_PriceHigh / data_example$btcusd_PriceLow * data_example$eurusd_Bid
-# printf(
-#     "Arbitragegewinn: 1 USD => %s USD (%s %%)\n",
-#     round(result, 9L), format.percentage(result - 1, 7L)
-# )
-
-# Beispiel als LaTeX-Tabelle ausgeben
+# Beispieltabelle bilden
+dataset <- dataset[Time %between% exampleTimeframe]
+printf("Tabelle OHNE Ergebnisse:\n\n")
 
 # Spalten: Nr., Zeit, BTC/USD High/Low, BTC/EUR High/Low, EUR/USD Geld/Brief
 tabIndentFirst <- strrep(" ", 8)
 tabIndent <- strrep(" ", 12)
-for (i in seq_len(nrow(data_reduced))) {
-    priceTriple <- data_reduced[i]
+for (i in seq_len(nrow(dataset))) {
+    priceTriple <- dataset[i]
     
     printf("%s%d &\n", tabIndentFirst, i)
     
@@ -70,16 +45,62 @@ for (i in seq_len(nrow(data_reduced))) {
     )
     
     # BTC/USD
-    printf("%s%s &\n", tabIndent, format.money(priceTriple$btcusd_PriceHigh, digits=2))
-    printf("%s%s &\n", tabIndent, format.money(priceTriple$btcusd_PriceLow, digits=2))
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$a_PriceHigh, digits=2))
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$a_PriceLow, digits=2))
     
     # BTC/EUR
-    printf("%s%s &\n", tabIndent, format.money(priceTriple$btceur_PriceHigh, digits=2))
-    printf("%s%s &\n", tabIndent, format.money(priceTriple$btceur_PriceLow, digits=2))
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$b_PriceHigh, digits=2))
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$b_PriceLow, digits=2))
     
     # EUR/USD
-    printf("%s%s &\n", tabIndent, format.money(priceTriple$eurusd_Bid, digits=5))
-    printf("%s%s \\\\\n", tabIndent, format.money(priceTriple$eurusd_Ask, digits=5))
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$ab_Bid, digits=5))
+    printf("%s%s \\\\\n", tabIndent, format.money(priceTriple$ab_Ask, digits=5))
+    
+    printf("\n")
+}
+
+
+# Tabelle MIT Ergebnissen
+result <- new(
+    "TriangularResult",
+    Exchange = "coinbase",
+    ExchangeName = "Coinbase Pro",
+    Currency_A = "usd",
+    Currency_B = "eur",
+    data = dataset
+)
+calculateResult(result)
+
+# Spalten: Nr., Zeit, BTC/USD High/Low, BTC/EUR High/Low, Route 1, Route 2
+printf("\n\nTabelle MIT Ergebnissen:\n\n")
+for (i in seq_len(nrow(result$data))) {
+    priceTriple <- result$data[i]
+    
+    printf("%s%d &\n", tabIndentFirst, i)
+    
+    printf(
+        "%s%s &\n",
+        tabIndent, formatPOSIXctWithFractionalSeconds(priceTriple$Time, "%H:%M:%OS")
+    )
+    
+    # BTC/USD
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$a_PriceHigh, digits=2))
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$a_PriceLow, digits=2))
+    
+    # BTC/EUR
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$b_PriceHigh, digits=2))
+    printf("%s%s &\n", tabIndent, format.money(priceTriple$b_PriceLow, digits=2))
+    
+    # Ergebnisse
+    route_1 <- sprintf("%+.6f", (priceTriple$ResultAB - 1) * 100) |> 
+        str_replace(fixed("."), ",") |>
+        str_replace("(\\d{3})", "\\1\\\\,")
+    printf("%s%s\\,\\%% &\n", tabIndent, route_1)
+    
+    route_2 <- sprintf("%+.6f", (priceTriple$ResultBA - 1) * 100) |> 
+        str_replace(fixed("."), ",") |>
+        str_replace("(\\d{3})", "\\1\\\\,")
+    printf("%s%s\\,\\%% \\\\\n", tabIndent, route_2)
     
     printf("\n")
 }

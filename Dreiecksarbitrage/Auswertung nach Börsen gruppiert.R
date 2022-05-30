@@ -78,9 +78,11 @@ DEBUG_ASSIGN_TO_GLOBAL_ENV <- TRUE
 #' Daher werden für das Tripel BTC, EUR, USD folgende Routen durchgespielt:
 #' Variante 1: EUR - BTC - USD - EUR (EUR-USD-Briefkurs)
 #'     äq. zu: USD - EUR - BTC - USD
+#'     = `Result_AB`
 #' 
 #' Variante 2: USD - BTC - EUR - USD (EUR-USD-Geldkurs)
 #'     äq. zu: EUR - USD - BTC - EUR
+#'     = `Result_BA`
 #' 
 #' @param data Eine Instanz der Klasse `TriangularResult` (per Referenz)
 #' @return NULL (`data` wird per Referenz verändert)

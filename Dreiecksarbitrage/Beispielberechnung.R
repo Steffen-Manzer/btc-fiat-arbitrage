@@ -66,21 +66,29 @@ printf(
 )
 
 printf(
-    "Arbitragegewinn (mit Zwischenrundung): 1.000.000 EUR => %s EUR (%+07f %%)\n",
+    "Arbitragegewinn (mit Zwischenrundung): 1.000.000 EUR => %s EUR (%+07f %%)\n\n",
     format.money(result), result/1e4 - 100
 )
 
 # Route: EUR -> USD -> BTC -> EUR
 #        USD -> BTC -> EUR -> USD
 # Hier noch ohne Zwischenrundung, aber diese Route wird in der Arbeit ohnehin nicht dargestellt
-# printf("Route 2: EUR -> USD -> BTC -> EUR\n")
-# printf("         USD -> BTC -> EUR -> USD\n")
-# printf("   [Kauf BTC gegen USD] 1 BTC = %s USD\n", format.money(data_example$btcusd_PriceLow))
-# printf("[Verkauf BTC gegen EUR] 1 BTC = %s EUR\n", format.money(data_example$btceur_PriceHigh))
-# printf("   [Kauf USD gegen EUR] 1 EUR = %s USD\n", format.money(data_example$eurusd_Bid, digits = 5L))
-# 
-# result <- data_example$btceur_PriceHigh / data_example$btcusd_PriceLow * data_example$eurusd_Bid
-# printf(
-#     "Arbitragegewinn: 1 USD => %s USD (%s %%)\n",
-#     round(result, 9L), format.percentage(result - 1, 7L)
-# )
+printf("Route 2: EUR -> USD -> BTC -> EUR\n")
+printf("         USD -> BTC -> EUR -> USD\n")
+
+# 1. USD -> BTC
+result <- round(1e6 / data_example$btcusd_PriceLow, 8L)
+printf("   [Kauf BTC gegen USD] 1 BTC = %s USD => %.08f BTC\n", data_example$btcusd_PriceLow, result)
+
+# 2. BTC -> EUR
+result <- round(result * data_example$btceur_PriceHigh, 4L)
+printf("[Verkauf BTC gegen EUR] 1 BTC = %s EUR => %s EUR\n", data_example$btceur_PriceHigh,format.money(result))
+
+# 3. EUR -> USD
+result <- round(result * data_example$eurusd_Bid, 4L)
+printf("   [Kauf USD gegen EUR] 1 EUR = %s USD => %s USD\n", data_example$eurusd_Bid, format.money(result))
+
+printf(
+    "Arbitragegewinn (mit Zwischenrundung): 1.000.000 USD => %s USD (%+.2f USD / %+07f %%)\n\n",
+    format.money(result), result-1e6, result/1e4 - 100
+)
