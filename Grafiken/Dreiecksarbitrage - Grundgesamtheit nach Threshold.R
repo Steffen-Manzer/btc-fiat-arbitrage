@@ -47,7 +47,7 @@ for (t in c(1, 2, 5, 10)) {
     for (f in files) {
         
         # Informationen aus Dateinamen auslesen:
-        # bitfinex-usd-eur-1.fst
+        # bitfinex-usd-eur.fst
         n <- basename(f)
         parts <- n |> str_split(fixed("-"))
         exchange <- parts[[1]][1]

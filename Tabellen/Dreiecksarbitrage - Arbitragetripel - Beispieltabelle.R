@@ -13,14 +13,14 @@ arbitrageOpportunity <- as.POSIXct("2021-12-05 23:06:02.170219")
 # Beispielzeilen
 exampleTimeframe <- c("2021-12-05 23:06:01.086400", "2021-12-05 23:06:02.17022")
 
-# 31400114 rows, 10 columns (coinbase-usd-eur-1.fst)
+# 31400114 rows, 10 columns (coinbase-usd-eur.fst)
 # Position 29.900.000 entspricht dem 03.12.2021, 20:52:48
 # Position 30.000.000 entspricht dem 06.12.2021, 21:56:10
 fst_from <- 29900000L
 fst_to <- fst_from + 1e5
 
 dataset <- read_fst(
-    path = "Cache/Dreiecksarbitrage/1s/coinbase-usd-eur-1.fst",
+    path = "Cache/Dreiecksarbitrage/1s/coinbase-usd-eur.fst",
     columns = c("Time", "a_PriceLow", "a_PriceHigh", "b_PriceLow", "b_PriceHigh", "ab_Bid", "ab_Ask"),
     from = fst_from,
     to = fst_to,

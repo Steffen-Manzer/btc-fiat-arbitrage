@@ -47,54 +47,6 @@ library("data.table")
 library("lubridate") # is.POSIXct, floor_date
 
 
-# Hilfsfunktionen -------------------------------------------------------------
-
-#' Teilergebnis speichern, um Arbeitsspeicher wieder freizugeben
-#' 
-#' @param result Eine data.table
-#' @param index Nummer dieses Teilergebnisses
-#' @param exchange Name der Bitcoin-Börse
-#' @param currency_a Gegenwährung 1
-#' @param currency_a Gegenwährung 2
-saveInterimResult <- function(result, index, exchange, currency_a, currency_b, threshold)
-{
-    # Parameter validieren
-    stopifnot(
-        is.data.table(result), nrow(result) >= 1L,
-        is.integer(index), length(index) == 1L,
-        is.character(exchange), length(exchange) == 1L,
-        is.character(currency_a), length(currency_a) == 1L,
-        is.character(currency_b), length(currency_b) == 1L
-    )
-    
-    # Zieldatei bestimmen
-    outFile <- sprintf("Cache/Dreiecksarbitrage/%ds/%s-%s-%s-%d.fst",
-                       threshold, exchange, currency_a, currency_b, index)
-    stopifnot(!file.exists(outFile))
-    
-    # Ergebnis um zwischenzeitlich eingefügte `NA`s bereinigen
-    # (= reservierter Speicher für weitere Ergebnisse)
-    result <- cleanupDT(result)
-    
-    # Um Probleme mit appendDT (NA+POSIXct) zu umgehen, wurde der Zeitstempel
-    # unten in ein double umgewandelt und wird an dieser Stelle wieder in 
-    # POSIXct konvertiert.
-    result[, Time:=as.POSIXct(Time, origin="1970-01-01")]
-    
-    printf("\n\n%s Datensätze in %s (unkomprimiert).",
-           format.number(nrow(result)),
-           format(object.size(result), units="auto", standard="SI"))
-    
-    # Ergebnis speichern
-    if (!dir.exists(dirname(outFile))) {
-        dir.create(dirname(outFile), recursive=TRUE)
-    }
-    write_fst(result, outFile, compress=100)
-    
-    return(invisible(NULL))
-}
-
-
 # Haupt-Auswertungsfunktion ---------------------------------------------------
 
 #' Dreiecksarbitrage für die Route A -> BTC -> B -> A bestimmen
@@ -108,9 +60,9 @@ saveInterimResult <- function(result, index, exchange, currency_a, currency_b, t
 #'    ab der das Tick-Paar verworfen wird.
 #' @param forexComparisonThresholdHours Zeitliche Differenz zum nächsten Wechselkurs,
 #'     ab der das Tick-Paar verworfen wird.
-#' @return `NULL` Ergebnisse werden in mehreren Dateien (i = 1...n) unter
-#'     Cache/Dreiecksarbitrage/`exchange`-`currency_a`-`currency_b`-`i`.fst
-#'     gespeichert (siehe `saveInterimResult`).
+#' @return `NULL` Ergebnisse werden unter
+#'     Cache/Dreiecksarbitrage/`exchange`-`currency_a`-`currency_b`.fst
+#'     gespeichert
 calculateTriangularArbitragePriceTriples <- function(
     exchange,
     currency_a,
@@ -141,16 +93,18 @@ calculateTriangularArbitragePriceTriples <- function(
     currency_a <- tolower(currency_a)
     currency_b <- tolower(currency_b)
     
-    # Ergebnisdatei existiert bereits
-    firstOutputFile <- sprintf(
-        "Cache/Dreiecksarbitrage/%ds/%s-%s-%s-1.fst",
+    # Ergebnisdatei
+    outputFile <- sprintf(
+        "Cache/Dreiecksarbitrage/%ds/%s-%s-%s.fst",
         bitcoinComparisonThresholdSeconds, exchange, currency_a, currency_b
     )
-    if (file.exists(firstOutputFile)) {
-        printf("Zieldatei %s bereits vorhanden!\n", firstOutputFile)
+    if (file.exists(outputFile)) {
+        printf("Zieldatei %s bereits vorhanden!\n", outputFile)
         return(invisible(NULL))
     }
-    rm(firstOutputFile)
+    if (!dir.exists(dirname(outputFile))) {
+        dir.create(dirname(outputFile), recursive=TRUE)
+    }
     
     # Bezeichnungen normalisieren
     pair_a_b <- determineCurrencyPairOrder(currency_a, currency_b)
@@ -291,7 +245,6 @@ calculateTriangularArbitragePriceTriples <- function(
     
     # Ergebnisvektor
     result <- data.table()
-    result_set_index <- 1L
     
     # Fortschritt aufzeichnen und ausgeben
     processedDatasets <- 0L
@@ -322,8 +275,8 @@ calculateTriangularArbitragePriceTriples <- function(
         processedDatasets <- processedDatasets + 1L
         if (processedDatasets %% 10000 == 0 || currentRow == numRows) {
             runtime <- as.integer(proc.time()["elapsed"] - now)
-            #           Runtime nInput  Time    nResult Size    Speed      Set
-            printf("\r  % 13s   % 11s   % 26s   % 10s   % 8s   % 6s T/s   % 3d",
+            #           Runtime nInput  Time    nResult Size    Speed
+            printf("\r  % 13s   % 11s   % 26s   % 10s   % 8s   % 6s T/s",
                    format.duration(runtime),
                    format.number(processedDatasets),
                    formatPOSIXctWithFractionalSeconds(
@@ -331,8 +284,7 @@ calculateTriangularArbitragePriceTriples <- function(
                    ),
                    format.number(nrowDT(result)),
                    format(object.size(result), units="auto", standard="SI"),
-                   format.number(round(processedDatasets/runtime, 0)),
-                   result_set_index
+                   format.number(round(processedDatasets/runtime, 0))
             )
         }
         
@@ -516,10 +468,6 @@ calculateTriangularArbitragePriceTriples <- function(
         
         # (Noch) kein passender Wechselkurs gefunden
         if (nrow(tick_ab) == 0L || (length(tick_ab) == 1L && is.na(tick_ab))) {
-            if (nrowDT(result) > 0L && result_set_index > 1L) {
-                warning("Wechselkurs-Tick nicht gefunden!")
-                printf.debug("!!! Wechselkurs-Tick nicht gefunden: %s\n", tick_btc_b$Time)
-            }
             next
         }
         
@@ -576,26 +524,23 @@ calculateTriangularArbitragePriceTriples <- function(
             ))
             
         }
-        
-        # 100 Mio. Datenpunkte im Ergebnisvektor: Zwischenspeichern
-        if (nrowDT(result) >= 1e8) {
-            
-            printf.debug(
-                "\n100 Mio. Datenpunkte im Ergebnisvektor, Teilergebnis zwischenspeichern...\n"
-            )
-            
-            # Ergebnis speichern
-            saveInterimResult(result, result_set_index, exchange, currency_a, currency_b, bitcoinComparisonThresholdSeconds)
-            result_set_index <- result_set_index + 1L
-            
-            # Ergebnisspeicher leeren
-            result <- data.table()
-            gc()
-        }
     }
     
-    # Rest speichern
-    saveInterimResult(result, result_set_index, exchange, currency_a, currency_b, bitcoinComparisonThresholdSeconds)
+    # Speichern
+    # Ergebnis um zwischenzeitlich eingefügte `NA`s bereinigen
+    # (= reservierter Speicher für weitere Ergebnisse)
+    result <- cleanupDT(result)
+    
+    # Um Probleme mit appendDT (NA+POSIXct) zu umgehen, wurde der Zeitstempel
+    # zuvor in ein double umgewandelt und an dieser Stelle wieder in POSIXct konvertiert.
+    result[, Time:=as.POSIXct(Time, origin="1970-01-01")]
+    
+    printf("\n\n%s Datensätze in %s (unkomprimiert).",
+           format.number(nrow(result)),
+           format(object.size(result), units="auto", standard="SI"))
+    
+    # Ergebnis speichern
+    write_fst(result, outputFile, compress=100)
     
     printf("\n\n  Abgeschlossen.\n")
     printf("===============\n")
