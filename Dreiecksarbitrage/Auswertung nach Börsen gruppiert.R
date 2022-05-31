@@ -17,6 +17,7 @@
 
 # Bibliotheken und externe Hilfsfunktionen laden ------------------------------
 source("Klassen/TriangularResult.R")
+source("Funktionen/CalculateIntervals.R")
 source("Funktionen/DetermineCurrencyPairOrder.R")
 source("Funktionen/FormatNumber.R")
 source("Funktionen/printf.R")
