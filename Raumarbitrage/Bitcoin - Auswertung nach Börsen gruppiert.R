@@ -488,7 +488,6 @@ plotNumDifferencesByTime <- function(
         ) +
         scale_y_continuous(
             labels = function(x) paste(format.number(x / roundFac))
-            #breaks = breaks_extended(4L)
         ) +
         # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
         scale_color_highcontrast() +
@@ -1008,12 +1007,7 @@ plotVolatilityByTime <- function(
         result <- rbindlist(list(result, dataset[Time %between% timeframe & !is.na(Volatility)]))
     }
     
-    if (nrow(result) == 0L) {
-        stop(sprintf(
-            "Datensatz ist leer. Daten für Aggregationslevel %s vorhanden?",
-            aggregationLevel
-        ))
-    }
+    stopifnot(nrow(result) > 0L)
     
     result <- result[j=.(Volatility=mean(Volatility)), by=Time]
     setorder(result, Time)

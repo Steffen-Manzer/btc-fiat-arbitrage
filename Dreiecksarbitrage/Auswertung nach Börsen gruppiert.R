@@ -19,6 +19,7 @@
 source("Klassen/TriangularResult.R")
 source("Funktionen/CalculateIntervals.R")
 source("Funktionen/DetermineCurrencyPairOrder.R")
+source("Funktionen/FormatCurrencyPair.R")
 source("Funktionen/FormatNumber.R")
 source("Funktionen/printf.R")
 source("Konfiguration/FilePaths.R")
@@ -26,12 +27,14 @@ library("fst")
 library("data.table")
 library("lubridate") # floor_date
 library("ggplot2")
-library("ggthemes")
-library("gridExtra") # grid.arrange
+library("ggthemes") # Einfaches Farbschema von Paul Tol
+library("khroma") # Weitere, detailliertere Farbschemata von Paul Tol
+library("cowplot") # plot_grid
 library("readr") # read_file, write_file
 #library("scales") # breaks_extended
 library("stringr") # str_replace
 library("tictoc")
+library("TTR") # volatility
 
 
 # Konfiguration -----------------------------------------------------------
@@ -43,14 +46,22 @@ exchangeNames <- list(
     "kraken" = "Kraken"
 )
 
-# TODO.
+# Verfügbare Grenzwerte für Abschluss des Arbitragegeschäfts in Sekunden
+thresholds <- c(1L, 2L, 5L, 10L)
+
+# Haupt-Intervall zur Betrachtung innerhalb der Arbeit
+# (Rest: Nur Anhang, reduzierte Ansicht)
+mainThreshold <- 1L
+
 # Die Breakpoints selbst werden immer dem letzten der beiden entstehenden
 # Intervalle zugerechnet
 breakpointsByExchange <- list(
-    "bitfinex" = NULL,
-    "bitstamp" = NULL,
-    "coinbase" = NULL,
-    "kraken" = NULL
+    # Intervall: 1.           2.             3.           4.
+    # Von/Bis: --> 2015 -- 2015-2017  --  2017-2019 -- 2019 -->
+    "bitfinex" = c(                            "2019-07-01"), # USD ab 14.01.2013 / EUR ab 19.05.2017
+    "bitstamp" = c(              "2017-01-01", "2019-07-01"), # USD ab 18.08.2011 / EUR ab 16.04.2016
+    "coinbase" = c(              "2017-01-01", "2019-07-01"), # USD ab 01.12.2014 / EUR ab 23.04.2015
+    "kraken"   = c("2015-04-01", "2017-01-01", "2019-07-01")  # USD ab 06.10.2013 / EUR ab 10.09.2013
 )
 
 #' Tabellen-Template mit `{tableContent}`, `{tableCaption` und `{tableLabel}` 
@@ -60,13 +71,11 @@ summaryTableTemplateFile <-
             latexOutPath)
 
 # Variablen für Tests initialisieren
-exchange <- "coinbase"
+exchange <- "kraken"
 currency_a <- "usd"
 currency_b <- "eur"
-
-# Ergebnisse für Test-/Entwicklungszwecke in globale Umgebung exportieren,
-# um nicht jedes Mal Daten neu einlesen und berechnen zu müssen
-DEBUG_ASSIGN_TO_GLOBAL_ENV <- TRUE
+threshold <- 1L
+breakpoints <- breakpointsByExchange[[exchange]]
 
 
 # Hilfsfunktionen -------------------------------------------------------------
@@ -85,8 +94,8 @@ DEBUG_ASSIGN_TO_GLOBAL_ENV <- TRUE
 #'     äq. zu: EUR - USD - BTC - EUR
 #'     = `Result_BA`
 #' 
-#' @param data Eine Instanz der Klasse `TriangularResult` (per Referenz)
-#' @return NULL (`data` wird per Referenz verändert)
+#' @param result Eine Instanz der Klasse `TriangularResult` (per Referenz)
+#' @return NULL (`result` wird per Referenz verändert)
 calculateResult <- function(result)
 {
     stopifnot(inherits(result, "TriangularResult"))
@@ -97,20 +106,23 @@ calculateResult <- function(result)
     quotedFiatCurrency <- substr(pair_a_b, 4, 6)
     
     if (result$Currency_A == baseFiatCurrency && result$Currency_B == quotedFiatCurrency) {
-        # A ist Basiswährung des Wechselkurses, Beispiel EUR/USD:
-        # A = EUR = Basiswährung
-        # B = USD = quotierte Währung
-        # Umrechnung A -> B (Basis -> quotiert): *Bid (mit Bid multiplizieren)
-        # Umrechnung B -> A (quotiert -> Basis): /Ask (durch Ask dividieren)
+        #' A ist Basiswährung des Wechselkurses, Beispiel EUR/USD:
+        #' A = EUR = Basiswährung
+        #' B = USD = quotierte Währung
+        #' Umrechnung A -> B (Basis -> quotiert): *Bid (mit Bid multiplizieren)
+        #' Umrechnung B -> A (quotiert -> Basis): /Ask (durch Ask dividieren)
         a_to_b <- expr(ab_Bid)
         b_to_a <- expr(1/ab_Ask)
         
     } else if (result$Currency_B == baseFiatCurrency && result$Currency_A == quotedFiatCurrency) {
-        # B ist Basiswährung des Wechselkurses, Beispiel EUR/USD:
-        # A = USD = quotierte Währung
-        # B = EUR = Basiswährung
-        # Umrechnung A -> B (quotiert -> Basis): /Ask (durch Ask dividieren)
-        # Umrechnung B -> A (Basis -> quotiert): *Bid (mit Bid multiplizieren)
+        #'
+        #' * Dies ist der vorliegende Fall für die durchgeführte Berechnung (A=usd, B=eur) *
+        #'
+        #' B ist Basiswährung des Wechselkurses, Beispiel EUR/USD:
+        #' A = USD = quotierte Währung
+        #' B = EUR = Basiswährung
+        #' Umrechnung A -> B (quotiert -> Basis): /Ask (durch Ask dividieren)
+        #' Umrechnung B -> A (Basis -> quotiert): *Bid (mit Bid multiplizieren)
         a_to_b <- expr(1/ab_Ask)
         b_to_a <- expr(ab_Bid)
         
@@ -118,17 +130,19 @@ calculateResult <- function(result)
         stop("Hinterlegtes Wechselkurspaar ist nicht korrekt!")
     }
     
-    # Ergebnisse berechnen (siehe Doku zu data.table: "set")
+    # Ergebnisse berechnen (siehe Dokumentation zu data.table: `set`)
     result$data[, `:=`(
-        # Route A->B: A -> B -> BTC -> A oder B -> BTC -> A -> B
-        ResultAB = eval(a_to_b) * a_PriceHigh / b_PriceLow,
+        # Route 1 = A->B: A -> B -> BTC -> A oder B -> BTC -> A -> B
+        ResultAB = eval(a_to_b) * a_PriceHigh / b_PriceLow - 1,
         
-        # Route B->A: A -> BTC -> B -> A oder B -> A -> BTC -> B
-        ResultBA = eval(b_to_a) * b_PriceHigh / a_PriceLow
+        # Route 2 = B->A: A -> BTC -> B -> A oder B -> A -> BTC -> B
+        ResultBA = eval(b_to_a) * b_PriceHigh / a_PriceLow - 1
     )]
     
+    #' Bestes Ergebnis bestimmen ("paralleles" Maximum `pmax`)
     result$data[, BestResult := pmax(ResultAB, ResultBA)]
     
+    #' Kein Rückgabewert, `result` wird per Referenz verändert
     return(invisible(NULL))
 }
 
@@ -155,19 +169,32 @@ aggregateResultsByTime <- function(result, floorUnits, interval = NULL)
     # großen Datenmengen (für den Fall, dass ein Intervall angegeben ist)
     # unten zu vermeiden (stattdessen immer direkt ein data.table-Subsetting)
     group <- expr(.(
+        
+        # Lagemaße
         Min = min(BestResult),
         Q1 = quantile(BestResult, probs=.25, names=FALSE),
         Mean = mean(BestResult),
         Median = median(BestResult),
         Q3 = quantile(BestResult, probs=.75, names=FALSE),
         Max = max(BestResult),
-        n = .N
+        n = .N,
+        
+        # Wieviele Preistripel sind größer als...
+        # 1 %
+        nLargerThan1Pct = length(which(BestResult >= .01)),
+        # 2 %
+        nLargerThan2Pct = length(which(BestResult >= .02)),
+        # 5 %
+        nLargerThan5Pct = length(which(BestResult >= .05)),
+        
+        # Routen-Statistiken: Wie oft ist Route 1 / 2 die bessere Wahl?
+        AB_Best = sum(as.integer(ResultAB == BestResult)) / .N,
+        BA_Best = sum(as.integer(ResultBA == BestResult)) / .N
     ))
     
     if (!is.null(interval)) {
         
         # Zeitraum begrenzt
-        # TODO Test
         aggregatedResults <- result$data[
             Time %between% interval,
             j = eval(group),
@@ -196,7 +223,6 @@ aggregateResultsByTime <- function(result, floorUnits, interval = NULL)
 #' @param arbitrageResults `data.table` mit den aggregierten Ergebnissen
 #' @param latexOutPath Ausgabepfad als LaTeX-Datei
 #' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
-#' @param removeGaps Datenlücken nicht interpolieren/zeichnen
 #' @param plotType Plot-Typ: line oder point
 #' @param plotTitle Überschrift (optional)
 #' @return Der Plot (unsichtbar)
@@ -204,7 +230,6 @@ plotAggregatedResultsOverTime <- function(
     arbitrageResults,
     latexOutPath = NULL,
     breakpoints = NULL,
-    removeGaps = TRUE,
     plotType = "line",
     plotTitle = NULL
 ) {
@@ -257,57 +282,33 @@ plotAggregatedResultsOverTime <- function(
         # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
         plot <- plot + 
             geom_rect(
-                aes(
-                    xmin = From,
-                    xmax = To,
-                    ymin = 0,
-                    ymax = maxValue * 1.05,
-                    fill = Set
-                ),
+                aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
                 data = intervals,
-                alpha = .25
+                alpha = .5,
+                show.legend = FALSE
             ) +
             geom_text(
-                aes(
-                    x = From+(To-From)/2,
-                    y = maxValue,
-                    label = paste0(plotTextPrefix, Set)
-                ),
+                aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
                 data = intervals
             )
     }
     
-    if (plotType == "line") {
-        
-        # Liniengrafik. Nützlich, wenn Daten nahezu kontinuierlich vorliegen
-        # Bestehende Lücken > 2 Tage dennoch auslassen und nicht interpolieren
-        # https://stackoverflow.com/a/21529560
-        # TODO Variabel gestalten (nicht fix 2 Tage)?
-        if (removeGaps) {
-            gapGroups <- c(0, cumsum(diff(arbitrageResults$Time) > 2))
-        } else {
-            gapGroups <- 0
-        }
-        
-        plot <- plot +
-            # Q1/Q3 zeichnen
-            geom_ribbon(aes(x=Time, ymin=Q1, ymax=Q3, group=gapGroups), fill="grey70") +
-            
-            # Median zeichnen
-            geom_line(aes(x=Time, y=Median, color="1", linetype="1", group=gapGroups), size=.5)
-        
-    } else if (plotType == "point") {
-        
-        # Punkt-Grafik. Besser, wenn Daten viele Lücken aufweisen
-        plot <- plot +
-            geom_point(aes(x=Time, y=BestResult, color="1"), size=.25)
-        
+    # Datumsachse bestimmen
+    if (difftime(max(arbitrageResults$Time), min(arbitrageResults$Time), units = "weeks") > 2*52) {
+        date_breaks <- "1 year"
+        date_labels <- "%Y"
     } else {
-        stop(sprintf("Unbekannter Plot-Typ: %s", plotType))
+        date_breaks <- expr(waiver())
+        date_labels <- "%m/%Y"
     }
     
-    
-    plot <- plot + 
+    plot <- plot +
+        # Q1/Q3 zeichnen
+        geom_ribbon(aes(x=Time, ymin=Q1, ymax=Q3), fill="grey70") +
+        
+        # Median zeichnen
+        geom_line(aes(x=Time, y=Median, color="1", linetype="1"), size=.5) +
+        
         theme_minimal() +
         theme(
             legend.position = "none",
@@ -315,13 +316,19 @@ plotAggregatedResultsOverTime <- function(
             axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
             axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
         ) +
-        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
-        coord_cartesian(ylim=c(minValue, maxValue)) +
-        scale_y_continuous(
-            labels = function(x) paste(format.number((x-1) * 100), "%")
+        coord_cartesian(ylim=c(0, maxValue)) +
+        scale_x_datetime(
+            date_breaks = eval(date_breaks),
+            date_labels = date_labels,
+            expand = expansion(mult=c(.01, .05))
         ) +
-        scale_color_ptol() +
-        scale_fill_ptol() +
+        scale_y_continuous(
+            labels = function(x) paste(format.number(x * 100), "%")
+        ) +
+        # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
+        scale_color_highcontrast() +
+        # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
+        scale_fill_pale() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab)
@@ -329,6 +336,149 @@ plotAggregatedResultsOverTime <- function(
     
     if (!is.null(plotTitle)) {
         plot <- plot + ggtitle(paste0(plotSmallPrefix, plotTitle))
+    }
+    
+    if (!is.null(latexOutPath)) {
+        # Plot zeichnen
+        print(plot)
+        dev.off()
+        return(invisible(plot))
+    } else {
+        return(plot)
+    }
+}
+
+
+#' Anteil der "vorteilhaften" Preisabweichungen im Zeitverlauf darstellen
+#' 
+#' @param result `data.table` mit den aggr. Preistripeln
+#' @param latexOutPath Zieldatei
+#' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
+#' @param plotTitle Überschrift (optional)
+#' @param legendBelowGraph Position der Legende (optional)
+#' @return Der Plot (unsichtbar)
+plotProfitableTriplesByTime <- function(
+    result,
+    latexOutPath = NULL,
+    breakpoints = NULL,
+    plotTitle = NULL,
+    legendBelowGraph = NULL
+)
+{
+    # Parameter validieren
+    stopifnot(
+        is.data.table(result),
+        is.null(latexOutPath) || (is.character(latexOutPath) && length(latexOutPath) == 1L),
+        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L),
+        is.null(plotTitle) || (is.character(plotTitle) && length(plotTitle) == 1L),
+        is.null(legendBelowGraph) || (is.logical(legendBelowGraph) && length(legendBelowGraph) == 1L)
+    )
+    
+    # Einige Bezeichnungen und Variablen
+    plotXLab <- "Datum"
+    plotYLab <- "Anteil"
+    plotTextPrefix <- "\\footnotesize "
+    
+    # Ausgabeoptionen
+    if (!is.null(latexOutPath)) {
+        source("Konfiguration/TikZ.R")
+        printf.debug("Ausgabe als LaTeX in Datei %s\n", basename(latexOutPath))
+        tikz(
+            file = latexOutPath,
+            width = documentPageWidth,
+            height = 6 / 2.54, # cm -> Zoll
+            sanitize = TRUE
+        )
+    }
+    
+    # Gesamtübersicht, gruppiert nach Grenzwerten, aggregiert
+    plot <- ggplot(result)
+    
+    # Maximalwert entsteht immer bei der geringsten Abweichung (Hier: 1%)
+    maxValue <- with(result, max(nLargerThan1Pct / n))
+    
+    # Bereiche zeichnen und Nummer anzeigen
+    if (!is.null(breakpoints)) {
+        
+        # Die hier bestimmten Intervalle der aggregierten Daten können
+        # von den Intervallen des gesamten Datensatzes abweichen
+        intervals <- calculateIntervals(result$Time, breakpoints)
+        
+        # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
+        plot <- plot + 
+            geom_rect(
+                aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
+                data = intervals,
+                alpha = .5,
+                show.legend = FALSE
+            ) +
+            geom_text(
+                aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
+                data = intervals
+            )
+    }
+    
+    # Datumsachse bestimmen
+    if (difftime(max(result$Time), min(result$Time), units = "weeks") > 2*52) {
+        date_breaks <- "1 year"
+        date_labels <- "%Y"
+    } else {
+        date_breaks <- expr(waiver())
+        date_labels <- "%m/%Y"
+    }
+    
+    # Legende einrichten
+    if (isTRUE(legendBelowGraph)) {
+        legendPosition <- "bottom"
+        legendMargin <- margin(t=-5)
+        legendBackground <- element_blank()
+    } else if (is.null(breakpoints)) {
+        legendPosition <- c(0.88, 0.7)
+        legendMargin <- margin(0, 12, 5, 5)
+        legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+    } else {
+        legendPosition <- c(0.88, 0.58)
+        legendMargin <- margin(0, 12, 5, 5)
+        legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+    }
+    
+    # Grafik mit Anteilen zeichnen
+    plot <- plot +
+        geom_line(aes(x=Time, y=nLargerThan1Pct/n, color="1\\,%", linetype="1\\,%"), size = .5) +
+        geom_line(aes(x=Time, y=nLargerThan2Pct/n, color="2\\,%", linetype="2\\,%"), size = .5) +
+        geom_line(aes(x=Time, y=nLargerThan5Pct/n, color="5\\,%", linetype="5\\,%"), size = .5) +
+        theme_minimal() +
+        theme(
+            plot.title.position = "plot",
+            axis.title.x = element_text(margin=margin(t=5)),
+            axis.title.y = element_text(margin=margin(r=10)),
+            legend.position = legendPosition,
+            legend.background = legendBackground,
+            legend.margin = legendMargin,
+            legend.title = element_blank(),
+        ) +
+        coord_cartesian(ylim=c(0, maxValue)) +
+        scale_x_datetime(
+            date_breaks = eval(date_breaks),
+            date_labels = date_labels,
+            expand = expansion(mult=c(.01, .05))
+        ) +
+        scale_y_continuous(
+            labels = function(x) paste0(format.percentage(x, digits=0), "\\,%")
+        ) +
+        # Vor dem farbigen Hintergrund ist das "bright"-Schema am besten erkennbar.
+        # Resultierende kräftige Linienfarben: Blau, Rot, Grün
+        scale_color_bright() +
+        scale_fill_pale() +
+        labs(
+            x = paste0(plotTextPrefix, plotXLab),
+            y = paste0(plotTextPrefix, plotYLab),
+            linetype = "\\footnotesize Grenzwert",
+            colour = "\\footnotesize Grenzwert"
+        )
+    
+    if (!is.null(plotTitle)) {
+        plot <- plot + ggtitle(paste0("\\small ", plotTitle))
     }
     
     if (!is.null(latexOutPath)) {
@@ -360,7 +510,7 @@ plotNumResultsOverTime <- function(
     
     # Einige Bezeichnungen und Variablen
     plotXLab <- "Datum"
-    plotYLab <- paste0(timeHorizon, " Beobachtungen")
+    plotYLab <- "Beobachtungen"
     plotTextPrefix <- "\\footnotesize "
     plotSmallPrefix <- "\\small "
     maxValue <- max(arbitrageResults$n)
@@ -386,24 +536,24 @@ plotNumResultsOverTime <- function(
         # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
         plot <- plot + 
             geom_rect(
-                aes(
-                    xmin = From,
-                    xmax = To,
-                    ymin = 0,
-                    ymax = maxValue * 1.05,
-                    fill = Set
-                ),
+                aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
                 data = intervals,
-                alpha = .25
+                alpha = .5,
+                show.legend = FALSE
             ) +
             geom_text(
-                aes(
-                    x = From+(To-From)/2,
-                    y = maxValue,
-                    label = paste0(plotTextPrefix, Set)
-                ),
+                aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
                 data = intervals
             )
+    }
+    
+    # Datumsachse bestimmen
+    if (difftime(max(arbitrageResults$Time), min(arbitrageResults$Time), units = "weeks") > 2*52) {
+        date_breaks <- "1 year"
+        date_labels <- "%Y"
+    } else {
+        date_breaks <- expr(waiver())
+        date_labels <- "%m/%Y"
     }
     
     # Anzahl Datensätze zeichnen
@@ -419,14 +569,19 @@ plotNumResultsOverTime <- function(
             axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
             axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
         ) +
-        scale_x_datetime(expand=expansion(mult=c(.01, .03))) +
         coord_cartesian(ylim=c(0, maxValue)) +
+        scale_x_datetime(
+            date_breaks = eval(date_breaks),
+            date_labels = date_labels,
+            expand = expansion(mult=c(.01, .05))
+        ) +
         scale_y_continuous(
             labels = function(x) paste(format.number(x / roundFac))
-            #breaks = breaks_extended(4L)
         ) +
-        scale_color_ptol() +
-        scale_fill_ptol() +
+        # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
+        scale_color_highcontrast() +
+        # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
+        scale_fill_pale() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab, " [", roundedTo, "]")
@@ -440,6 +595,159 @@ plotNumResultsOverTime <- function(
 }
 
 
+#' Volatilität (Mittelwert) zweier Kurspaare einer Börse für den
+#' angegebenen Zeitabschnitt darstellen
+#' 
+#' @param pair1 Das gewünschte Kurspaar, bspw. btcusd
+#' @param pair2 Das gewünschte Kurspaar, bspw. btcusd
+#' @param exchange Das gewünschte Kurspaar, bspw. btcusd
+#' @param timeframe POSIXct-Vektor der Länge 2 mit den Grenzen des Intervalls (inkl.)
+#' @param numPeriodsForEstimate Anzahl Perioden für die Vola.-Abschätzung
+#' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
+#' @param plotTitle Überschrift (optional)
+#' @param legendBelowGraph Position der Legende (optional)
+#' @return Plot
+plotVolatilityByTime <- function(
+    pair1,
+    pair2,
+    exchange,
+    timeframe,
+    numPeriodsForEstimate = 10L,
+    breakpoints = NULL,
+    plotTitle = NULL,
+    legendBelowGraph = NULL
+)
+{
+    stopifnot(
+        is.character(pair1), length(pair1) == 1L,
+        is.character(pair2), length(pair2) == 1L,
+        length(timeframe) == 2L, is.POSIXct(timeframe),
+        is.numeric(numPeriodsForEstimate), length(numPeriodsForEstimate) == 1L,
+        is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L),
+        is.null(plotTitle) || (length(plotTitle) == 1L && is.character(plotTitle)),
+        is.null(legendBelowGraph) || (is.logical(legendBelowGraph) && length(legendBelowGraph) == 1L)
+    )
+    
+    # Zeitzone ist UTC, fehlt aber in `timeframe` aus unbekannten Gründen
+    setattr(timeframe, "tzone", "UTC")
+    
+    plotXLab <- "Datum"
+    plotYLab <- "Volatilität"
+    plotTextPrefix <- "\\footnotesize "
+    
+    # Volatilität berechnen
+    
+    # Paar 1
+    sourceFile <- sprintf(
+        "Cache/%1$s/%2$s/%1$s-%2$s-daily.fst",
+        tolower(exchange), tolower(pair1)
+    )
+    result <- read_fst(sourceFile, columns=c("Time", "Mean"), as.data.table=TRUE)
+    result[, Pair:=format.currencyPair(pair1)]
+    result[, Volatility:=volatility(result$Mean, n=numPeriodsForEstimate, N=365)]
+    result <- result[Time %between% timeframe & !is.na(Volatility)]
+    
+    
+    # Paar 2
+    sourceFile <- sprintf(
+        "Cache/%1$s/%2$s/%1$s-%2$s-daily.fst",
+        tolower(exchange), tolower(pair2)
+    )
+    dataset <- read_fst(sourceFile, columns=c("Time", "Mean"), as.data.table=TRUE)
+    dataset[, Pair:=format.currencyPair(pair2)]
+    dataset[, Volatility:=volatility(dataset$Mean, n=numPeriodsForEstimate, N=365)]
+    result <- rbindlist(list(result, dataset[Time %between% timeframe & !is.na(Volatility)]))
+    rm(dataset)
+    
+    stopifnot(nrow(result) > 0L)
+    result <- result[j=.(Volatility=mean(Volatility)), by=.(Time, Pair)]
+    setorder(result, Time)
+    
+    # Achseneigenschaften
+    maxValue <- max(result$Volatility)
+    
+    plot <- ggplot(result)
+    
+    # Bereiche zeichnen und Nummer anzeigen
+    if (!is.null(breakpoints)) {
+        
+        # Die hier bestimmten Intervalle der aggregierten Daten können
+        # von den Intervallen des gesamten Datensatzes abweichen
+        intervals <- calculateIntervals(result$Time, breakpoints)
+        
+        # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
+        plot <- plot + 
+            geom_rect(
+                aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
+                data = intervals,
+                alpha = .5,
+                show.legend = FALSE
+            ) +
+            geom_text(
+                aes(x=From+(To-From)/2, y=maxValue, label=paste0(plotTextPrefix, Set)),
+                data = intervals
+            )
+    }
+    
+    # Datumsachse bestimmen
+    if (difftime(timeframe[2], timeframe[1], units = "weeks") > 2*52) {
+        date_breaks <- "1 year"
+        date_labels <- "%Y"
+    } else {
+        date_breaks <- expr(waiver())
+        date_labels <- "%m/%Y"
+    }
+    
+    # Legende einrichten
+    if (isTRUE(legendBelowGraph)) {
+        legendPosition <- "bottom"
+        legendMargin <- margin(t=-5)
+        legendBackground <- element_blank()
+    } else if (is.null(breakpoints)) {
+        legendPosition <- c(0.88, 0.7)
+        legendMargin <- margin(0, 12, 5, 5)
+        legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+    } else {
+        legendPosition <- c(0.88, 0.66)
+        legendMargin <- margin(0, 12, 5, 5)
+        legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+    }
+    
+    # Volumen zeichnen
+    plot <- plot +
+        geom_line(aes(x=Time, y=Volatility, color=Pair, linetype=Pair), size=.5) +
+        theme_minimal() +
+        theme(
+            plot.title.position = "plot",
+            axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0)),
+            legend.position = legendPosition,
+            legend.background = legendBackground,
+            legend.margin = legendMargin,
+            legend.title = element_blank(),
+        ) +
+        coord_cartesian(ylim=c(0, maxValue)) +
+        scale_x_datetime(
+            date_breaks = eval(date_breaks),
+            date_labels = date_labels,
+            expand = expansion(mult=c(.01, .05))
+        ) +
+        scale_y_continuous(labels = format.number) +
+        # Vor dem farbigen Hintergrund ist das "bright"-Schema am besten erkennbar.
+        # Resultierende kräftige Linienfarben: Blau, Rot, Grün
+        scale_color_bright() +
+        scale_fill_pale() +
+        labs(
+            x = paste0(plotTextPrefix, plotXLab),
+            y = paste0(plotTextPrefix, plotYLab)
+        )
+    
+    if (!is.null(plotTitle)) {
+        plot <- plot + ggtitle(paste0("\\small ", plotTitle))
+    }
+    
+    return(plot)
+}
 
 
 #' Informationen über einen Datensatz für eine Gesamtauswertung
@@ -470,9 +778,9 @@ collectDatasetSummary <- function(result)
         intervalLengthHours = intervalLengthHours,
         numRowsPerHour = numRows / intervalLengthHours,
         numRowsPerDay = numRows / (intervalLengthHours / 24),
-        numRowsLargerThan_A = length(which(result$data$BestResult >= 1.01)),
-        numRowsLargerThan_B = length(which(result$data$BestResult >= 1.02)),
-        numRowsLargerThan_C = length(which(result$data$BestResult >= 1.05)),
+        numRowsLargerThan_A = length(which(result$data$BestResult >= .01)),
+        numRowsLargerThan_B = length(which(result$data$BestResult >= .02)),
+        numRowsLargerThan_C = length(which(result$data$BestResult >= .05)),
         maxValue = max(result$data$BestResult)
     ))
 }
@@ -589,12 +897,14 @@ summariseDatasetAsTable <- function(
 #' @param currency_b Gegenwährung 2
 #' @param threshold Zeitliche Differenz zweier BTC-Ticks in Sekunden,
 #'                  ab der das Tick-Paar verworfen wird.
+#' @param overviewImageHeight Höhe der Überblicksgrafik überschreiben
 #' @return `data.table`: Ergebnis von `collectDatasetSummary()`
 analyseTriangularArbitrage <- function(
     exchange,
     currency_a,
     currency_b,
-    threshold
+    threshold,
+    overviewImageHeight = NULL
 )
 {
     # Parameter validieren
@@ -602,7 +912,8 @@ analyseTriangularArbitrage <- function(
         is.character(exchange), length(exchange) == 1L,
         is.character(currency_a), length(currency_a) == 1L, nchar(currency_a) == 3L,
         is.character(currency_b), length(currency_b) == 1L, nchar(currency_b) == 3L,
-        is.numeric(threshold), length(threshold) == 1L
+        is.numeric(threshold), length(threshold) == 1L,
+        (is.null(overviewImageHeight) || is.numeric(overviewImageHeight))
     )
     
     # Verzeichnisse anlegen
@@ -610,7 +921,11 @@ analyseTriangularArbitrage <- function(
         "%s/Abbildungen/Dreiecksarbitrage/%ds/btc-eur-usd/%s",
         latexOutPath, threshold, exchange
     )
-    for (d in c(plotOutPath)) {
+    tableOutPath <- sprintf(
+        "%s/Tabellen/Dreiecksarbitrage/%ds/btc-eur-usd/%s",
+        latexOutPath, threshold, exchange
+    )
+    for (d in c(tableOutPath, plotOutPath)) {
         if (!dir.exists(d)) {
             dir.create(d, recursive=TRUE)
         }
@@ -627,50 +942,33 @@ analyseTriangularArbitrage <- function(
     stopifnot(file.exists(dataFile))
     
     # Daten einlesen
-    if (
-        exists("DEBUG_ASSIGN_TO_GLOBAL_ENV") && isTRUE(DEBUG_ASSIGN_TO_GLOBAL_ENV) &&
-        exists("result") && inherits(result, "TriangularResult") &&
-        result$Exchange == exchange
-    ) {
-        # Entwicklungsmodus aktiv: Daten bereits geladen
-        printf("Nutze bereits eingelesene Daten für %s.\n", exchangeName)
-        
-    } else {
-        
-        # Daten neu einlesen
-        printf("Lese Daten für %s...\n", exchangeName)
-        result <- new(
-            "TriangularResult",
-            Exchange = exchange,
-            ExchangeName = exchangeName,
-            Currency_A = currency_a,
-            Currency_B = currency_b,
-            data = read_fst(
-                dataFile,
-                columns = c(
-                    "Time",
-                    "a_PriceLow", "a_PriceHigh", # z.B. BTC/USD
-                    "b_PriceLow", "b_PriceHigh", # z.B. BTC/EUR
-                    "ab_Bid", "ab_Ask" # z.B. EUR/USD
-                ),
-                as.data.table = TRUE
-            )
+    printf("Lese Daten für %s...\n", exchangeName)
+    result <- new(
+        "TriangularResult",
+        Exchange = exchange,
+        ExchangeName = exchangeName,
+        Currency_A = currency_a,
+        Currency_B = currency_b,
+        data = read_fst(
+            dataFile,
+            columns = c(
+                "Time",
+                "a_PriceLow", "a_PriceHigh", # z.B. BTC/USD
+                "b_PriceLow", "b_PriceHigh", # z.B. BTC/EUR
+                "ab_Bid", "ab_Ask" # z.B. EUR/USD
+            ),
+            as.data.table = TRUE
         )
+    )
         
-        # Ergebnis der Arbitrage (beide Routen + Optimum) berechnen
-        calculateResult(result)
-        
-        # Entwicklungsmodus aktiv, Werte für weitere Entwicklung beibehalten
-        if (exists("DEBUG_ASSIGN_TO_GLOBAL_ENV") && isTRUE(DEBUG_ASSIGN_TO_GLOBAL_ENV)) {
-            result <<- result
-        }
-    }
+    # Ergebnis der Arbitrage (beide Routen + Optimum) berechnen
+    calculateResult(result)
     
     # Zusammenfassung ausgeben
     numTotal <- nrow(result$data)
     printf("%s Datensätze. Davon:\n", format.number(numTotal))
-    for (largerThan in c(5, 2, 1, .5)) {
-        numLarger <- length(result$data[BestResult >= (1 + largerThan / 100), which=TRUE])
+    for (largerThan in c(1, 2, 5)) {
+        numLarger <- length(result$data[BestResult >= (largerThan / 100), which=TRUE])
         printf(
             "Anzahl >= %.1f %%: %s (%s %%)\n",
             largerThan, format.number(numLarger), format.percentage(numLarger/numTotal, 1L)
@@ -684,30 +982,45 @@ analyseTriangularArbitrage <- function(
     p_diff <- plotAggregatedResultsOverTime(
         resultsByMonth,
         breakpoints = breakpoints,
-        # Lücken werden immer auf 1d-Basis entfernt.
-        # Da es sich um Monatsdaten handelt, wäre der Plot leer...
-        removeGaps = FALSE,
         plotTitle = "Arbitrageergebnis"
+    )
+    p_profitable <- plotProfitableTriplesByTime(
+        resultsByMonth,
+        breakpoints = breakpoints,
+        plotTitle = "Arbitrage-Tripel mit einer Abweichung von min. 1\\,%, 2\\,% und 5\\,%"
     )
     p_nrow <- plotNumResultsOverTime(
         resultsByMonth,
         breakpoints = breakpoints,
         timeHorizon = "",
-        plotTitle = "Anzahl monatlicher Beobachtungen"
+        plotTitle = "Anzahl Beobachtungen"
+    )
+    p_vola <- plotVolatilityByTime(
+        paste0("btc", currency_a),
+        paste0("btc", currency_b),
+        exchange,
+        resultsByMonth[c(1,.N), Time],
+        breakpoints = breakpoints,
+        plotTitle = "Rollierende, annualisierte 10-Tage-Volatilität der Preise"
     )
     
     # Als LaTeX-Dokument ausgeben
+    if (is.null(overviewImageHeight)) {
+        overviewImageHeight <- 22L
+    }
+    
     source("Konfiguration/TikZ.R")
     tikz(
         file = sprintf("%s/Uebersicht.tex", plotOutPath),
         width = documentPageWidth,
-        height = 11 / 2.54,
+        height = overviewImageHeight / 2.54,
         sanitize = TRUE
     )
-    grid.arrange(
-        p_diff, p_nrow,
-        layout_matrix = rbind(c(1),c(2))
-    )
+    print(plot_grid(
+        p_diff, p_profitable, p_nrow, p_vola,
+        ncol = 1L,
+        align = "v"
+    ))
     dev.off()
     
     return(collectDatasetSummary(result))
@@ -717,16 +1030,14 @@ analyseTriangularArbitrage <- function(
 # Auswertung händisch starten
 if (FALSE) {
     
-    #thresholds <- c(2L) # Testmodus/Entwicklugnsmodus
-    thresholds <- c(1L, 2L, 5L, 10L)
-    
+    thresholds <- c(1L) # Testmodus/Entwicklungsmodus
     for (threshold in thresholds) {
         printf("\n\nBetrachte den Schwellwert %ds...\n", threshold)
         
-        bitfinexSummary <- analyseTriangularArbitrage("bitfinex", "usd", "eur", threshold) ; invisible(gc())
-        bitstampSummary <- analyseTriangularArbitrage("bitstamp", "usd", "eur", threshold) ; invisible(gc())
-        coinbaseSummary <- analyseTriangularArbitrage("coinbase", "usd", "eur", threshold) ; invisible(gc())
-        krakenSummary <- analyseTriangularArbitrage("kraken", "usd", "eur", threshold) ; invisible(gc())
+        bitfinexSummary <- analyseTriangularArbitrage("bitfinex", "usd", "eur", threshold)
+        bitstampSummary <- analyseTriangularArbitrage("bitstamp", "usd", "eur", threshold)
+        coinbaseSummary <- analyseTriangularArbitrage("coinbase", "usd", "eur", threshold)
+        krakenSummary <- analyseTriangularArbitrage("kraken", "usd", "eur", threshold)
         
         # Zusammenfassende Tabelle erstellen
         totalSummary <- rbindlist(list(
