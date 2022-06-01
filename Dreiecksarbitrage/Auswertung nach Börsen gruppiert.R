@@ -30,6 +30,7 @@ library("ggplot2")
 library("ggthemes") # Einfaches Farbschema von Paul Tol
 library("khroma") # Weitere, detailliertere Farbschemata von Paul Tol
 library("cowplot") # plot_grid
+library("patchwork") # Grid-Layout
 library("readr") # read_file, write_file
 #library("scales") # breaks_extended
 library("stringr") # str_replace
@@ -61,7 +62,8 @@ breakpointsByExchange <- list(
     "bitfinex" = c(                            "2019-07-01"), # USD ab 14.01.2013 / EUR ab 19.05.2017
     "bitstamp" = c(              "2017-01-01", "2019-07-01"), # USD ab 18.08.2011 / EUR ab 16.04.2016
     "coinbase" = c(              "2017-01-01", "2019-07-01"), # USD ab 01.12.2014 / EUR ab 23.04.2015
-    "kraken"   = c("2015-04-01", "2017-01-01", "2019-07-01")  # USD ab 06.10.2013 / EUR ab 10.09.2013
+    "kraken"   = c("2015-04-01", "2017-01-01", "2019-07-01"), # USD ab 06.10.2013 / EUR ab 10.09.2013
+    "all"      = c("2015-04-01", "2017-01-01", "2019-07-01")  # Alle Varianten
 )
 
 #' Tabellen-Template mit `{tableContent}`, `{tableCaption` und `{tableLabel}` 
@@ -69,13 +71,6 @@ breakpointsByExchange <- list(
 summaryTableTemplateFile <- 
     sprintf("%s/Tabellen/Templates/Dreiecksarbitrage_Uebersicht_nach_Boerse.tex",
             latexOutPath)
-
-# Variablen für Tests initialisieren
-exchange <- "kraken"
-currency_a <- "usd"
-currency_b <- "eur"
-threshold <- 1L
-breakpoints <- breakpointsByExchange[[exchange]]
 
 
 # Hilfsfunktionen -------------------------------------------------------------
@@ -223,14 +218,12 @@ aggregateResultsByTime <- function(result, floorUnits, interval = NULL)
 #' @param arbitrageResults `data.table` mit den aggregierten Ergebnissen
 #' @param latexOutPath Ausgabepfad als LaTeX-Datei
 #' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
-#' @param plotType Plot-Typ: line oder point
 #' @param plotTitle Überschrift (optional)
 #' @return Der Plot (unsichtbar)
 plotAggregatedResultsOverTime <- function(
     arbitrageResults,
     latexOutPath = NULL,
     breakpoints = NULL,
-    plotType = "line",
     plotTitle = NULL
 ) {
     # Parameter validieren
@@ -260,12 +253,12 @@ plotAggregatedResultsOverTime <- function(
     plotYLab <- "Arbitrageergebnis"
     
     # Zeichnen
-    if (!is.null(arbitrageResults$Q3)) {
+    if (!is.null(arbitrageResults$Exchange)) {
+        minValue <- min(arbitrageResults$Median)
+        maxValue <- max(arbitrageResults$Median)
+    } else if (!is.null(arbitrageResults$Q3)) {
         minValue <- min(arbitrageResults$Q1)
         maxValue <- max(arbitrageResults$Q3)
-    } else if (!is.null(arbitrageResults$BestResult)) {
-        minValue <- min(arbitrageResults$BestResult)
-        maxValue <- max(arbitrageResults$BestResult)
     } else {
         stop("Keine Quartile und keine Rohdaten gefunden!")
     }
@@ -282,7 +275,7 @@ plotAggregatedResultsOverTime <- function(
         # Grafik um farbige Hintergründe der jeweiligen Segmente ergänzen
         plot <- plot + 
             geom_rect(
-                aes(xmin=From, xmax=To, ymin=0, ymax=maxValue * 1.05, fill=Set),
+                aes(xmin=From, xmax=To, ymin=minValue, ymax=maxValue * 1.05, fill=Set),
                 data = intervals,
                 alpha = .5,
                 show.legend = FALSE
@@ -302,21 +295,46 @@ plotAggregatedResultsOverTime <- function(
         date_labels <- "%m/%Y"
     }
     
+    if (is.null(arbitrageResults$Exchange)) {
+        
+        # Quartilswerte + Median für Einzelbörsen
+        plot <- plot +
+            # Q1/Q3 zeichnen
+            geom_ribbon(aes(x=Time, ymin=Q1, ymax=Q3), fill="grey70") +
+            
+            # Median zeichnen
+            geom_line(aes(x=Time, y=Median, color="1", linetype="1"), size=.5, show.legend=FALSE) +
+            
+            # Normales "bright"-Farbschema
+            scale_color_bright()
+        
+    } else {
+        
+        # Median für Überblick
+        plot <- plot +
+            geom_line(
+                aes(x=Time, y=Median, color=Exchange, linetype=Exchange),
+                size = .5
+            ) +
+            
+            # Farbreihenfolge für bessere Lesbarkeit hier ausnahmsweise ändern
+            scale_color_manual(
+                values = rev(unname(colour("bright")(4))),
+                limits = unlist(unname(exchangeNames))
+            )
+        
+    }
+    
     plot <- plot +
-        # Q1/Q3 zeichnen
-        geom_ribbon(aes(x=Time, ymin=Q1, ymax=Q3), fill="grey70") +
-        
-        # Median zeichnen
-        geom_line(aes(x=Time, y=Median, color="1", linetype="1"), size=.5) +
-        
         theme_minimal() +
         theme(
-            legend.position = "none",
             plot.title.position = "plot",
             axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
-            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0)),
+            # Legende immer rechts ausrichten. Für Einzel-Börsen ohnehin keine Legende.
+            legend.position = "right"
         ) +
-        coord_cartesian(ylim=c(0, maxValue)) +
+        coord_cartesian(ylim=c(minValue, maxValue)) +
         scale_x_datetime(
             date_breaks = eval(date_breaks),
             date_labels = date_labels,
@@ -325,13 +343,13 @@ plotAggregatedResultsOverTime <- function(
         scale_y_continuous(
             labels = function(x) paste(format.number(x * 100), "%")
         ) +
-        # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
-        scale_color_highcontrast() +
-        # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
-        scale_fill_pale() +
+        # Für das "Set" der breakpoints keine Legende zeigen
+        scale_fill_pale(guide="none") +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
-            y = paste0(plotTextPrefix, plotYLab)
+            y = paste0(plotTextPrefix, plotYLab),
+            color = paste0(plotTextPrefix, "Börse"),
+            linetype = paste0(plotTextPrefix, "Börse")
         )
     
     if (!is.null(plotTitle)) {
@@ -378,6 +396,7 @@ plotProfitableTriplesByTime <- function(
     plotXLab <- "Datum"
     plotYLab <- "Anteil"
     plotTextPrefix <- "\\footnotesize "
+    plotSmallPrefix <- "\\small "
     
     # Ausgabeoptionen
     if (!is.null(latexOutPath)) {
@@ -427,26 +446,66 @@ plotProfitableTriplesByTime <- function(
         date_labels <- "%m/%Y"
     }
     
+    # Werteachse bestimmen
+    if (maxValue < .02) {
+        numYDigits <- 1L
+    } else {
+        numYDigits <- 0L
+    }
+    
     # Legende einrichten
     if (isTRUE(legendBelowGraph)) {
         legendPosition <- "bottom"
         legendMargin <- margin(t=-5)
         legendBackground <- element_blank()
+    } else if (!is.null(result$Exchange)) {
+        legendPosition <- "right"
+        legendMargin <- margin()
+        legendBackground <- element_blank()
     } else if (is.null(breakpoints)) {
         legendPosition <- c(0.88, 0.7)
-        legendMargin <- margin(0, 12, 5, 5)
+        legendMargin <- margin(0, 5, 5, 5)
         legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
     } else {
         legendPosition <- c(0.88, 0.58)
-        legendMargin <- margin(0, 12, 5, 5)
+        legendMargin <- margin(0, 5, 5, 5)
         legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+    }
+    
+    if (is.null(result$Exchange)) {
+        
+        # Einzelbörse
+        plot <- plot +
+            geom_line(aes(x=Time, y=nLargerThan1Pct/n, color="1\\,%", linetype="1\\,%"), size = .5) +
+            geom_line(aes(x=Time, y=nLargerThan2Pct/n, color="2\\,%", linetype="2\\,%"), size = .5) +
+            geom_line(aes(x=Time, y=nLargerThan5Pct/n, color="5\\,%", linetype="5\\,%"), size = .5) +
+            
+            # Normales "bright"-Farbschema
+            scale_color_bright()
+        
+        legendName <- "Grenzwert"
+        
+    } else {
+        
+        # Übersicht
+        plot <- plot +
+            geom_line(
+                aes(x=Time, y=nLargerThan1Pct/n, color=Exchange, linetype=Exchange),
+                size = .5
+            ) +
+            
+            # Farbreihenfolge für bessere Lesbarkeit hier ausnahmsweise ändern
+            scale_color_manual(
+                values = rev(unname(colour("bright")(4))),
+                limits=unlist(unname(exchangeNames))
+            )
+        
+        legendName <- "Börse"
+        
     }
     
     # Grafik mit Anteilen zeichnen
     plot <- plot +
-        geom_line(aes(x=Time, y=nLargerThan1Pct/n, color="1\\,%", linetype="1\\,%"), size = .5) +
-        geom_line(aes(x=Time, y=nLargerThan2Pct/n, color="2\\,%", linetype="2\\,%"), size = .5) +
-        geom_line(aes(x=Time, y=nLargerThan5Pct/n, color="5\\,%", linetype="5\\,%"), size = .5) +
         theme_minimal() +
         theme(
             plot.title.position = "plot",
@@ -455,7 +514,7 @@ plotProfitableTriplesByTime <- function(
             legend.position = legendPosition,
             legend.background = legendBackground,
             legend.margin = legendMargin,
-            legend.title = element_blank(),
+            legend.title = element_blank()
         ) +
         coord_cartesian(ylim=c(0, maxValue)) +
         scale_x_datetime(
@@ -464,21 +523,19 @@ plotProfitableTriplesByTime <- function(
             expand = expansion(mult=c(.01, .05))
         ) +
         scale_y_continuous(
-            labels = function(x) paste0(format.percentage(x, digits=0), "\\,%")
+            labels = function(x) paste0(format.percentage(x, digits=numYDigits), "\\,%")
         ) +
-        # Vor dem farbigen Hintergrund ist das "bright"-Schema am besten erkennbar.
-        # Resultierende kräftige Linienfarben: Blau, Rot, Grün
-        scale_color_bright() +
-        scale_fill_pale() +
+        # Für das "Set" der breakpoints keine Legende zeigen
+        scale_fill_pale(guide="none") +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
             y = paste0(plotTextPrefix, plotYLab),
-            linetype = "\\footnotesize Grenzwert",
-            colour = "\\footnotesize Grenzwert"
+            linetype = paste0(plotTextPrefix, legendName),
+            colour = paste0(plotTextPrefix, legendName)
         )
     
     if (!is.null(plotTitle)) {
-        plot <- plot + ggtitle(paste0("\\small ", plotTitle))
+        plot <- plot + ggtitle(paste0(plotSmallPrefix, plotTitle))
     }
     
     if (!is.null(latexOutPath)) {
@@ -499,7 +556,6 @@ plotProfitableTriplesByTime <- function(
 plotNumResultsOverTime <- function(
     arbitrageResults,
     breakpoints = NULL,
-    timeHorizon = "Monatliche",
     plotTitle = NULL
 ) {
     # Parameter validieren
@@ -556,18 +612,35 @@ plotNumResultsOverTime <- function(
         date_labels <- "%m/%Y"
     }
     
+    if (is.null(arbitrageResults$Exchange)) {
+        groupValue <- expr("1")
+        showLegend <- FALSE
+        plot <- plot + scale_color_bright()
+    } else {
+        groupValue <- expr(Exchange)
+        showLegend <- TRUE
+        plot <- plot +
+            # Farbreihenfolge für bessere Lesbarkeit hier ausnahmsweise ändern
+            scale_color_manual(
+                values = rev(unname(colour("bright")(4))),
+                limits=unlist(unname(exchangeNames))
+            )
+    }
+    
     # Anzahl Datensätze zeichnen
     plot <- plot +
         geom_line(
-            aes(x=Time, y=n, color="1", linetype="1"),
-            size = .5
+            aes(x=Time, y=n, color=eval(groupValue), linetype=eval(groupValue)),
+            size = .5,
+            show.legend = showLegend
         )  + 
         theme_minimal() +
         theme(
-            legend.position = "none",
             plot.title.position = "plot",
             axis.title.x = element_text(margin=margin(t=5, r=0, b=0, l=0)),
-            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0))
+            axis.title.y = element_text(margin=margin(t=0, r=10, b=0, l=0)),
+            # Legende immer rechts ausrichten. Für Einzel-Börsen ohnehin keine Legende.
+            legend.position = "right"
         ) +
         coord_cartesian(ylim=c(0, maxValue)) +
         scale_x_datetime(
@@ -578,13 +651,13 @@ plotNumResultsOverTime <- function(
         scale_y_continuous(
             labels = function(x) paste(format.number(x / roundFac))
         ) +
-        # Ähnlich wie scale_color_ptol, aber mit höherem Kontrast
-        scale_color_highcontrast() +
-        # Kompromiss aus guter Erkennbarkeit bei SW + Farbe als Hintergrund
-        scale_fill_pale() +
+        # Für das "Set" der breakpoints keine Legende zeigen
+        scale_fill_pale(guide="none") +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
-            y = paste0(plotTextPrefix, plotYLab, " [", roundedTo, "]")
+            y = paste0(plotTextPrefix, plotYLab, " [", roundedTo, "]"),
+            color = paste0(plotTextPrefix, "Börse"),
+            linetype = paste0(plotTextPrefix, "Börse")
         )
     
     if (!is.null(plotTitle)) {
@@ -600,8 +673,8 @@ plotNumResultsOverTime <- function(
 #' 
 #' @param pair1 Das gewünschte Kurspaar, bspw. btcusd
 #' @param pair2 Das gewünschte Kurspaar, bspw. btcusd
-#' @param exchange Das gewünschte Kurspaar, bspw. btcusd
 #' @param timeframe POSIXct-Vektor der Länge 2 mit den Grenzen des Intervalls (inkl.)
+#' @param exchange Das gewünschte Kurspaar, bspw. btcusd
 #' @param numPeriodsForEstimate Anzahl Perioden für die Vola.-Abschätzung
 #' @param breakpoints Vektor mit Daten (Plural von: Datum) der Strukturbrüche
 #' @param plotTitle Überschrift (optional)
@@ -610,8 +683,8 @@ plotNumResultsOverTime <- function(
 plotVolatilityByTime <- function(
     pair1,
     pair2,
-    exchange,
     timeframe,
+    exchange = NULL,
     numPeriodsForEstimate = 10L,
     breakpoints = NULL,
     plotTitle = NULL,
@@ -622,6 +695,7 @@ plotVolatilityByTime <- function(
         is.character(pair1), length(pair1) == 1L,
         is.character(pair2), length(pair2) == 1L,
         length(timeframe) == 2L, is.POSIXct(timeframe),
+        is.null(exchange) || (length(exchange) == 1L && is.character(exchange)),
         is.numeric(numPeriodsForEstimate), length(numPeriodsForEstimate) == 1L,
         is.null(breakpoints) || (is.vector(breakpoints) && length(breakpoints) > 0L),
         is.null(plotTitle) || (length(plotTitle) == 1L && is.character(plotTitle)),
@@ -637,31 +711,46 @@ plotVolatilityByTime <- function(
     
     # Volatilität berechnen
     
-    # Paar 1
-    sourceFile <- sprintf(
-        "Cache/%1$s/%2$s/%1$s-%2$s-daily.fst",
-        tolower(exchange), tolower(pair1)
-    )
-    result <- read_fst(sourceFile, columns=c("Time", "Mean"), as.data.table=TRUE)
-    result[, Pair:=format.currencyPair(pair1)]
-    result[, Volatility:=volatility(result$Mean, n=numPeriodsForEstimate, N=365)]
-    result <- result[Time %between% timeframe & !is.na(Volatility)]
+    if (is.null(exchange)) {
+        exchanges <- names(exchangeNames)
+    } else {
+        exchanges <- c(exchange)
+    }
+    result <- data.table()
     
-    
-    # Paar 2
-    sourceFile <- sprintf(
-        "Cache/%1$s/%2$s/%1$s-%2$s-daily.fst",
-        tolower(exchange), tolower(pair2)
-    )
-    dataset <- read_fst(sourceFile, columns=c("Time", "Mean"), as.data.table=TRUE)
-    dataset[, Pair:=format.currencyPair(pair2)]
-    dataset[, Volatility:=volatility(dataset$Mean, n=numPeriodsForEstimate, N=365)]
-    result <- rbindlist(list(result, dataset[Time %between% timeframe & !is.na(Volatility)]))
-    rm(dataset)
+    for (exchangeLoop in exchanges) {
+        
+        # Paar 1
+        sourceFile <- sprintf(
+            "Cache/%1$s/%2$s/%1$s-%2$s-daily.fst",
+            tolower(exchangeLoop), tolower(pair1)
+        )
+        stopifnot(file.exists(sourceFile))
+        
+        dataset <- read_fst(sourceFile, columns=c("Time", "Mean"), as.data.table=TRUE)
+        dataset[, Pair:=format.currencyPair(pair1)]
+        dataset[, Volatility:=volatility(dataset$Mean, n=numPeriodsForEstimate, N=365)]
+        result <- rbindlist(list(result, dataset[Time %between% timeframe & !is.na(Volatility)]))
+        
+        # Paar 2
+        sourceFile <- sprintf(
+            "Cache/%1$s/%2$s/%1$s-%2$s-daily.fst",
+            tolower(exchangeLoop), tolower(pair2)
+        )
+        stopifnot(file.exists(sourceFile))
+        
+        dataset <- read_fst(sourceFile, columns=c("Time", "Mean"), as.data.table=TRUE)
+        dataset[, Pair:=format.currencyPair(pair2)]
+        dataset[, Volatility:=volatility(dataset$Mean, n=numPeriodsForEstimate, N=365)]
+        result <- rbindlist(list(result, dataset[Time %between% timeframe & !is.na(Volatility)]))
+        rm(dataset)
+    }
     
     stopifnot(nrow(result) > 0L)
+    
+    # Gruppieren und sortieren
     result <- result[j=.(Volatility=mean(Volatility)), by=.(Time, Pair)]
-    setorder(result, Time)
+    setorder(result, Time, Pair)
     
     # Achseneigenschaften
     maxValue <- max(result$Volatility)
@@ -703,13 +792,17 @@ plotVolatilityByTime <- function(
         legendPosition <- "bottom"
         legendMargin <- margin(t=-5)
         legendBackground <- element_blank()
+    } else if (is.null(exchange)) {
+        legendPosition <- "right"
+        legendMargin <- margin()
+        legendBackground <- element_blank()
     } else if (is.null(breakpoints)) {
         legendPosition <- c(0.88, 0.7)
-        legendMargin <- margin(0, 12, 5, 5)
+        legendMargin <- margin(0, 5, 5, 5)
         legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
     } else {
         legendPosition <- c(0.88, 0.66)
-        legendMargin <- margin(0, 12, 5, 5)
+        legendMargin <- margin(0, 5, 5, 5)
         legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
     }
     
@@ -724,7 +817,7 @@ plotVolatilityByTime <- function(
             legend.position = legendPosition,
             legend.background = legendBackground,
             legend.margin = legendMargin,
-            legend.title = element_blank(),
+            legend.title = element_blank()
         ) +
         coord_cartesian(ylim=c(0, maxValue)) +
         scale_x_datetime(
@@ -736,10 +829,13 @@ plotVolatilityByTime <- function(
         # Vor dem farbigen Hintergrund ist das "bright"-Schema am besten erkennbar.
         # Resultierende kräftige Linienfarben: Blau, Rot, Grün
         scale_color_bright() +
-        scale_fill_pale() +
+        # Für das "Set" der breakpoints keine Legende zeigen
+        scale_fill_pale(guide="none") +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
-            y = paste0(plotTextPrefix, plotYLab)
+            y = paste0(plotTextPrefix, plotYLab),
+            color = paste0(plotTextPrefix, "Kurspaar"),
+            linetype = paste0(plotTextPrefix, "Kurspaar")
         )
     
     if (!is.null(plotTitle)) {
@@ -892,7 +988,6 @@ summariseDatasetAsTable <- function(
 #' Berechne und analysiere Ergebnisse der Dreiecksarbitrage in grafischer
 #' Form und berechne Daten für eine Auswertung in tabellarischer Form
 #'
-#' @param exchange Die zu betrachtende Börse
 #' @param currency_a Gegenwährung 1
 #' @param currency_b Gegenwährung 2
 #' @param threshold Zeitliche Differenz zweier BTC-Ticks in Sekunden,
@@ -900,7 +995,6 @@ summariseDatasetAsTable <- function(
 #' @param overviewImageHeight Höhe der Überblicksgrafik überschreiben
 #' @return `data.table`: Ergebnis von `collectDatasetSummary()`
 analyseTriangularArbitrage <- function(
-    exchange,
     currency_a,
     currency_b,
     threshold,
@@ -909,7 +1003,6 @@ analyseTriangularArbitrage <- function(
 {
     # Parameter validieren
     stopifnot(
-        is.character(exchange), length(exchange) == 1L,
         is.character(currency_a), length(currency_a) == 1L, nchar(currency_a) == 3L,
         is.character(currency_b), length(currency_b) == 1L, nchar(currency_b) == 3L,
         is.numeric(threshold), length(threshold) == 1L,
@@ -918,12 +1011,12 @@ analyseTriangularArbitrage <- function(
     
     # Verzeichnisse anlegen
     plotOutPath <- sprintf(
-        "%s/Abbildungen/Dreiecksarbitrage/%ds/btc-eur-usd/%s",
-        latexOutPath, threshold, exchange
+        "%s/Abbildungen/Dreiecksarbitrage/%ds/btc-eur-usd",
+        latexOutPath, threshold
     )
     tableOutPath <- sprintf(
-        "%s/Tabellen/Dreiecksarbitrage/%ds/btc-eur-usd/%s",
-        latexOutPath, threshold, exchange
+        "%s/Tabellen/Dreiecksarbitrage/%ds/btc-eur-usd",
+        latexOutPath, threshold
     )
     for (d in c(tableOutPath, plotOutPath)) {
         if (!dir.exists(d)) {
@@ -931,133 +1024,182 @@ analyseTriangularArbitrage <- function(
         }
     }
     
-    # Variablen initialisieren
-    exchangeName <- exchangeNames[[exchange]]
-    breakpoints <- breakpointsByExchange[[exchange]]
-    
-    dataFile <- sprintf(
-        "Cache/Dreiecksarbitrage/%ds/%s-%s-%s.fst",
-        threshold, exchange, currency_a, currency_b
-    )
-    stopifnot(file.exists(dataFile))
-    
-    # Daten einlesen
-    printf("Lese Daten für %s...\n", exchangeName)
-    result <- new(
-        "TriangularResult",
-        Exchange = exchange,
-        ExchangeName = exchangeName,
-        Currency_A = currency_a,
-        Currency_B = currency_b,
-        data = read_fst(
-            dataFile,
-            columns = c(
-                "Time",
-                "a_PriceLow", "a_PriceHigh", # z.B. BTC/USD
-                "b_PriceLow", "b_PriceHigh", # z.B. BTC/EUR
-                "ab_Bid", "ab_Ask" # z.B. EUR/USD
-            ),
-            as.data.table = TRUE
-        )
-    )
-        
-    # Ergebnis der Arbitrage (beide Routen + Optimum) berechnen
-    calculateResult(result)
-    
-    # Zusammenfassung ausgeben
-    numTotal <- nrow(result$data)
-    printf("%s Datensätze. Davon:\n", format.number(numTotal))
-    for (largerThan in c(1, 2, 5)) {
-        numLarger <- length(result$data[BestResult >= (largerThan / 100), which=TRUE])
-        printf(
-            "Anzahl >= %.1f %%: %s (%s %%)\n",
-            largerThan, format.number(numLarger), format.percentage(numLarger/numTotal, 1L)
-        )
+    # LaTeX/TikZ-Ausgabemodul laden
+    source("Konfiguration/TikZ.R")
+    if (is.null(overviewImageHeight)) {
+        overviewImageHeight <- 22L
     }
     
-    # Monatsdaten berechnen
-    resultsByMonth <- aggregateResultsByTime(result, "1 month")
+    # Alle Ergebnisse für Gesamtauswertung zwischenspeichern
+    summaryStatistics <- data.table()
+    allAggregatedResults <- data.table()
     
-    # Überblicksgrafik
+    # Einzelauswertung
+    for (i in seq_along(exchangeNames)) {
+        
+        # Variablen initialisieren
+        exchange <- names(exchangeNames)[[i]]
+        exchangeName <- exchangeNames[[i]]
+        breakpoints <- breakpointsByExchange[[exchange]]
+        
+        dataFile <- sprintf(
+            "Cache/Dreiecksarbitrage/%ds/%s-%s-%s.fst",
+            threshold, exchange, currency_a, currency_b
+        )
+        stopifnot(file.exists(dataFile))
+        
+        # Daten einlesen
+        printf("Lese Daten für %s...\n", exchangeName)
+        result <- new(
+            "TriangularResult",
+            Exchange = exchange,
+            ExchangeName = exchangeName,
+            Currency_A = currency_a,
+            Currency_B = currency_b,
+            data = read_fst(
+                dataFile,
+                columns = c(
+                    "Time",
+                    "a_PriceLow", "a_PriceHigh", # z.B. BTC/USD
+                    "b_PriceLow", "b_PriceHigh", # z.B. BTC/EUR
+                    "ab_Bid", "ab_Ask" # z.B. EUR/USD
+                ),
+                as.data.table = TRUE
+            )
+        )
+        
+        # Ergebnis der Arbitrage (beide Routen + Optimum) berechnen
+        calculateResult(result)
+        
+        # Zusammenfassung in Konsole ausgeben
+        numTotal <- nrow(result$data)
+        printf("%s Datensätze, davon ", format.number(numTotal))
+        for (largerThan in c(1, 2, 5)) {
+            numLarger <- length(result$data[BestResult >= (largerThan / 100), which=TRUE])
+            printf(
+                "%s (%s %%) >= %d %%, ",
+                format.number(numLarger), format.percentage(numLarger/numTotal, 1L), largerThan
+            )
+        }
+        printf("\n")
+        
+        # Monatsdaten berechnen
+        aggregatedResults <- aggregateResultsByTime(result, "1 month")
+        
+        # Überblicksgrafik
+        p_diff <- plotAggregatedResultsOverTime(
+            aggregatedResults,
+            breakpoints = breakpoints,
+            plotTitle = "Arbitrageergebnis"
+        )
+        p_profitable <- plotProfitableTriplesByTime(
+            aggregatedResults,
+            breakpoints = breakpoints,
+            plotTitle = "Arbitrage-Tripel mit einem Ergebnis von min. 1\\,%, 2\\,% und 5\\,%"
+        )
+        p_nrow <- plotNumResultsOverTime(
+            aggregatedResults,
+            breakpoints = breakpoints,
+            plotTitle = "Anzahl Beobachtungen"
+        )
+        p_vola <- plotVolatilityByTime(
+            paste0("btc", currency_a),
+            paste0("btc", currency_b),
+            aggregatedResults[c(1,.N), Time],
+            exchange,
+            breakpoints = breakpoints,
+            plotTitle = "Rollierende, annualisierte 10-Tage-Volatilität der Preise",
+            legendBelowGraph = TRUE
+        )
+        
+        # Übersicht ausgeben
+        tikz(
+            file = sprintf("%s/%s/Uebersicht.tex", plotOutPath, exchange),
+            width = documentPageWidth,
+            height = overviewImageHeight / 2.54,
+            sanitize = TRUE
+        )
+        print(plot_grid(
+            p_diff, p_profitable, p_nrow, p_vola,
+            ncol = 1L,
+            align = "v"
+        ))
+        dev.off()
+        
+        # Gesamtstatistiken aufbauen
+        aggregatedResults[, Exchange:=exchangeName]
+        allAggregatedResults <- rbindlist(list(allAggregatedResults, aggregatedResults))
+        summaryStatistics <- rbindlist(list(summaryStatistics, collectDatasetSummary(result)))
+    }
+    
+    # Gesamtübersichtsgrafik aufbauen
+    setorder(allAggregatedResults, Time, Exchange)
+    breakpoints <- breakpointsByExchange[["all"]]
+    
     p_diff <- plotAggregatedResultsOverTime(
-        resultsByMonth,
+        allAggregatedResults, 
+        
+        # Kraken hat die meisten Breakpoints
         breakpoints = breakpoints,
         plotTitle = "Arbitrageergebnis"
     )
     p_profitable <- plotProfitableTriplesByTime(
-        resultsByMonth,
+        allAggregatedResults,
         breakpoints = breakpoints,
-        plotTitle = "Arbitrage-Tripel mit einer Abweichung von min. 1\\,%, 2\\,% und 5\\,%"
+        plotTitle = "Arbitrage-Tripel mit einem Ergebnis von min. 1\\,%"
     )
     p_nrow <- plotNumResultsOverTime(
-        resultsByMonth,
+        allAggregatedResults,
         breakpoints = breakpoints,
-        timeHorizon = "",
         plotTitle = "Anzahl Beobachtungen"
     )
     p_vola <- plotVolatilityByTime(
         paste0("btc", currency_a),
         paste0("btc", currency_b),
-        exchange,
-        resultsByMonth[c(1,.N), Time],
+        allAggregatedResults[c(1,.N), Time],
         breakpoints = breakpoints,
         plotTitle = "Rollierende, annualisierte 10-Tage-Volatilität der Preise"
     )
     
-    # Als LaTeX-Dokument ausgeben
-    if (is.null(overviewImageHeight)) {
-        overviewImageHeight <- 22L
-    }
-    
-    source("Konfiguration/TikZ.R")
+    # Übersicht ausgeben
     tikz(
         file = sprintf("%s/Uebersicht.tex", plotOutPath),
         width = documentPageWidth,
         height = overviewImageHeight / 2.54,
         sanitize = TRUE
     )
-    print(plot_grid(
-        p_diff, p_profitable, p_nrow, p_vola,
-        ncol = 1L,
-        align = "v"
-    ))
+    #' Nutze `patchwork` statt `cowplot`, da sonst die Legende zu breit wird
+    print(p_diff / p_profitable / p_nrow / p_vola)
     dev.off()
     
-    return(collectDatasetSummary(result))
+    # Zusammenfassende Tabelle erstellen
+    summariseDatasetAsTable(
+        summaryStatistics,
+        outFile = sprintf("%s/Uebersicht.tex", tableOutPath),
+        caption = sprintf(
+            "Zentrale Kenngrößen der Dreiecksarbitrage für BTC, EUR und USD im Gesamtüberblick"
+        ),
+        label = sprintf("Dreiecksarbitrage_BTCEURUSD_Uebersicht_%ds", threshold)
+    )
 }
 
 
-# Auswertung händisch starten
+# Auswertung (grafisch, numerisch) --------------------------------------------
+
+# Händisch einzeln bei Bedarf starten, da große Datenmengen geladen werden
+# und die Verarbeitung viel Zeit in Anspruch nimmt.
 if (FALSE) {
     
     thresholds <- c(1L) # Testmodus/Entwicklungsmodus
     for (threshold in thresholds) {
         printf("\n\nBetrachte den Schwellwert %ds...\n", threshold)
         
-        bitfinexSummary <- analyseTriangularArbitrage("bitfinex", "usd", "eur", threshold)
-        bitstampSummary <- analyseTriangularArbitrage("bitstamp", "usd", "eur", threshold)
-        coinbaseSummary <- analyseTriangularArbitrage("coinbase", "usd", "eur", threshold)
-        krakenSummary <- analyseTriangularArbitrage("kraken", "usd", "eur", threshold)
-        
-        # Zusammenfassende Tabelle erstellen
-        totalSummary <- rbindlist(list(
-            bitfinexSummary, bitstampSummary, coinbaseSummary, krakenSummary
-        ))
-        tableOutPath <- sprintf(
-            "%s/Tabellen/Dreiecksarbitrage/%ds/btc-eur-usd/Uebersicht.tex",
-            latexOutPath, threshold
-        )
-        if (!dir.exists(dirname(tableOutPath))) {
-            dir.create(dirname(tableOutPath), recursive=TRUE)
+        if (threshold == mainThreshold) {
+            overviewImageHeight <- NULL
+        } else {
+            overviewImageHeight <- 20L
         }
         
-        summariseDatasetAsTable(
-            totalSummary,
-            outFile = tableOutPath,
-            caption = sprintf(
-                "Zentrale Kenngrößen der Dreiecksarbitrage für BTC, EUR und USD im Gesamtüberblick"
-            ),
-            label = sprintf("Dreiecksarbitrage_BTCEURUSD_Uebersicht_%ds", threshold)
-        )
+        analyseTriangularArbitrage("usd", "eur", threshold, overviewImageHeight)
     }
 }

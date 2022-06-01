@@ -591,11 +591,11 @@ plotProfitableDifferencesByTime <- function(
         legendBackground <- element_blank()
     } else if (is.null(breakpoints)) {
         legendPosition <- c(0.88, 0.7)
-        legendMargin <- margin(0, 12, 5, 5)
+        legendMargin <- margin(0, 5, 5, 5)
         legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
     } else {
         legendPosition <- c(0.88, 0.58)
-        legendMargin <- margin(0, 12, 5, 5)
+        legendMargin <- margin(0, 5, 5, 5)
         legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
     }
     
@@ -989,7 +989,7 @@ plotVolatilityByTime <- function(
     plotTextPrefix <- "\\footnotesize "
     
     # Volatilität berechnen
-    exchanges <- c("bitfinex", "bitstamp", "coinbase", "kraken")
+    exchanges <- names(exchangeNames)
     result <- data.table()
     for (exchange in exchanges) {
         sourceFile <- sprintf(
