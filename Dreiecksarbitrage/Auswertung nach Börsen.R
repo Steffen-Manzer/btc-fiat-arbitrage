@@ -497,7 +497,7 @@ plotProfitableTriplesByTime <- function(
             # Farbreihenfolge für bessere Lesbarkeit hier ausnahmsweise ändern
             scale_color_manual(
                 values = rev(unname(colour("bright")(4))),
-                limits=unlist(unname(exchangeNames))
+                limits = unlist(unname(exchangeNames))
             )
         
         legendName <- "Börse"
@@ -1171,6 +1171,11 @@ analyseTriangularArbitrage <- function(
     #' Nutze `patchwork` statt `cowplot`, da sonst die Legende zu breit wird
     print(p_diff / p_profitable / p_nrow / p_vola)
     dev.off()
+    
+    # TODO DEV TEMP
+    allAggregatedResults <<- allAggregatedResults
+    summaryStatistics <<- summaryStatistics
+    # END
     
     # Zusammenfassende Tabelle erstellen
     summariseDatasetAsTable(
