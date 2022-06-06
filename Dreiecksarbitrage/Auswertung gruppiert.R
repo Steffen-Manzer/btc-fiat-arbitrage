@@ -526,11 +526,14 @@ plotNumResultsOverTime <- function(
     
     # Achseneigenschaften
     if (maxValue > 1e6) {
-        roundedTo <- "Mio."
+        roundedTo <- " [Mio.]"
         roundFac <- 1e6
-    } else {
-        roundedTo <- "Tsd."
+    } else if (maxValue > 1e3) {
+        roundedTo <- " [Tsd.]"
         roundFac <- 1e3
+    } else {
+        roundedTo <- ""
+        roundFac <- 1
     }
     
     plot <- ggplot(arbitrageResults)
@@ -590,7 +593,7 @@ plotNumResultsOverTime <- function(
         scale_fill_pale() +
         labs(
             x = paste0(plotTextPrefix, plotXLab),
-            y = paste0(plotTextPrefix, plotYLab, " [", roundedTo, "]")
+            y = paste0(plotTextPrefix, plotYLab, roundedTo)
         )
     
     if (!is.null(plotTitle)) {
@@ -2010,7 +2013,6 @@ analyseTriangularArbitrage <- function(
 # und die Verarbeitung viel Zeit in Anspruch nimmt.
 if (FALSE) {
     
-    thresholds <- c(1L) # Testmodus/Entwicklungsmodus
     for (threshold in thresholds) {
         printf("\n\nBetrachte den Schwellwert %ds...\n", threshold)
         
