@@ -86,12 +86,6 @@ for (i in seq_along(exchanges)) {
         for (i in seq_along(files)) {
             f <- files[i]
             
-            # EUR/USD-Daten liegen ewig weit zurück, relevant aber erst ab 2013
-            yr <- str_match(f, "\\d{4}")
-            if (pair == "eurusd" && as.integer(yr) < 2013) {
-                next
-            }
-            
             # Anzahl Ticks lesen
             fileStats <- metadata_fst(f)
             numTicks <- numTicks + fileStats$nrOfRows
