@@ -30,7 +30,7 @@ texFileQ1Q3Median <- sprintf(
 
 # Beispieldaten und Achsenbeschriftung
 pair <- "btcusd"
-threshold <- 2L
+threshold <- 1L
 plotTextPrefix <- "\\footnotesize "
 plotXLab <- "Datum"
 plotYLab <- "Preisabweichung"
@@ -52,7 +52,7 @@ if (!exists("priceDifferences")) {
 # Grafiken erstellen ----------------------------------------------------------
 
 # Median
-p_diff_median <- plotAggregatedPriceDifferencesOverTime(priceDifferences, removeGaps = FALSE)
+p_diff_median <- plotAggregatedPriceDifferencesByTime(priceDifferences, removeGaps = FALSE)
 if (plotAsLaTeX) {
     tikz(
         file = texFileQ1Q3Median,
