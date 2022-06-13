@@ -1,7 +1,7 @@
 library("fst")
 library("data.table")
 library("stringr") # str_replace
-source("Dreiecksarbitrage/Auswertung nach Börsen gruppiert.R") # calculateResult
+source("Dreiecksarbitrage/Auswertung gruppiert.R") # calculateResult
 source("Funktionen/printf.R")
 source("Funktionen/FormatNumber.R")
 source("Funktionen/FormatPOSIXctWithFractionalSeconds.R")
@@ -92,12 +92,12 @@ for (i in seq_len(nrow(result$data))) {
     printf("%s%s &\n", tabIndent, format.money(priceTriple$b_PriceLow, digits=2))
     
     # Ergebnisse
-    route_1 <- sprintf("%+.6f", (priceTriple$ResultAB - 1) * 100) |> 
+    route_1 <- sprintf("%+.6f", (priceTriple$ResultAB) * 100) |> 
         str_replace(fixed("."), ",") |>
         str_replace("(\\d{3})", "\\1\\\\,")
     printf("%s%s\\,\\%% &\n", tabIndent, route_1)
     
-    route_2 <- sprintf("%+.6f", (priceTriple$ResultBA - 1) * 100) |> 
+    route_2 <- sprintf("%+.6f", (priceTriple$ResultBA) * 100) |> 
         str_replace(fixed("."), ",") |>
         str_replace("(\\d{3})", "\\1\\\\,")
     printf("%s%s\\,\\%% \\\\\n", tabIndent, route_2)

@@ -82,7 +82,7 @@ summaryTableTemplateFile <-
 # Schnellstart für Entwicklung
 currency_a <- "usd"
 currency_b <- "eur"
-threshold <- 1L
+threshold <- mainThreshold
 onlyMainGraphAndTable <- FALSE
 appendThresholdToTableLabel <- FALSE
 overviewImageHeight <- NULL

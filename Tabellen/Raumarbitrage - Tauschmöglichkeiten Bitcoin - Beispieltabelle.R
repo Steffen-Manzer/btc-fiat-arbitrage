@@ -121,10 +121,9 @@ tabIndentFirst <- strrep(" ", 8)
 tabIndent <- strrep(" ", 12)
 for (i in seq_len(nrow(result))) {
     priceDifference <- result[i]
-    printf("%s%s &\n",
-           tabIndentFirst, 
-           #formatPOSIXctWithFractionalSeconds(priceDifference$Time, "%d.%m.%Y, %H:%M:%OS")
-           formatPOSIXctWithFractionalSeconds(priceDifference$Time, "%H:%M:%OS")
+    printf(
+        "%s%s &\n",
+        tabIndentFirst, formatPOSIXctWithFractionalSeconds(priceDifference$Time, "%H:%M:%OS")
     )
     
     # Höchstkurs
