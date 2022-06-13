@@ -66,7 +66,7 @@ ab <- ab[!triplets]
 # Dokumentation: Siehe `Raumarbitrage/Bitcoin - Preisunterschiede berechnen.r`
 result <- data.table()
 numRows <- nrow(ab)
-comparisonThreshold <- 5
+comparisonThreshold <- 2L
 currentRow <- 0L
 while (TRUE) {
     

@@ -35,7 +35,7 @@ exchangeNames <- list(
 metadata <- data.table()
 
 # Mögliche zeitliche Limits durchgehen
-for (t in c(1, 2, 5, 10)) {
+for (t in c(2, 5, 10)) {
     
     # Börsenpaare durchgehen
     # ACHTUNG: Annahme, dass es nur eine Teildatei gibt!
@@ -87,7 +87,7 @@ metadata[, currencyPair := factor(currencyPair, levels = c("btcusd", "btceur"))]
 
 
 # Plot erzeugen ---------------------------------------------------------------
-metadata[, thresholdFactor := factor(threshold, levels=c("1", "2", "5", "10"))]
+metadata[, thresholdFactor := factor(threshold, levels=c("2", "5", "10"))]
 p <- 
     ggplot(metadata, aes(x=currencyPair, y=numRows, fill=thresholdFactor)) +
     geom_bar(
@@ -140,16 +140,8 @@ for (pair in unique(metadata$currencyPair)) {
     printf("%s:\n", format.currencyPair(pair))
     
     result <- metadata[currencyPair == pair & threshold == 10L, numRows] /
-        metadata[currencyPair == pair & threshold == 1L, numRows]
-    printf("     1s -> 10s: %s %%\n", format.percentage(result - 1, 1L))
-    
-    result <- metadata[currencyPair == pair & threshold == 10L, numRows] /
         metadata[currencyPair == pair & threshold == 2L, numRows]
     printf("     2s -> 10s: %s %%\n", format.percentage(result - 1, 1L))
-    
-    result <- metadata[currencyPair == pair & threshold == 2L, numRows] /
-        metadata[currencyPair == pair & threshold == 1L, numRows]
-    printf("     1s ->  2s: %s %%\n", format.percentage(result - 1, 1L))
     
     result <- metadata[currencyPair == pair & threshold == 5L, numRows] /
         metadata[currencyPair == pair & threshold == 2L, numRows]

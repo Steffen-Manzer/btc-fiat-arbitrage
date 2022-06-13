@@ -47,11 +47,11 @@ exchangeNames <- list(
 )
 
 # Verfügbare Grenzwerte für Abschluss des Arbitragegeschäfts in Sekunden
-thresholds <- c(1L, 2L, 5L, 10L)
+thresholds <- c(2L, 5L, 10L)
 
 # Haupt-Intervall zur Betrachtung innerhalb der Arbeit
 # (Rest: Nur Anhang, reduzierte Ansicht)
-mainThreshold <- 1L
+mainThreshold <- 2L
 
 # Die Breakpoints selbst werden immer dem letzten der beiden entstehenden
 # Intervalle zugerechnet

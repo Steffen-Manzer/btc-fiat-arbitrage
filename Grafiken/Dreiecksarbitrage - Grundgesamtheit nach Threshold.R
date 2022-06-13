@@ -35,13 +35,12 @@ exchangeNames <- list(
 metadata <- data.table()
 
 # Mögliche zeitliche Limits durchgehen
-for (t in c(1, 2, 5, 10)) {
+for (t in c(2L, 5L, 10L)) {
     
     # Börsenpaare durchgehen
-    # ACHTUNG: Annahme, dass es nur eine Teildatei gibt!
     files <- list.files(
         sprintf("Cache/Dreiecksarbitrage/%ds/", t),
-        pattern = ".+-1\\.fst",
+        pattern = "^[A-Za-z\\-]+\\.fst",
         full.names = TRUE
     )
     for (f in files) {
@@ -71,7 +70,7 @@ for (t in c(1, 2, 5, 10)) {
 
 
 # Plot erzeugen ---------------------------------------------------------------
-metadata[, thresholdFactor := factor(threshold, levels=c("1", "2", "5", "10"))]
+metadata[, thresholdFactor := factor(threshold, levels=c("2", "5", "10"))]
 p <-
     ggplot(metadata, aes(x=exchange, y=numRows, fill=thresholdFactor)) +
     geom_bar(
@@ -120,14 +119,6 @@ if (plotAsLaTeX) {
 # Statistiken ausgeben ----------------------------------------------------
 for (exchangeName in unique(metadata$exchange)) {
     printf("%s:\n", exchangeName)
-    
-    result <- metadata[exchange == exchangeName & threshold == 10L, numRows] /
-        metadata[exchange == exchangeName & threshold == 1L, numRows]
-    printf("    1s -> 10s: %s %%\n", format.percentage(result - 1, 1L))
-    
-    result <- metadata[exchange == exchangeName & threshold == 2L, numRows] /
-        metadata[exchange == exchangeName & threshold == 1L, numRows]
-    printf("    1s ->  2s: %s %%\n", format.percentage(result - 1, 1L))
     
     result <- metadata[exchange == exchangeName & threshold == 5L, numRows] /
         metadata[exchange == exchangeName & threshold == 2L, numRows]
