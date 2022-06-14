@@ -96,7 +96,7 @@ p <-
         width = .75
     ) +
     geom_text(
-        aes(label=round(numRows/1e6)),
+        aes(label=format.numberWithFixedDigits(numRows/1e6, digits=1L)),
         position = position_dodge(width=.85),
         vjust = -0.5,
         size = 3

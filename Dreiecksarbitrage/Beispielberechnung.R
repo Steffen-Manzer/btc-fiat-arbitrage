@@ -1,3 +1,6 @@
+#' Beispielberechnung für die Arbeit
+#' Erzeugt keine Tabellen oder Abbildungen.
+
 library("fst")
 library("data.table")
 source("Funktionen/printf.R")
