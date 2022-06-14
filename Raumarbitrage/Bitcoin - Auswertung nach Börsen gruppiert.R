@@ -100,6 +100,15 @@ summaryTableTemplateFile <-
     sprintf("%s/Tabellen/Templates/Raumarbitrage_Uebersicht_nach_Boerse.tex",
             latexOutPath)
 
+# Schnellstart für Entwicklung
+pair <- "btcusd"
+breakpoints <- breakpointsByCurrency[[pair]]
+threshold <- mainThreshold
+overviewImageHeight <- NULL
+forceTablePosition <- NULL
+onlyMainGraphAndTable <- FALSE
+appendThresholdToTableLabel <- FALSE
+
 
 # Hilfsfunktionen -------------------------------------------------------------
 
@@ -1420,6 +1429,15 @@ plotPercentageHighLowByExchange <- function(
     # Histogramm zeichnen
     plot <- ggplot(result) +
         geom_col(aes(x=exchangeName, y=ratio, fill=type), position="dodge", width=.75) +
+        geom_text(
+            aes(
+                x = exchangeName,
+                y = ratio + .04,
+                group = type,
+                label = paste0("\\scriptsize ", format.percentage(ratio, 1L), "\\,\\%")
+            ),
+            position = position_dodge(width=.75)
+        ) +
         theme_minimal() +
         theme(
             plot.title.position = "plot",
