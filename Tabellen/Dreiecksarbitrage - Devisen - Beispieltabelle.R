@@ -29,18 +29,24 @@ for (i in seq_len(nrow(forex))) {
         "%s%s &\n",
         tabIndentFirst, formatPOSIXctWithFractionalSeconds(tick$Time, "%d.%m.%Y, %H:%M:%OS3")
     )
+    
+    # Geldkurs
     printf(
         "%s%s\\,%s &\n",
         tabIndent, format.money(tick$Bid, digits=5), "USD"
     )
-    printf(
-        "%s%s\\,%s &\n",
-        tabIndent, format.money(tick$Ask, digits=5), "USD"
-    )
+    
+    # Briefkurs
     printf(
         "%s%s\\,%s \\\\\n",
-        tabIndent, format.money(tick$Mittel, digits=6), "USD"
+        tabIndent, format.money(tick$Ask, digits=5), "USD"
     )
+    
+    # Mittelkurs nicht relevant
+    # printf(
+    #     "%s%s\\,%s \\\\\n",
+    #     tabIndent, format.money(tick$Mittel, digits=6), "USD"
+    # )
     
     printf("\n")
 }
