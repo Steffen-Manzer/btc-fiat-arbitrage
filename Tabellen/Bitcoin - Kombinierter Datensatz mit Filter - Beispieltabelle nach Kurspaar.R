@@ -56,22 +56,23 @@ for (i in seq_len(nrow(ab))) {
         "%s%s &\n",
         tabIndentFirst, formatPOSIXctWithFractionalSeconds(tick$Time, "%d.%m.%Y, %H:%M:%OS")
     )
+    
+    # Kurspaar
+    printf("%s%s &\n", tabIndent, tick$CurrencyPair)
+    
+    # Höchstpreis
     printf(
         "%s%s\\,%s &\n",
         tabIndent, format.money(tick$PriceHigh, digits=2), substr(tick$CurrencyPair, 5, 7)
     )
+    
+    # Tiefstpreis
     printf(
-        "%s%s\\,%s &\n",
+        "%s%s\\,%s \\\\\n",
         tabIndent, format.money(tick$PriceLow, digits=2), substr(tick$CurrencyPair, 5, 7)
     )
     
-    # Anzahl Ticks interessiert für Dreiecksarbitrage nicht
-    #printf("%s%d &\n", tabIndent, tick$n)
-    
-    # Keine Ticks gefiltert, daher hier nicht einblenden
-    #printf("%s%s &\n", tabIndent, tick$CurrencyPair)
-    printf("%s%s \\\\\n", tabIndent, tick$CurrencyPair)
-    
+    # Keine Ticks gefiltert, daher Filter nicht einblenden
     # if (isTRUE(triplets[i])) {
     #     printf("%s* \\\\\n", tabIndent)
     # } else {
