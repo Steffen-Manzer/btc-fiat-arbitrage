@@ -105,7 +105,7 @@
     }
     
     cat(
-        trimws(format(Sys.time(), "%B %Y")), "%",
+        trimws(format(last(btcusd$Time), "%B %Y")), "%",
         file = outFileTimestamp,
         sep = ""
     )

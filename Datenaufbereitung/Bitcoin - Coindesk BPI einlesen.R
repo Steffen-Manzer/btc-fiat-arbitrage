@@ -35,6 +35,9 @@ cat("Parsing as 60s data and saving as .fst ... ")
 tic()
 bpi.60s$Time <- fastPOSIXct(bpi.60s$Time)
 
+# Mögliche Duplikate entfernen
+bpi.60s <- bpi.60s[j = .(Close = last(Close)), by=Time]
+
 # Rendite berechnen
 bpi.60s$Rendite <- c(0, diff(log(bpi.60s$Close)))
 
