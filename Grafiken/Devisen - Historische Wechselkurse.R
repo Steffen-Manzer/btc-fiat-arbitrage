@@ -5,25 +5,25 @@
 ####
 
 # Nutzt manuell abgerufene Daten, Aktualisierung über:
-# Datenanalyse/Daten/Dukascopy/dukascopy-monthly.js
+# Datenanalyse/Crawler/Dukascopy/get-ohlc.sh
 
 
 # Funktionen und Bibliotheken laden -------------------------------------------
 library("data.table")
 library("ggplot2")
 library("ggthemes")
-library("gridExtra")
-library("stringr")
-library("TTR") # Technical Trading Rules -> volatility
+library("cowplot") # plot_grid
+source("Funktionen/FormatCurrencyPair.R")
 source("Funktionen/printf.R")
 source("Konfiguration/FilePaths.R")
 
 
-# TODO Reparieren
 # Konfiguration -----------------------------------------------------------
-asTeX <- F # Ausgabe als TeX-Dokument oder in RStudio direkt
-texFile <- sprintf("%s/Abbildungen/Markteffizienz_Devisen_HistorischeKurse.tex",
-                   latexOutPath)
+asTeX <- TRUE # Ausgabe als TeX-Dokument oder in RStudio direkt
+texFile <- sprintf(
+    "%s/Abbildungen/Markteffizienz_Devisen_HistorischeKurse.tex",
+    latexOutPath
+)
 outFileTimestamp <- sprintf(
     "%s/Abbildungen/Markteffizienz_Devisen_HistorischeKurse_Stand.tex",
     latexOutPath
@@ -31,7 +31,7 @@ outFileTimestamp <- sprintf(
 
 
 # Daten einlesen --------------------------------------------------------------
-dataPathBase <- "Daten/Dukascopy/data/" # EURUSD-monthly-bid.csv.gz
+dataPathBase <- "Daten/dukascopy-ohlc/"
 
 pairs <- c("EURUSD", "USDJPY", "GBPUSD", "USDCHF")
 plotData <- list()
@@ -39,7 +39,13 @@ plotData <- list()
 # Einzelne Daten einlesen
 for (pair in pairs) {
     cat(paste0("Lese ", pair, "...\n"))
-    dataset <- fread(paste0(dataPathBase, pair, "/", pair, "-monthly-bid.csv.gz"))
+    
+    files <- list.files(dataPathBase, pattern=paste0("^", pair |> tolower()), full.names=TRUE)
+    if (length(files) != 1) {
+        stop(sprintf("Konnte Quelldatei für %s nicht bestimmen.", pair))
+    }
+    
+    dataset <- fread(files[1])
     
     # Datensatz beschreiben
     dataset$Datensatz <- pair
@@ -90,8 +96,8 @@ for (pair in pairs) {
             expand = expansion(mult = c(.1, .1))
         ) + 
         scale_color_ptol() +
-        labs(title=paste0(str_sub(pair, 0, 3), "/", str_sub(pair, 4, 6))) +
-        ylab(str_sub(pair, 4, 6))
+        labs(title=format.currencyPair(pair)) +
+        ylab(substr(pair, 4, 6))
     
     plotData <- c(plotData, list(plot))
 }
@@ -109,7 +115,7 @@ if (asTeX) {
     )
 }
 
-grid.arrange(grobs=plotData)
+print(plot_grid(plotlist=plotData, ncol = 2L, align = "hv"))
 
 if (asTeX) {
     dev.off()
