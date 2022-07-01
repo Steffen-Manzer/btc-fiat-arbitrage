@@ -112,7 +112,7 @@ foreach ($data as $tick) {
     $time = \DateTime::createFromFormat('U.u', sprintf('%f', $tick['Time'] / 1000));
     
     // skip datasets out of range
-    if ($time < $lastDataset || $time >= $requestUntil) {
+    if ($time <= $lastDataset || $time >= $requestUntil) {
         echo '-- Skipping ' . $time->format('Y-m-d H:i') . PHP_EOL;
         continue;
     }
