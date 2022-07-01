@@ -19,10 +19,12 @@
     
     # Berechnungen ------------------------------------------------------------
     # Jahresenergiebedarf Bitcoin
-    # https://static.dwcdn.net/data/cFnri.csv
-    # via https://datawrapper.dwcdn.net/cFnri/8/
-    #   via https://digiconomist.net/bitcoin-energy-consumption/
-    apiSourceFile <- "https://static.dwcdn.net/data/cFnri.csv"
+    # https://digiconomist.net/bitcoin-energy-consumption/
+    # -> https://app.everviz.com/embed/ywoqita/
+    #  -> https://api.everviz.com/gsheet?googleSpreadsheetKey=1bLjXWHG4IXO8_CyMKRl1tSN8hTn3AFOlxfBISyQ6zM0&worksheet=A1:ZZ
+    #   -> https://docs.google.com/spreadsheets/d/1bLjXWHG4IXO8_CyMKRl1tSN8hTn3AFOlxfBISyQ6zM0
+    #    -> https://docs.google.com/spreadsheets/d/1bLjXWHG4IXO8_CyMKRl1tSN8hTn3AFOlxfBISyQ6zM0/gviz/tq?tqx=out:csv&sheet=TWh%20per%20Year
+    apiSourceFile <- "https://docs.google.com/spreadsheets/d/1bLjXWHG4IXO8_CyMKRl1tSN8hTn3AFOlxfBISyQ6zM0/gviz/tq?tqx=out:csv&sheet=TWh%20per%20Year"
     
     # Nur einmal pro Woche neu laden
     if (
@@ -104,7 +106,7 @@
     }
     
     cat(
-        trimws(format(Sys.time(), "%B %Y")), "%",
+        trimws(format(last(rawData$Time), "%B %Y")), "%",
         file = outFileTimestamp,
         sep = ""
     )
