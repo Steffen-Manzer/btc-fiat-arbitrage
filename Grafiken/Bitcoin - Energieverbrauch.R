@@ -5,7 +5,7 @@
 
 (function() {
     
-    stop("Derzeit nicht genutzt.")
+    #stop("Derzeit nicht genutzt.")
     
     # Aufruf durch LaTeX, sonst direkt aus RStudio
     fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
@@ -24,12 +24,6 @@
     #   via https://digiconomist.net/bitcoin-energy-consumption/
     apiSourceFile <- "https://static.dwcdn.net/data/cFnri.csv"
     
-    # Stromerzeugung Deutschland
-    # https://www-genesis.destatis.de/genesis/online?operation=table&code=43312-0001&bypass=true&levelindex=1&levelid=1629705181020
-    comparisonApiGermany <- "https://www-genesis.destatis.de/genesisWS/rest/2020/data/table"
-    #comparisonApiGermanyParams <- "name=43312-0001&startyear=2018&transpose=true&username=DEJ07P56OT&password=K7QN@RF8YwFWnph798_k"
-    comparisonApiGermanyParams <- "name=43311-0002&startyear=2016&username=DEJ07P56OT&password=K7QN@RF8YwFWnph798_k"
-    
     # Nur einmal pro Woche neu laden
     if (
         fromLaTeX && asTeX && file.exists(texFile) && 
@@ -43,11 +37,7 @@
     # Bibliotheken und Hilfsfunktionen laden ----------------------------------
     source("Funktionen/R_in_LaTeX_Warning.R")
     library("data.table")
-    #library("rjson") # Für Destatis
-    #library("stringr") # Destatis-Datum einlesen
-    #library("purrr") # Destatis-Datum einlesen
     library("lubridate") # floor_date
-    #library("dplyr") # Nur für auskommentierte Bereiche nötig
     library("ggplot2")
     library("ggthemes")
     
@@ -66,87 +56,6 @@
         variable.name = "Type",
         value.name = "Energiemenge_in_TWh"
     )
-    
-    
-    # Daten einlesen: Destatis
-    # failed <- FALSE
-    # tryCatch(
-    #     {
-    #         apiResponse <- system2("curl", c(
-    #             '-H "Accept: application/json"',
-    #             paste0('-d "', comparisonApiGermanyParams, '"'),
-    #             '-G',
-    #             comparisonApiGermany
-    #         ), stdout = TRUE, timeout = 60)
-    #         
-    #         if (nchar(apiResponse) < 10) {
-    #             simpleError("Invalid response.")
-    #         }
-    #         
-    #         apiResponse <- do.call(paste0, as.list(apiResponse))
-    #         apiResponse <- fromJSON(apiResponse)
-    #         
-    #         # Prüfe Validität
-    #         if (length(apiResponse) != 5) {
-    #             simpleError("Invalid response length.")
-    #         }
-    #         if (apiResponse$Status$Code > 0) {
-    #             simpleError(apiResponse$Status$Content)
-    #         }
-    #         
-    #         destatisData <<- apiResponse$Object$Content
-    #         
-    #     },
-    #     error = function(err) {
-    #         failed <<- TRUE
-    #         warning(err)
-    #     }
-    # )
-    # 
-    # if (failed) {
-    #     cat(latexWarning("Konnte Destatis-Daten nicht lesen!"), file = outFile)
-    #     return()
-    # }
-    # 
-    # # Datensatz aufbereiten
-    # destatisTable <- fread(destatisData, skip = 7, fill = TRUE, select=c(1,2,3,5))
-    # #destatisTable <- destatisTable_Total #%>%
-    #     #select(1, 2, 3, 4, ncol(destatisTable_Total))
-    # colnames(destatisTable) <- c("Year", "Month", "Type", "Value")
-    # #Value = Elektrizitätserzeugung (netto) in MWh
-    # 
-    # # Letzte drei Zeilen entfernen
-    # destatisTable <- head(destatisTable, -3)
-    # 
-    # # Werte einlesen
-    # destatisTable$Value <- as.numeric(destatisTable$Value)
-    # 
-    # # Nicht benötigte Daten entfernen und korrekt bezeichnen
-    # destatisTable <- destatisTable %>%
-    #     filter(Type == "Insgesamt" & Value != "...")
-    # destatisTable$Type = "Stromerzeugung"
-    # 
-    # # Datum einlesen...
-    # destatisTable$Month <- reduce2(
-    #     c("Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"), 
-    #     c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"), 
-    #     .init=destatisTable$Month,
-    #     str_replace
-    # )
-    # destatisTable$Time <- as.Date(
-    #     parse_date_time2(paste0(destatisTable$Year, "-", destatisTable$Month, "-01"), order = "Y-m-d", tz="UTC")
-    # )
-    # destatisTable$Year <- NULL
-    # destatisTable$Month <- NULL
-    # destatisTable <- destatisTable %>%
-    #     relocate(Time) %>%
-    #     arrange(Time)
-    # 
-    # # Annualisieren
-    # destatisTable$Annualized <- frollsum(destatisTable$Value, n = 12)
-    # 
-    # # Auf gemeinsame Daten beschränken
-    # destatisTable <- destatisTable[destatisTable$Time >= rawData$Time[1]]
     
     
     # Grafiken erstellen
