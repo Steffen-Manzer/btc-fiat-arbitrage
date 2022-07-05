@@ -2,17 +2,8 @@
 #'
 #' Notwendig ist die vorherige Berechnung und Speicherung von Preistripeln
 #' unter
-#'   `Cache/Dreiecksarbitrage/{Börse}-{Währung 1}-{Währung 2}-{i}` mit `i = 1 ... n`.
+#'   `Cache/Dreiecksarbitrage/{Börse}-{Währung 1}-{Währung 2}.fst`
 #' über die Datei `Preistipel finden.R`.
-#'
-#' Stand Januar 2022 passen sämtliche Ergebnisse noch mit etwas Puffer in eine
-#' einzelne Ergebnisdatei, ohne dass diese jeweils mehr als 4 GB Arbeitsspeicher
-#' belegen würde.
-#'
-#' Diese Auswertung lädt aus diesem Grund derzeit je Kurs-/Börsenpaar nur die
-#' erste Ergebnisdatei und prüft nicht, ob weitere Ergebnisse vorliegen.
-#' Das Nachladen weiterer Ergebnisdateien müsste in Zukunft ergänzt werden, wenn
-#' einzelne Dateien die Schwelle von 100 Mio. Datensätzen überschreiten.
 
 
 # Bibliotheken und externe Hilfsfunktionen laden ------------------------------
@@ -90,6 +81,62 @@ forceTablePosition <- NULL
 
 
 # Hilfsfunktionen -------------------------------------------------------------
+
+#' Ergebnisdaten für alle Börsen laden
+loadResults <- function(currency_a, currency_b, threshold)
+{
+    allResults <- NULL
+    for (i in seq_along(exchangeNames)) {
+        
+        # Variablen initialisieren
+        exchange <- names(exchangeNames)[[i]]
+        exchangeName <- exchangeNames[[i]]
+        
+        dataFile <- sprintf(
+            "Cache/Dreiecksarbitrage/%ds/%s-%s-%s.fst",
+            threshold, exchange, currency_a, currency_b
+        )
+        stopifnot(file.exists(dataFile))
+        
+        # Daten einlesen
+        printf("Lese Daten für %s... ", exchangeName)
+        result <- new(
+            "TriangularResult",
+            Exchange = exchange,
+            ExchangeName = exchangeName,
+            Currency_A = currency_a,
+            Currency_B = currency_b,
+            data = read_fst(
+                dataFile,
+                columns = c(
+                    "Time",
+                    "a_PriceLow", "a_PriceHigh", # z.B. BTC/USD
+                    "b_PriceLow", "b_PriceHigh", # z.B. BTC/EUR
+                    "ab_Bid", "ab_Ask" # z.B. EUR/USD
+                ),
+                as.data.table = TRUE
+            )
+        )
+        printf("%s Datensätze.\n", format.number(nrow(result$data)))
+        
+        # Ergebnis der Arbitrage (beide Routen + Optimum) berechnen
+        calculateResult(result)
+        result$data[, Exchange:=exchangeName]
+        
+        # Ergebnis anhängen
+        if (!is.null(allResults)) {
+            allResults <- rbindlist(list(allResults, result$data))
+        } else {
+            allResults <- result$data
+        }
+    }
+    
+    # Sortieren
+    setorder(allResults, Time)
+    printf("%s Datensätze insgesamt.\n", format.number(nrow(allResults)))
+    
+    return(allResults)
+}
 
 #' Ergebnis berechnen
 #' 
@@ -1743,56 +1790,7 @@ analyseTriangularArbitrage <- function(
         }
     }
     
-    # Lade alle Ergebnissets
-    allResults <- NULL
-    for (i in seq_along(exchangeNames)) {
-        
-        # Variablen initialisieren
-        exchange <- names(exchangeNames)[[i]]
-        exchangeName <- exchangeNames[[i]]
-        
-        dataFile <- sprintf(
-            "Cache/Dreiecksarbitrage/%ds/%s-%s-%s.fst",
-            threshold, exchange, currency_a, currency_b
-        )
-        stopifnot(file.exists(dataFile))
-        
-        # Daten einlesen
-        printf("Lese Daten für %s... ", exchangeName)
-        result <- new(
-            "TriangularResult",
-            Exchange = exchange,
-            ExchangeName = exchangeName,
-            Currency_A = currency_a,
-            Currency_B = currency_b,
-            data = read_fst(
-                dataFile,
-                columns = c(
-                    "Time",
-                    "a_PriceLow", "a_PriceHigh", # z.B. BTC/USD
-                    "b_PriceLow", "b_PriceHigh", # z.B. BTC/EUR
-                    "ab_Bid", "ab_Ask" # z.B. EUR/USD
-                ),
-                as.data.table = TRUE
-            )
-        )
-        printf("%s Datensätze.\n", format.number(nrow(result$data)))
-        
-        # Ergebnis der Arbitrage (beide Routen + Optimum) berechnen
-        calculateResult(result)
-        result$data[, Exchange:=exchangeName]
-        
-        # Ergebnis anhängen
-        if (!is.null(allResults)) {
-            allResults <- rbindlist(list(allResults, result$data))
-        } else {
-            allResults <- result$data
-        }
-    }
-    
-    # Sortieren
-    setorder(allResults, Time)
-    printf("%s Datensätze insgesamt.\n", format.number(nrow(allResults)))
+    allResults <- loadResults(currency_a, currency_b, threshold)
     
     # Aggregieren
     aggregatedResults <- aggregateResultsByTime(allResults, "1 month")
