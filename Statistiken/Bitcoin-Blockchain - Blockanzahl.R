@@ -5,8 +5,6 @@
 
 (function() {
     
-    stop("Derzeit nicht verwendet.")
-    
     # Konfiguration -----------------------------------------------------------
     source("Konfiguration/FilePaths.R")
     outFile <- sprintf("%s/Daten/Bitcoin_Blockchain_Blockcount.tex", latexOutPath)
