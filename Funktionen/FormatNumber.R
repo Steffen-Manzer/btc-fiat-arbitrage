@@ -8,6 +8,11 @@ format.numberWithFixedDigits <- function(..., digits=1L) {
     formatC(..., format="f", big.mark=".", decimal.mark=",", digits=digits)
 }
 
+#' Ausgabe mit einer exakten Anzahl signifikanter Stellen
+format.numberWithSignificantDigits <- function(n, digits) {
+    formatC(signif(n, digits=digits), digits=digits, format="fg", flag="#", decimal.mark=",")
+}
+
 #' Währungsausgabe, wie sie in DE üblich ist: 123456.789 -> 123.456,79
 format.money <- function(..., digits=2L) {
     formatC(..., format="f", big.mark=".", decimal.mark=",", digits=digits)
