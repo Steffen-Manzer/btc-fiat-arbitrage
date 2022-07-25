@@ -46,12 +46,12 @@ sampleExchangeRate_b = 65000 # 65.000 USD
 # Bibliotheken und Hilfsfunktionen laden --------------------------------------
 library("fst")
 library("data.table")
-library("dplyr")
 library("readr")
 library("stringr")
 library("ggplot2")
 library("ggthemes")
 source("Funktionen/FormatNumber.R")
+source("Funktionen/printf.R")
 
 # Quelldaten
 srcsets <- fread("
@@ -88,15 +88,19 @@ volumeSet <- data.table(
 
 for (i in seq_len(nrow(srcsets))) {
     srcset <- srcsets[i]
-    cat("Reading", srcset$Exchange, srcset$Pair, "\n")
+    printf("Lese %s: %s... ", srcset$Exchange, srcset$Pair)
     
     if (!file.exists(srcset$SrcFile)) {
-        cat("File not found, skipping.\n")
-        warning(paste("File not found:", srcset$SrcFile))
-        next()
+        stop("Datei nicht gefunden!")
     }
     
     dataset <- read_fst(srcset$SrcFile, as.data.table=TRUE)
+    printf(
+        "%s Datensätze von %s bis %s.\n",
+        format.number(nrow(dataset)),
+        format(dataset[1, Time], "%d.%m.%Y"),
+        format(dataset[.N, Time], "%d.%m.%Y")
+    )
     
     # Nach Datum filtern
     dataset <- dataset[dataset$Time >= dateFrom & dataset$Time < dateTo]
@@ -156,6 +160,8 @@ for (template in templateFiles) {
     if (!file.exists(templateSourceFile)) {
         stop("templateSource not found.")
     }
+    
+    cat("Writing", basename(templateTargetFile), "...\n")
     
     # LaTeX-Template lesen
     latexTemplate <- read_file(templateSourceFile)
@@ -227,14 +233,14 @@ for (template in templateFiles) {
         latexTemplate |>
             str_replace(
                 fixed(paste0("{", exchange, ".TotalVolumeUSD_a}")),
-                format.number(volumeTotal * sampleExchangeRate_a / 1e9, digits=0L)
+                format.number(round(volumeTotal * sampleExchangeRate_a / 1e9))
             ) -> latexTemplate
         
         # Umrechnung in USD bei Beispielkurs b)
         latexTemplate |>
             str_replace(
                 fixed(paste0("{", exchange, ".TotalVolumeUSD_b}")),
-                format.number(volumeTotal * sampleExchangeRate_b / 1e9, digits=0L)
+                format.number(round(volumeTotal * sampleExchangeRate_b / 1e9))
             ) -> latexTemplate
     }
     
@@ -242,71 +248,12 @@ for (template in templateFiles) {
         Sys.chmod(templateTargetFile, mode="0644")
     }
     latexTemplate <- latexTemplate |> 
-        str_replace(fixed("{CurrentDate}"), trimws(format(Sys.Date(), "%B~%Y"))) |>
+        str_replace(
+            fixed("{CurrentDate}"),
+            trimws(paste0(format(as.POSIXct(dateFrom), "%m/%Y"), " -- ", format(as.POSIXct(dateTo)-1, "%m/%Y")))
+        ) |>
         write_file(templateTargetFile)
     
     # Vor versehentlichem Überschreiben schützen
     Sys.chmod(templateTargetFile, mode="0444")
-}
-
-# Plot ausgeben
-if (asTeX) {
-    stop("Code-Segment veraltet, Prüfung nötig.")
-    source("Konfiguration/TikZ.R")
-    cat("Ausgabe in Datei ", texFile, "\n")
-    tikz(
-        file = texFile,
-        width = documentPageWidth,
-        height = defaultImageHeight,
-        sanitize = TRUE
-    )
-    
-    # Plotten
-    # Filter jedes mal erneut prüfen!
-    warning("Manually removing non-significant exchange pairs.")
-    warning("Check y scale expansion (geom_text must fit)")
-    plot <- ggplot(
-            volumeSet[
-                Exchange != "Total" &
-                (Exchange != "Kraken" | Pair != "BTC/GBP") &
-                (Exchange != "Kraken" | Pair != "BTC/JPY") &
-                (Exchange != "Kraken" | Pair != "BTC/CAD")
-            ]
-            aes(fill=Pair, x=Exchange, y=Volume/1e6)
-        ) +
-        geom_bar(position = position_dodge2(preserve = "single"), stat="identity") +
-        geom_text(
-            aes(x=Exchange, y=Volume/1e6, label=Pair, hjust=-.15),
-            position=position_dodge2(width=.9, preserve = "single"),
-            size=2.5, angle=90
-        ) +
-        labs(x="\\footnotesize Börse", y="\\footnotesize Jahresumsatz [Mio. BTC]") +
-        theme_minimal() +
-        theme(
-            # legend.position = c(0.85, 0.75),
-            # legend.background = element_rect(fill = "white", size = 0.2, linetype = "solid"),
-            # legend.margin = margin(0, 10, 5, 5),
-            # legend.title = element_blank(),
-            legend.position = "none",
-            axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),
-            axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0)),
-            panel.grid.major.x = element_blank()
-         ) + 
-        scale_x_discrete(
-            expand = expansion(mult = c(.02, .02))
-        ) +
-        scale_y_continuous(
-            #labels = function(x) { prettyNum(x, big.mark=".", decimal.mark=",") },
-            breaks=seq(0, 30, 1),
-            #minor_breaks = NULL,
-            # Von c(0, .05) erweitert für Label oberhalb der Balken
-            expand = expansion(mult = c(0, .31))
-        ) + 
-        scale_fill_ptol()
-    
-    print(plot)
-    if (asTeX) {
-        dev.off()
-    }
-    
 }
