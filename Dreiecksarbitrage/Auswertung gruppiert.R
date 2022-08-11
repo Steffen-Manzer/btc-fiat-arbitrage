@@ -1809,7 +1809,7 @@ analyseTriangularArbitrage <- function(
     p_nrow <- plotNumResultsOverTime(
         aggregatedResults,
         breakpoints = breakpoints,
-        plotTitle = "Anzahl Beobachtungen"
+        plotTitle = "Anzahl beobachtete Arbitrage-Tripel"
     )
     p_vola <- plotVolatilityByTime(
         paste0("btc", currency_a),
@@ -1947,7 +1947,7 @@ analyseTriangularArbitrage <- function(
         )
         p_nrow <- plotNumResultsOverTime(
             aggregatedResultSubset,
-            plotTitle = "Anzahl Beobachtungen"
+            plotTitle = "Anzahl beobachtete Arbitrage-Tripel"
         )
         p_vola <- plotVolatilityByTime(
             paste0("btc", currency_a),

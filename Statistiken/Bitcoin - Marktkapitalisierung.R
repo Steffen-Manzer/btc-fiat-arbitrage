@@ -2,6 +2,8 @@
 # Besonderheiten gegenüber normalen Skripten:
 # - setwd + source(.Rprofile)
 # - Caching, da 3x pro Kompilierung aufgerufen
+#
+# Stand Juli 2022 nicht mehr in der Arbeit verwendet, da viel zu schnell veraltet.
 
 (function() {
     

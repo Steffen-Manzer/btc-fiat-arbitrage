@@ -1781,7 +1781,7 @@ analysePriceDifferences <- function(
     p_nrow <- plotNumDifferencesByTime(
         aggregatedPriceDifferences,
         breakpoints = breakpoints,
-        plotTitle = "Anzahl Beobachtungen"
+        plotTitle = "Anzahl beobachtete Arbitragemöglichkeiten"
     )
     p_vola <- plotVolatilityByTime(
         pair,
@@ -1938,7 +1938,7 @@ analysePriceDifferences <- function(
         )
         p_nrow <- plotNumDifferencesByTime(
             aggregatedPriceDifferences,
-            plotTitle = "Anzahl Beobachtungen"
+            plotTitle = "Anzahl beobachtete Arbitragemöglichkeiten"
         )
         p_vola <- plotVolatilityByTime(
             pair,
