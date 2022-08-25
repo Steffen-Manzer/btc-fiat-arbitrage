@@ -21,7 +21,7 @@
         "%s/Abbildungen/Krypto_Bitcoin_Preis_BPI_Stand.tex",
         latexOutPath
     )
-    plotAsLaTeX <- fromLaTeX || FALSE
+    plotAsLaTeX <- fromLaTeX || TRUE
     
     # Nur einmal pro Monat neu laden
     if (
@@ -82,7 +82,7 @@
     }
     
     cat(
-        trimws(format(Sys.time(), "%B %Y")), "%",
+        trimws(format(last(btcusd$Time), "%B %Y")), "%",
         file = outFileTimestamp,
         sep = ""
     )
