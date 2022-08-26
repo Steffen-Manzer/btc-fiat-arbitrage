@@ -17,7 +17,7 @@ from urllib import request
 # ====== Beginn Konfiguration ======
 
 # Ausgabepfad (Einzelne Paare werden in Unterverzeichnisse abgelegt)
-out_path = "../../Daten/dukascopy/"
+out_path = "../../Daten/dukascopy-tick/"
 
 # Gewünschte Wechselpaare
 symbols = ["eurusd"]  # , "gbpusd", "usdchf", "usdcad", "usdjpy", "audusd"]
