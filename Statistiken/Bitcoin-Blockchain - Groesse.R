@@ -19,8 +19,8 @@
     # Aufruf durch LaTeX, sonst direkt aus RStudio
     fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
-    # Nur einmal pro Woche neu laden
-    if (fromLaTeX && file.exists(outFile) && difftime(Sys.time(), file.mtime(outFile), units = "days") < 7) {
+    # Nur alle zwei Wochen neu laden
+    if (fromLaTeX && file.exists(outFile) && difftime(Sys.time(), file.mtime(outFile), units = "days") < 14) {
         cat("Daten noch aktuell, keine Aktualisierung der Blockgroesse.\n")
         return()
     }
@@ -47,7 +47,7 @@
     blocksize <- floor(blocksize / 5000) * 5
     cat(blocksize, "~GB%", file = outFile, sep="")
     cat(
-        trimws(format(Sys.time(), "%e. %B %Y")), "%",
+        trimws(format(Sys.time(), "%B %Y")), "%",
         file = outFileTimestamp,
         sep = ""
     )

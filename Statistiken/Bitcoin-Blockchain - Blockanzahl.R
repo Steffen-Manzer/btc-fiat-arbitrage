@@ -14,8 +14,8 @@
     # Aufruf durch LaTeX, sonst direkt aus RStudio
     fromLaTeX <- (commandArgs(T)[1] == "FromLaTeX") %in% TRUE
     
-    # Nur einmal pro Woche neu laden
-    if (fromLaTeX && file.exists(outFile) && difftime(Sys.time(), file.mtime(outFile), units = "days") < 7) {
+    # Nur alle zwei Wochen neu laden
+    if (fromLaTeX && file.exists(outFile) && difftime(Sys.time(), file.mtime(outFile), units = "days") < 14) {
         cat("Daten noch aktuell, keine Aktualisierung der Blockanzahl\n")
         return()
     }
