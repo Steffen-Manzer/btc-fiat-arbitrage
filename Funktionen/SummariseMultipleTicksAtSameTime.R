@@ -3,12 +3,12 @@ library("data.table") # .[ (Gruppierungsfunktion)
 
 #' Mehrfache Ticks mit der exakt selben Zeit zusammenfassen
 #' 
-#' Falls `dataset` partiell eingelesen wird, muss darauf geachtet 
+#' Falls 'dataset' partiell eingelesen wird, muss darauf geachtet 
 #' werden, dass stets sämtliche Ticks der selben Zeit vorliegen.
 #' 
-#' @param dataset Eine `data.table` mit den Spalten `Time`, `Price`,
-#'                `Exchange` oder `CurrencyPair` sowie `RowNum`
-#' @return `data.table` Wie `dataset`, nur mit gruppierten Zeitpunkten
+#' @param dataset Eine 'data.table' mit den Spalten 'Time', 'Price',
+#'                'Exchange' oder 'CurrencyPair' sowie 'RowNum'
+#' @return 'data.table' Wie 'dataset', nur gruppiert
 summariseMultipleTicksAtSameTime <- function(dataset) {
     if (!is.null(dataset$Exchange)) {
         return(dataset[

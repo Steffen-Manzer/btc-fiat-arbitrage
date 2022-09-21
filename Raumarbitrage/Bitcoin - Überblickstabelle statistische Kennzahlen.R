@@ -153,7 +153,7 @@ if (FALSE) {
         printf("Berechne Gesamtergebnisse...\n")
         tableContent <- paste0(
             tableContent,
-            "\n", s, "\\tablebody\n\n",
+            "\n", s, "\\tablesummary\n\n",
             calculateMoments(comparablePrices$PriceDifference, "Gesamt") |> generateTableRow()
         )
         

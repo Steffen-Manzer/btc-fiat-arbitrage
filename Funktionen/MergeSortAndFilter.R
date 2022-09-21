@@ -3,9 +3,8 @@ library("data.table") # rbindlist, setorder
 library("zoo") # rollapply
 
 #' Verbindet zwei Sätze von Tickdaten in eine gemeinsame Liste,
-#' sortiert diese nach Zeit und entfernt alle mittleren von
-#' drei oder mehr aufeinanderfolgenden Ticks der selben Börse oder
-#' des selben Wechselkurses (`compare_by`).
+#' sortiert nach Zeit und entfernt alle mittleren von drei oder mehr
+#' aufeinanderfolgenden Ticks der selben Börse / des selben Kurses.
 #' 
 #' Beispiel Raumarbitrage: Vergleich anhand der Börse:
 #' |--------------------------------->   Zeitachse
@@ -14,10 +13,10 @@ library("zoo") # rollapply
 #'  ? * *           *         * *        Nicht benötigte Ticks
 #'  A     A B B A B   B A A B     B A    Reduzierter Datensatz
 #' 
-#' @param dataset_a `data.table` mit `Time` und `compare_by` (s.u.)
-#' @param dataset_b Wie `dataset_a`.
+#' @param dataset_a 'data.table' mit 'Time' und 'compare_by' (s.u.)
+#' @param dataset_b Wie 'dataset_a'.
 #' @param compare_by Spalte anhand derer doppelte Ticks erkannt werden
-#' @return `data.table` Eine Tabelle der Tickdaten beider Börsen
+#' @return 'data.table' Eine Tabelle der Tickdaten beider Börsen
 mergeSortAndFilterTwoDatasets <- function(
     dataset_a, dataset_b, compare_by = "Exchange"
 ) {
@@ -33,7 +32,7 @@ mergeSortAndFilterTwoDatasets <- function(
         # nächsten Tick identisch ist. Daher: Fensterbreite 3
         width = 3,
         FUN = function(x) all(x == x[1]),
-        # Mit `FALSE` auffüllen (ersten und letzten Tick nie filtern)
+        # Ersten und letzten Tick nie filtern)
         fill = FALSE
     )
     

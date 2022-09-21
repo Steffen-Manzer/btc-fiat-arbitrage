@@ -1674,7 +1674,7 @@ summariseDatasetAsTable <- function(
         # Gesamtdaten
         tableContent <- paste0(
             tableContent,
-            "        \\tablebody\n\n",
+            "        \\tablesummary\n\n",
             "        Gesamt &\n",
             createRow(nrow(dataset), dataset)
         )
