@@ -70,7 +70,7 @@ if (plotAsLaTeX) {
 # Min/Max/Mean
 p_diff_minmaxmean <- ggplot(priceDifferences) +
     geom_ribbon(aes(x=Time, ymin=0,ymax=Max),fill="grey70") +
-    geom_line(aes(x=Time, y=Mean, color="1", linetype="1"), size=.5) + 
+    geom_line(aes(x=Time, y=Mean, color="1", linetype="1"), linewidth=.5) + 
     theme_minimal() +
     theme(
         legend.position = "none",
@@ -102,7 +102,7 @@ if (plotAsLaTeX) {
 
 # Mean
 p_diff_mean <- ggplot(priceDifferences) + 
-    geom_line(aes(x=Time, y=Mean, color="1", linetype="1"), size=.5) + 
+    geom_line(aes(x=Time, y=Mean, color="1", linetype="1"), linewidth=.5) + 
     theme_minimal() +
     theme(
         legend.position = "none",

@@ -91,7 +91,7 @@
     }
     
     plotAbsVola <- ggplot(plotData, aes(x=Time, y=vClose, group=Datensatz)) +
-        geom_line(aes(color=Datensatz, linetype=Datensatz), size=1) +
+        geom_line(aes(color=Datensatz, linetype=Datensatz), linewidth=1) +
         theme_minimal() +
         theme(
             legend.position = "bottom",

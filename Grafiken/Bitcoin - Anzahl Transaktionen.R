@@ -69,7 +69,7 @@
     
     # 1-Wochen-Durchschnitt
     plot <- ggplot(weeklyData, aes(x=Time)) +
-        geom_line(aes(y=Volume, color="NumTransaktionen"), size=1) +
+        geom_line(aes(y=Volume, color="NumTransaktionen"), linewidth=1) +
         theme_minimal() +
         theme(
             legend.position = "none",

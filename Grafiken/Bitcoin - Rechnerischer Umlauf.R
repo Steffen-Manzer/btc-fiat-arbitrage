@@ -82,23 +82,23 @@
     plot <- ggplot(results, aes(x=block, y=bitcoins)) +
         geom_line(
             aes(y=bitcoinsMinusAttrition, color="Produktion abzüglich Verluste", linetype="Produktion abzüglich Verluste"),
-            size = 1
+            linewidth = 1
         ) +
         geom_line(
             data=lastResults,
             aes(x=block, y=bitcoinsMinusAttrition, color="Produktion abzüglich Verluste"),
             linetype="dotted",
-            size = 1
+            linewidth = 1
         ) +
         geom_line(
             aes(color="Insgesamt produziert", linetype="Insgesamt produziert"),
-            size = 1
+            linewidth = 1
         ) +
         geom_line(
             data=lastResults,
             aes(x=block, y=bitcoins, color="Insgesamt produziert"),
             linetype="dotted",
-            size = 1
+            linewidth = 1
         ) +
         scale_x_continuous(
             breaks = results$block,

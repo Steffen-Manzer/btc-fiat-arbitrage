@@ -63,7 +63,7 @@ library("ggthemes")
     
     plot <- btcVolume %>%
         ggplot(aes(x=Time)) +
-        geom_line(aes(y=Volume/1e6, color=Currency, linetype=Currency), size=1) +
+        geom_line(aes(y=Volume/1e6, color=Currency, linetype=Currency), linewidth=1) +
         scale_color_ptol() +
         scale_fill_ptol() +
         scale_x_date(

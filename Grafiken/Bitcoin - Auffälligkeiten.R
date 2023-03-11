@@ -71,7 +71,7 @@ p_bitstamp <- ggplot() +
     geom_line(
         aes(x=Time, y=Price, color=Exchange, linetype=Exchange),
         data=a_coinbase,
-        size=.75
+        linewidth=.75
     ) +
     geom_boxplot(
         aes(x=Time, group=Time, y=Price, color=Exchange, linetype=Exchange),

@@ -74,7 +74,7 @@
     }
     
     plot <- ggplot(btcvolume, aes(x=Time, y=meanDailyVolume)) +
-        geom_line(size=1, aes(color="")) +
+        geom_line(linewidth=1, aes(color="")) +
         theme_minimal() +
         theme(
             legend.position = "none",

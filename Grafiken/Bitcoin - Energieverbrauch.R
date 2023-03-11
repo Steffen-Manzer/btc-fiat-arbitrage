@@ -75,7 +75,7 @@
     plot <- ggplot(rawData, aes(x=Time)) +
         geom_line(
             aes(y=Energiemenge_in_TWh, color=Type, linetype=Type),
-            size=1
+            linewidth=1
         ) +
         theme_minimal() +
         theme(

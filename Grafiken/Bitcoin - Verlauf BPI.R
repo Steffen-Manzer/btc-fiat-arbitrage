@@ -55,7 +55,7 @@
     
     # Nutze Tagesdaten
     plot <- ggplot(btcusd, aes(x=Time)) +
-        geom_line(aes(y=Close, color="BTCUSD"), size=1) +
+        geom_line(aes(y=Close, color="BTCUSD"), linewidth=1) +
         theme_minimal() +
         theme(
             legend.position = "none",

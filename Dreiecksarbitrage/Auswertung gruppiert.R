@@ -356,7 +356,7 @@ plotAggregatedResultsOverTime <- function(
         geom_ribbon(aes(x=Time, ymin=Q1, ymax=Q3), fill="grey70") +
         
         # Median zeichnen
-        geom_line(aes(x=Time, y=Median, color="1", linetype="1"), size=.5, show.legend=FALSE) +
+        geom_line(aes(x=Time, y=Median, color="1", linetype="1"), linewidth=.5, show.legend=FALSE) +
         
         theme_minimal() +
         theme(
@@ -491,9 +491,9 @@ plotProfitableTriplesByTime <- function(
     
     # Grafik mit Anteilen zeichnen
     plot <- plot +
-        geom_line(aes(x=Time, y=nLargerThan1Pct/n, color="1\\,%", linetype="1\\,%"), size = .5) +
-        geom_line(aes(x=Time, y=nLargerThan2Pct/n, color="2\\,%", linetype="2\\,%"), size = .5) +
-        geom_line(aes(x=Time, y=nLargerThan5Pct/n, color="5\\,%", linetype="5\\,%"), size = .5) +
+        geom_line(aes(x=Time, y=nLargerThan1Pct/n, color="1\\,%", linetype="1\\,%"), linewidth = .5) +
+        geom_line(aes(x=Time, y=nLargerThan2Pct/n, color="2\\,%", linetype="2\\,%"), linewidth = .5) +
+        geom_line(aes(x=Time, y=nLargerThan5Pct/n, color="5\\,%", linetype="5\\,%"), linewidth = .5) +
         
         theme_minimal() +
         theme(
@@ -617,7 +617,7 @@ plotNumResultsOverTime <- function(
     
     # Anzahl Datensätze zeichnen
     plot <- plot +
-        geom_line(aes(x=Time, y=n, color="1", linetype="1"), size=.5) +
+        geom_line(aes(x=Time, y=n, color="1", linetype="1"), linewidth=.5) +
         theme_minimal() +
         theme(
             plot.title.position = "plot",
@@ -791,7 +791,7 @@ plotVolatilityByTime <- function(
     
     # Volumen zeichnen
     plot <- plot +
-        geom_line(aes(x=Time, y=Volatility, color=Pair, linetype=Pair), size=.5) +
+        geom_line(aes(x=Time, y=Volatility, color=Pair, linetype=Pair), linewidth=.5) +
         theme_minimal() +
         theme(
             plot.title.position = "plot",
@@ -971,7 +971,7 @@ plotTradingVolumeByTime <- function(
     
     # Volumen zeichnen
     plot <- plot +
-        geom_line(aes(x=Time, y=Amount, color=Pair, linetype=Pair), size=.5) +
+        geom_line(aes(x=Time, y=Amount, color=Pair, linetype=Pair), linewidth=.5) +
         theme_minimal() +
         theme(
             plot.title.position = "plot",
@@ -1137,7 +1137,7 @@ plotPriceLevelByTime <- function(
     
     # Volumen zeichnen
     plot <- plot +
-        geom_line(aes(x=Time, y=Mean, color=Pair, linetype=Pair), size=.5) +
+        geom_line(aes(x=Time, y=Mean, color=Pair, linetype=Pair), linewidth=.5) +
         theme_minimal() +
         theme(
             plot.title.position = "plot",

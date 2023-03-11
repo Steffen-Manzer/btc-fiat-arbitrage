@@ -334,7 +334,7 @@ plotAggregatedPriceDifferencesByTime <- function(
             geom_ribbon(aes(x=Time, ymin=Q1, ymax=Q3, group=gapGroups), fill="grey70") +
             
             # Median zeichnen
-            geom_line(aes(x=Time, y=Median, color="1", linetype="1", group=gapGroups), size=.5)
+            geom_line(aes(x=Time, y=Median, color="1", linetype="1", group=gapGroups), linewidth=.5)
         
     } else if (plotType == "point") {
         
@@ -475,7 +475,7 @@ plotNumDifferencesByTime <- function(
     
     # Anzahl Datensätze zeichnen
     plot <- plot +
-        geom_line(aes(x=Time, y=n, color="1", linetype="1"), size=.5) +
+        geom_line(aes(x=Time, y=n, color="1", linetype="1"), linewidth=.5) +
         theme_minimal() +
         theme(
             legend.position = "none",
@@ -592,9 +592,9 @@ plotProfitableDifferencesByTime <- function(
     
     # Grafik mit Anteilen zeichnen
     plot <- plot +
-        geom_line(aes(x=Time, y=nLargerThan1Pct/n, color="1\\,%", linetype="1\\,%"), size = .5) +
-        geom_line(aes(x=Time, y=nLargerThan2Pct/n, color="2\\,%", linetype="2\\,%"), size = .5) +
-        geom_line(aes(x=Time, y=nLargerThan5Pct/n, color="5\\,%", linetype="5\\,%"), size = .5) +
+        geom_line(aes(x=Time, y=nLargerThan1Pct/n, color="1\\,%", linetype="1\\,%"), linewidth = .5) +
+        geom_line(aes(x=Time, y=nLargerThan2Pct/n, color="2\\,%", linetype="2\\,%"), linewidth = .5) +
+        geom_line(aes(x=Time, y=nLargerThan5Pct/n, color="5\\,%", linetype="5\\,%"), linewidth = .5) +
         theme_minimal() +
         theme(
             plot.title.position = "plot",
@@ -771,7 +771,7 @@ plotTradingVolumeByTime <- function(
     
     # Volumen zeichnen
     plot <- plot +
-        geom_line(aes(x=Time, y=Amount, color="1", linetype="1"), size=.5) +
+        geom_line(aes(x=Time, y=Amount, color="1", linetype="1"), linewidth=.5) +
         theme_minimal() +
         theme(
             legend.position = "none",
@@ -926,7 +926,7 @@ plotPriceLevelByTime <- function(
     
     # Volumen zeichnen
     plot <- plot +
-        geom_line(aes(x=Time, y=Mean, color="1", linetype="1"), size=.5) +
+        geom_line(aes(x=Time, y=Mean, color="1", linetype="1"), linewidth=.5) +
         theme_minimal() +
         theme(
             legend.position = "none",
@@ -1049,7 +1049,7 @@ plotVolatilityByTime <- function(
     
     # Volumen zeichnen
     plot <- plot +
-        geom_line(aes(x=Time, y=Volatility, color="1", linetype="1"), size=.5) +
+        geom_line(aes(x=Time, y=Volatility, color="1", linetype="1"), linewidth=.5) +
         theme_minimal() +
         theme(
             legend.position = "none",

@@ -154,8 +154,8 @@
         
         # Erstelle Plot mit Tagesdaten
         plot = ggplot(bpi.perDay, aes(x=Time)) +
-            geom_vline(data=timeframe, aes(xintercept=Time), color="red", size=.5) +
-            geom_line(aes(y=Close), size=.5) +
+            geom_vline(data=timeframe, aes(xintercept=Time), color="red", linewidth=.5) +
+            geom_line(aes(y=Close), linewidth=.5) +
             theme_minimal() +
             theme(
                 axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)),

@@ -45,7 +45,7 @@ if (asTeX) {
 }
 
 plot <- ggplot(counterparties, aes(x=Jahr, y=Umsatz)) +
-    geom_line(aes(color=Kategorie, linetype=Kategorie), size=1) +
+    geom_line(aes(color=Kategorie, linetype=Kategorie), linewidth=1) +
     scale_x_date(
         labels = function(x) { format(x, "%Y") },
         breaks = counterparties$Jahr,
