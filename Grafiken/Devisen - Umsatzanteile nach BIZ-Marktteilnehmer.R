@@ -62,7 +62,7 @@ plot <- ggplot(counterparties, aes(x=Jahr, y=Umsatz)) +
     theme_minimal() +
     theme(
         legend.position = c(0.22, 0.8),
-        legend.background = element_rect(fill = "white", size = 0.2, linetype = "solid"),
+        legend.background = element_rect(fill = "white", linewidth = 0.2, linetype = "solid"),
         legend.margin = margin(0, 15, 5, 5),
         legend.title = element_blank(),
         axis.title.x = element_text(size = 9, margin = margin(t = 10)),

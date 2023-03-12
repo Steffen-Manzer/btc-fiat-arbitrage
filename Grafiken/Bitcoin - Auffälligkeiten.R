@@ -95,7 +95,7 @@ p_bitstamp <- ggplot() +
     theme_minimal() +
     theme(
         legend.position = c(0.85, 0.3),
-        legend.background = element_rect(fill="white", size=0.2, linetype="solid"),
+        legend.background = element_rect(fill="white", linewidth=0.2, linetype="solid"),
         legend.margin = margin(0, 12, 5, 5),
         legend.title = element_blank(),
         plot.title.position = "plot",
@@ -163,7 +163,7 @@ p_kraken <- ggplot(b_combined, aes(x=Time, y=Price)) +
     theme_minimal() +
     theme(
         legend.position = c(0.85, 0.3),
-        legend.background = element_rect(fill="white", size=0.2, linetype="solid"),
+        legend.background = element_rect(fill="white", linewidth=0.2, linetype="solid"),
         legend.margin = margin(0, 12, 5, 5),
         legend.title = element_blank(),
         plot.margin = plotMarginTopIncreased,
@@ -225,7 +225,7 @@ p_coinbase <- ggplot(c_combined, aes(x=Time, y=Price)) +
     theme_minimal() +
     theme(
         legend.position = c(0.85, 0.3),
-        legend.background = element_rect(fill="white", size=0.2, linetype="solid"),
+        legend.background = element_rect(fill="white", linewidth=0.2, linetype="solid"),
         legend.margin = margin(0, 12, 5, 5),
         legend.title = element_blank(),
         plot.margin = plotMarginTopIncreased,

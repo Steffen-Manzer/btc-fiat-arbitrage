@@ -164,7 +164,7 @@ loadComparablePricesByCurrencyPair <- function(currencyPair, threshold)
         )
         maxDifference <- priceDifferences[which.max(PriceDifference)]
         with(maxDifference, printf(
-            "Höchstwert: %s (%s <-> %s) am %s\n",
+            "  Höchstwert: %s (%s <-> %s) am %s\n",
             format.number(PriceDifference),
             format.money(PriceLow),
             format.money(PriceHigh),
@@ -583,11 +583,11 @@ plotProfitableDifferencesByTime <- function(
     } else if (is.null(breakpoints)) {
         legendPosition <- c(0.88, 0.7)
         legendMargin <- margin(0, 5, 5, 5)
-        legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+        legendBackground <- element_rect(fill="white", linewidth=0.2, linetype="solid")
     } else {
         legendPosition <- c(0.88, 0.58)
         legendMargin <- margin(0, 5, 5, 5)
-        legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+        legendBackground <- element_rect(fill="white", linewidth=0.2, linetype="solid")
     }
     
     # Grafik mit Anteilen zeichnen

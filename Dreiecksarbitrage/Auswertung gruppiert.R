@@ -482,11 +482,11 @@ plotProfitableTriplesByTime <- function(
     } else if (is.null(breakpoints)) {
         legendPosition <- c(0.88, 0.7)
         legendMargin <- margin(0, 5, 5, 5)
-        legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+        legendBackground <- element_rect(fill="white", linewidth=0.2, linetype="solid")
     } else {
         legendPosition <- c(0.88, 0.5)
         legendMargin <- margin(0, 5, 5, 5)
-        legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+        legendBackground <- element_rect(fill="white", linewidth=0.2, linetype="solid")
     }
     
     # Grafik mit Anteilen zeichnen
@@ -782,11 +782,11 @@ plotVolatilityByTime <- function(
     } else if (is.null(breakpoints)) {
         legendPosition <- c(0.88, 0.7)
         legendMargin <- margin(0, 5, 5, 5)
-        legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+        legendBackground <- element_rect(fill="white", linewidth=0.2, linetype="solid")
     } else {
         legendPosition <- c(0.88, 0.66)
         legendMargin <- margin(0, 5, 5, 5)
-        legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+        legendBackground <- element_rect(fill="white", linewidth=0.2, linetype="solid")
     }
     
     # Volumen zeichnen
@@ -934,7 +934,7 @@ plotTradingVolumeByTime <- function(
     } else {
         legendPosition <- c(0.1, 0.58)
         legendMargin <- margin(0, 5, 5, 5)
-        legendBackground <- element_rect(fill="white", size=0.2, linetype="solid")
+        legendBackground <- element_rect(fill="white", linewidth=0.2, linetype="solid")
     }
     
     plot <- ggplot(result)
@@ -1146,7 +1146,7 @@ plotPriceLevelByTime <- function(
             legend.title = element_blank(),
             legend.position = c(0.13, 0.55),
             legend.margin = margin(0, 12, 5, 5),
-            legend.background = element_rect(fill="white", size=0.2, linetype="solid")
+            legend.background = element_rect(fill="white", linewidth=0.2, linetype="solid")
         ) +
         coord_cartesian(ylim=c(0, maxValue)) +
         scale_x_datetime(
